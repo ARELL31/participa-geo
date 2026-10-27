@@ -66,6 +66,14 @@ def writer_engine(settings: Settings, db_name: str | None = None) -> Engine:
     )
 
 
+def api_engine(settings: Settings, db_name: str | None = None) -> Engine:
+    """Read-only engine for the web process (least-privilege ``api`` role)."""
+    return engine_for(
+        settings, user=settings.db_api_user, password=settings.db_api_password,
+        db_name=db_name,
+    )
+
+
 @contextmanager
 def session_scope(engine: Engine) -> Iterator[Session]:
     """Yield a ``Session`` and commit/rollback around the block."""
@@ -99,6 +107,7 @@ def run_migrations(settings: Settings, db_name: str | None = None) -> None:
 
 
 __all__ = [
+    "api_engine",
     "database_url",
     "engine_for",
     "migrator_engine",

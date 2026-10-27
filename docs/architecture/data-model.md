@@ -182,3 +182,45 @@ erDiagram
 La importación y la publicación son **idempotentes**: los identificadores
 deterministas y los `ON CONFLICT` garantizan que reejecutar `db load`,
 `gis import` o `gis publish` no duplica filas ni capas.
+
+## Carga del modelo (T5)
+
+`model load --bundle-dir data/processed/model` (CLI, rol `writer`) lee los
+artefactos T4 —`model.json`, `evaluation.json`, `manifest.json` y
+`predictions-2027.parquet`— y persiste un `model_run` y las 125 filas
+`prediction` mediante upserts deterministas (sin `pickle`/`joblib` ni
+reentrenamiento). El `model_run_id` proviene del artefacto real
+(`5bc387ce-6646-5b49-9c4f-ad302f4c422a`, familia `M0`). El mapeo de los campos del
+artefacto a columnas de `model_run` es:
+
+- `parameters` ← `model.json` (alpha, feature_order, intercept/coef/scaler si M1,
+  `description`/`candidate_m1` si M0, `limitations`).
+- `features` ← `model.json.feature_order`.
+- `cut_dates` ← `reference_date`/`target_year` de `model.json` y
+  `validation_year`/`test_year` de `evaluation.json`.
+- `hashes` ← `manifest.json` (`data_aggregate_sha256`, `logical_hash`, `artifacts`).
+- `dependencies` ← `manifest.json.versions`.
+- `metrics` ← `evaluation.json` (`selection`, `metrics`, `band`, `cohorts`).
+- `exclusions` ← `evaluation.json.exclusions`.
+
+Cada `prediction` conserva `estimated_abstention_pct` (nulo si
+`insufficient`), banda, `risk`, `risk_unstable`, `eligible` y `quality`
+(JSONB). `reference_territory_id` es el `territory_id` de la fila del parquet
+(uuid5 de la referencia 2025). Reejecutar `model load` con el mismo contenido
+no crea otro `model_run` ni duplica predicciones.
+
+## Limitación MVP: credenciales de rol en el contenedor `api`
+
+El contenedor `api` recibe **todas** las contraseñas de rol de base de datos
+(`DB_MIGRATOR_*`, `DB_WRITER_*`, `DB_API_*`, `DB_GIS_READER_*`) porque la CLI de
+mantenimiento (`db migrate`, `db load`, `model load`, …) corre en la misma
+imagen. El **proceso HTTP sólo usa `DB_API_*`**: `main.py` crea un único motor con
+el rol de menor privilegio `api` (sólo `SELECT`) y nunca toca las credenciales de
+`migrator`, `writer` o `gis_reader`. Rediseñar la separación (p. ej. una imagen
+de mantenimiento distinta) queda fuera del alcance del MVP y no se hace en T5.
+
+## Permiso de readiness (T5)
+
+La migración `0002` concede `SELECT ON alembic_version TO api` para que el
+chequeo de readiness pueda verificar que las migraciones están aplicadas sin
+ampliar ningún otro privilegio.

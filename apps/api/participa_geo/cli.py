@@ -131,6 +131,20 @@ def _train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _model_load(args: argparse.Namespace) -> int:
+    from participa_geo.db.repository import load_model_bundle
+    from participa_geo.db.session import session_scope, writer_engine
+    from participa_geo.settings import Settings
+
+    settings = Settings()
+    bundle_dir = Path(args.bundle_dir)
+    with session_scope(writer_engine(settings)) as session:
+        model_run_id = load_model_bundle(bundle_dir, session)
+
+    print(f"loaded model {model_run_id} from {bundle_dir}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="participa_geo",
@@ -219,6 +233,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
     )
     train.set_defaults(handler=_train)
+
+    model = subparsers.add_parser(
+        "model",
+        help="Cargar los artefactos de un modelo ya entrenado en PostGIS.",
+    )
+    model_sub = model.add_subparsers(dest="model_command")
+
+    model_load = model_sub.add_parser(
+        "load", help="Cargar el bundle de artefactos (modelo + predicciones)."
+    )
+    model_load.add_argument(
+        "--bundle-dir",
+        required=True,
+        help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
+    )
+    model_load.set_defaults(handler=_model_load)
 
     return parser
 

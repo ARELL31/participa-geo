@@ -1,0 +1,1204 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PARTICIPA-GEO API",
+    "description": "Análisis municipal de participación electoral (Jalisco).",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Live",
+        "description": "The process responds; does not imply data is ready.",
+        "operationId": "live_api_v1_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Ready",
+        "operationId": "ready_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/territories": {
+      "get": {
+        "tags": [
+          "territories"
+        ],
+        "summary": "List Territories",
+        "operationId": "list_territories_api_v1_territories_get",
+        "parameters": [
+          {
+            "name": "state_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "default": "14",
+              "title": "State Code"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "municipality",
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 125,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TerritoryDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/participation/history": {
+      "get": {
+        "tags": [
+          "participation"
+        ],
+        "summary": "List History",
+        "operationId": "list_history_api_v1_participation_history_get",
+        "parameters": [
+          {
+            "name": "territory_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Territory Id"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    2009,
+                    2012,
+                    2015,
+                    2018,
+                    2021,
+                    2024
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 125,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_HistoryDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "List Models",
+        "operationId": "list_models_api_v1_models_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 125,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ModelDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/{model_run_id}": {
+      "get": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Get Model",
+        "operationId": "get_model_api_v1_models__model_run_id__get",
+        "parameters": [
+          {
+            "name": "model_run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Model Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/predictions": {
+      "get": {
+        "tags": [
+          "predictions"
+        ],
+        "summary": "List Predictions",
+        "operationId": "list_predictions_api_v1_predictions_get",
+        "parameters": [
+          {
+            "name": "model_run_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Run Id"
+            }
+          },
+          {
+            "name": "target_year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": 2027,
+              "type": "integer",
+              "default": 2027,
+              "title": "Target Year"
+            }
+          },
+          {
+            "name": "territory_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Territory Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 125,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PredictionDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gis/wms": {
+      "get": {
+        "tags": [
+          "gis"
+        ],
+        "summary": "Gis Wms",
+        "operationId": "gis_wms_api_v1_gis_wms_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gis/wfs": {
+      "get": {
+        "tags": [
+          "gis"
+        ],
+        "summary": "Gis Wfs",
+        "operationId": "gis_wfs_api_v1_gis_wfs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DatasetMeta": {
+        "properties": {
+          "dataset_version_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Dataset Version Ids"
+          },
+          "reference_date": {
+            "type": "string",
+            "title": "Reference Date",
+            "default": "2025-12-15"
+          },
+          "model_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Run Id"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "geographic_warning": {
+            "type": "string",
+            "title": "Geographic Warning",
+            "default": ""
+          },
+          "filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters"
+          }
+        },
+        "type": "object",
+        "title": "DatasetMeta",
+        "description": "Versions, reference date and filters that identify a dataset snapshot."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryDTO": {
+        "properties": {
+          "territory_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Id"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "municipality_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality Code"
+          },
+          "ln": {
+            "type": "integer",
+            "title": "Ln"
+          },
+          "sv": {
+            "type": "integer",
+            "title": "Sv"
+          },
+          "nv": {
+            "type": "integer",
+            "title": "Nv"
+          },
+          "ns": {
+            "type": "integer",
+            "title": "Ns"
+          },
+          "participation_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participation Pct"
+          },
+          "abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Pct"
+          },
+          "unknown_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unknown Share"
+          },
+          "ns_lower_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ns Lower Pct"
+          },
+          "ns_upper_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ns Upper Pct"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "identity_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Status"
+          },
+          "footprint_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Footprint Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "ln",
+          "sv",
+          "nv",
+          "ns",
+          "eligible"
+        ],
+        "title": "HistoryDTO",
+        "description": "One participation record (municipal or state aggregate).\n\nState aggregates (``territory_id is None``) sum counts across the 125\nmunicipalities before recomputing rates; insufficient values are ``null``."
+      },
+      "LiveStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "LiveStatus"
+      },
+      "ModelDTO": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Run Id"
+          },
+          "family": {
+            "type": "string",
+            "title": "Family"
+          },
+          "target_year": {
+            "type": "integer",
+            "title": "Target Year"
+          },
+          "reference_date": {
+            "type": "string",
+            "title": "Reference Date"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          },
+          "cut_dates": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cut Dates"
+          },
+          "hashes": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hashes"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
+          "exclusions": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclusions"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "family",
+          "target_year",
+          "reference_date"
+        ],
+        "title": "ModelDTO",
+        "description": "A persisted, already-trained model run (no training endpoint exists)."
+      },
+      "Page_HistoryDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[HistoryDTO]"
+      },
+      "Page_ModelDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[ModelDTO]"
+      },
+      "Page_PredictionDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[PredictionDTO]"
+      },
+      "Page_TerritoryDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TerritoryDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[TerritoryDTO]"
+      },
+      "PredictionDTO": {
+        "properties": {
+          "territory_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Territory Id"
+          },
+          "municipality_code": {
+            "type": "string",
+            "title": "Municipality Code"
+          },
+          "municipality_name": {
+            "type": "string",
+            "title": "Municipality Name"
+          },
+          "target_year": {
+            "type": "integer",
+            "title": "Target Year"
+          },
+          "estimated_abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Abstention Pct"
+          },
+          "historical_error_lower_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historical Error Lower Pct"
+          },
+          "historical_error_upper_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historical Error Upper Pct"
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk"
+          },
+          "risk_unstable": {
+            "type": "boolean",
+            "title": "Risk Unstable",
+            "default": false
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PredictionQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territory_id",
+          "municipality_code",
+          "municipality_name",
+          "target_year",
+          "eligible",
+          "model_run_id"
+        ],
+        "title": "PredictionDTO",
+        "description": "One municipality forecast (or ``insufficient`` status) for 2027."
+      },
+      "PredictionQuality": {
+        "properties": {
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "identity_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Status"
+          },
+          "footprint_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Footprint Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eligible"
+        ],
+        "title": "PredictionQuality",
+        "description": "The quality decision attached to one prediction (never a numeric zero)."
+      },
+      "TerritoryDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "state_code": {
+            "type": "string",
+            "title": "State Code"
+          },
+          "municipality_code": {
+            "type": "string",
+            "title": "Municipality Code"
+          },
+          "identity_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Status"
+          },
+          "footprint_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Footprint Status"
+          },
+          "reference_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "state_code",
+          "municipality_code"
+        ],
+        "title": "TerritoryDTO",
+        "description": "A reference municipality with its comparability statuses."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

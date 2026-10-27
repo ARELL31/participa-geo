@@ -326,6 +326,303 @@ class Repository:
             footprint_status=row["footprint_status"],
         )
 
+    # -- model / prediction reads -----------------------------------------
+
+    def get_dataset_version_ids(self) -> list[UUID]:
+        """Return every loaded dataset version id (ascending year)."""
+        rows = self.session.execute(
+            text("SELECT id FROM dataset_version ORDER BY year")
+        ).scalars().all()
+        return [UUID(str(r)) for r in rows]
+
+    def get_models(
+        self, *, page: int, page_size: int
+    ) -> tuple[list[models.ModelRecord], int]:
+        """Return the loaded model runs (most recent first) plus the total."""
+        total = int(self.session.scalar(text("SELECT count(*) FROM model_run")))
+        rows = self.session.execute(
+            text(
+                """
+                SELECT id, family, parameters, features, cut_dates, hashes,
+                       dependencies, metrics, exclusions, created_at
+                FROM model_run
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+                """
+            ),
+            {"limit": page_size, "offset": (page - 1) * page_size},
+        ).mappings().all()
+        return [self._model_record(row) for row in rows], total
+
+    def get_model(self, model_run_id: UUID) -> models.ModelRecord | None:
+        """Return one model run by id, or ``None`` when absent."""
+        row = self.session.execute(
+            text(
+                """
+                SELECT id, family, parameters, features, cut_dates, hashes,
+                       dependencies, metrics, exclusions, created_at
+                FROM model_run
+                WHERE id = :id
+                """
+            ),
+            {"id": model_run_id},
+        ).mappings().first()
+        return self._model_record(row) if row else None
+
+    def get_published_model_run_id(self) -> UUID | None:
+        """Return the most recently loaded model run id (the deployed model)."""
+        row = self.session.execute(
+            text("SELECT id FROM model_run ORDER BY created_at DESC LIMIT 1")
+        ).first()
+        return row[0] if row else None
+
+    def get_predictions(
+        self,
+        *,
+        model_run_id: UUID,
+        target_year: int,
+        territory_id: UUID | None,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[models.PredictionRecord], int]:
+        """Return prediction rows (stably ordered by municipality code)."""
+        where = "p.model_run_id = :model_run_id AND p.target_year = :target_year"
+        params: dict = {"model_run_id": model_run_id, "target_year": target_year}
+        if territory_id is not None:
+            where += " AND p.reference_territory_id = :territory_id"
+            params["territory_id"] = territory_id
+
+        total = int(
+            self.session.scalar(
+                text(f"SELECT count(*) FROM prediction p WHERE {where}"), params
+            )
+        )
+
+        list_sql = f"""
+            SELECT p.reference_territory_id AS territory_id,
+                   t.municipality_code, t.name AS municipality_name,
+                   p.target_year, p.estimated_abstention_pct,
+                   p.historical_error_lower_pct, p.historical_error_upper_pct,
+                   p.risk, p.risk_unstable, p.eligible, p.quality, p.model_run_id
+            FROM prediction p
+            JOIN territory_version t ON t.id = p.reference_territory_id
+            WHERE {where}
+            ORDER BY t.municipality_code
+            LIMIT :limit OFFSET :offset
+        """
+        params["limit"] = page_size
+        params["offset"] = (page - 1) * page_size
+        rows = self.session.execute(text(list_sql), params).mappings().all()
+        return [self._prediction_record(row) for row in rows], total
+
+    @staticmethod
+    def _model_record(row) -> models.ModelRecord:
+        return models.ModelRecord(
+            model_run_id=row["id"],
+            family=row["family"],
+            parameters=row["parameters"],
+            features=row["features"],
+            cut_dates=row["cut_dates"],
+            hashes=row["hashes"],
+            dependencies=row["dependencies"],
+            metrics=row["metrics"],
+            exclusions=row["exclusions"],
+            created_at=row["created_at"],
+        )
+
+    @staticmethod
+    def _prediction_record(row) -> models.PredictionRecord:
+        return models.PredictionRecord(
+            territory_id=row["territory_id"],
+            municipality_code=row["municipality_code"],
+            municipality_name=row["municipality_name"],
+            target_year=row["target_year"],
+            estimated_abstention_pct=row["estimated_abstention_pct"],
+            historical_error_lower_pct=row["historical_error_lower_pct"],
+            historical_error_upper_pct=row["historical_error_upper_pct"],
+            risk=row["risk"],
+            risk_unstable=row["risk_unstable"],
+            eligible=row["eligible"],
+            quality=row["quality"],
+            model_run_id=row["model_run_id"],
+        )
+
+
+def load_model_bundle(path: Path, session: Session) -> UUID:
+    """Load the T4 artifact bundle into ``model_run`` + ``prediction`` rows.
+
+    Reads ``model.json``, ``evaluation.json``, ``manifest.json`` and
+    ``predictions-2027.parquet`` (never pickle/joblib, never retrains). The
+    ``model_run_id`` is taken from the artifact truth; upserts are keyed on
+    deterministic ids, so re-loading identical content is idempotent and inserts
+    exactly 125 prediction rows. Returns the loaded ``model_run_id``.
+    """
+    import json as _json
+    from uuid import NAMESPACE_URL as _NAMESPACE_URL
+    from uuid import uuid5 as _uuid5
+
+    import pandas as _pd
+
+    path = Path(path)
+    model_payload = _json.loads((path / "model.json").read_text(encoding="utf-8"))
+    evaluation_payload = _json.loads(
+        (path / "evaluation.json").read_text(encoding="utf-8")
+    )
+    manifest_payload = _json.loads((path / "manifest.json").read_text(encoding="utf-8"))
+
+    model_run_id = UUID(str(model_payload["model_run_id"]))
+    family = str(model_payload["family"])
+    target_year = int(model_payload["target_year"])
+    reference_date = str(model_payload.get("reference_date", "2025-12-15"))
+    feature_order = list(model_payload.get("feature_order", []))
+
+    parameters: dict = {
+        "alpha": model_payload.get("alpha"),
+        "feature_order": feature_order,
+        "description": model_payload.get("description"),
+        "limitations": list(model_payload.get("limitations", [])),
+        "clipped_count_2027": model_payload.get("clipped_count_2027"),
+    }
+    if model_payload.get("candidate_m1") is not None:
+        parameters["candidate_m1"] = model_payload["candidate_m1"]
+    for key in ("intercept", "coefficients", "scaler"):
+        if model_payload.get(key) is not None:
+            parameters[key] = model_payload[key]
+
+    cut_dates: dict = {
+        "reference_date": reference_date,
+        "target_year": target_year,
+        "validation_year": evaluation_payload.get("validation_year"),
+        "test_year": evaluation_payload.get("test_year"),
+        "fit_years": [2015, 2018, 2021, 2024],
+    }
+
+    hashes: dict = {
+        "data_aggregate_sha256": manifest_payload.get("data_aggregate_sha256"),
+        "logical_hash": manifest_payload.get("logical_hash"),
+        "artifacts": manifest_payload.get("artifacts", {}),
+    }
+
+    dependencies: dict = manifest_payload.get("versions", {})
+
+    metrics: dict = {
+        "selected_family": evaluation_payload.get("selected_family"),
+        "validation_year": evaluation_payload.get("validation_year"),
+        "test_year": evaluation_payload.get("test_year"),
+        "selection": evaluation_payload.get("selection", {}),
+        "metrics": evaluation_payload.get("metrics", {}),
+        "band": evaluation_payload.get("band", {}),
+        "cohorts": evaluation_payload.get("cohorts", {}),
+    }
+
+    exclusions: dict = evaluation_payload.get("exclusions", {})
+
+    stmt = pg_insert(models.ModelRun.__table__).values(
+        id=model_run_id,
+        family=family,
+        parameters=parameters,
+        features=feature_order,
+        cut_dates=cut_dates,
+        hashes=hashes,
+        dependencies=dependencies,
+        metrics=metrics,
+        exclusions=exclusions,
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["id"],
+        set_={
+            "family": stmt.excluded.family,
+            "parameters": stmt.excluded.parameters,
+            "features": stmt.excluded.features,
+            "cut_dates": stmt.excluded.cut_dates,
+            "hashes": stmt.excluded.hashes,
+            "dependencies": stmt.excluded.dependencies,
+            "metrics": stmt.excluded.metrics,
+            "exclusions": stmt.excluded.exclusions,
+        },
+    )
+    session.execute(stmt)
+
+    frame = _pd.read_parquet(path / "predictions-2027.parquet")
+    prediction_rows: list[dict] = []
+    for _, row in frame.iterrows():
+        territory_id = UUID(str(row["territory_id"]))
+        target = int(row["target_year"])
+        prediction_id = _uuid5(
+            _NAMESPACE_URL,
+            f"participa-geo:prediction:{model_run_id}:{territory_id}:{target}",
+        )
+        quality = _prediction_quality_dict(row)
+        prediction_rows.append(
+            {
+                "id": prediction_id,
+                "model_run_id": model_run_id,
+                "reference_territory_id": territory_id,
+                "target_year": target,
+                "estimated_abstention_pct": _float_or_none(
+                    row["estimated_abstention_pct"]
+                ),
+                "historical_error_lower_pct": _float_or_none(
+                    row["historical_error_lower_pct"]
+                ),
+                "historical_error_upper_pct": _float_or_none(
+                    row["historical_error_upper_pct"]
+                ),
+                "risk": str(row["risk"]) if row["risk"] is not None else None,
+                "risk_unstable": bool(row["risk_unstable"])
+                if row["risk_unstable"] is not None
+                else False,
+                "eligible": bool(row["eligible"]),
+                "quality": quality,
+            }
+        )
+
+    if prediction_rows:
+        pred_stmt = pg_insert(models.Prediction.__table__).values(prediction_rows)
+        pred_stmt = pred_stmt.on_conflict_do_update(
+            index_elements=["model_run_id", "reference_territory_id", "target_year"],
+            set_={
+                "estimated_abstention_pct": pred_stmt.excluded.estimated_abstention_pct,
+                "historical_error_lower_pct": pred_stmt.excluded.historical_error_lower_pct,
+                "historical_error_upper_pct": pred_stmt.excluded.historical_error_upper_pct,
+                "risk": pred_stmt.excluded.risk,
+                "risk_unstable": pred_stmt.excluded.risk_unstable,
+                "eligible": pred_stmt.excluded.eligible,
+                "quality": pred_stmt.excluded.quality,
+            },
+        )
+        session.execute(pred_stmt)
+
+    return model_run_id
+
+
+def _prediction_quality_dict(row) -> dict | None:
+    """Reconstruct the quality JSON from the prediction parquet row."""
+    import json as _json
+
+    quality = row.get("quality")
+    if isinstance(quality, str):
+        return _json.loads(quality)
+    if isinstance(quality, dict):
+        return quality
+    # Fall back to the denormalised columns when the JSON blob is absent.
+    reasons_raw = row.get("quality_reasons")
+    reasons = (
+        [str(r) for r in str(reasons_raw).split(";") if str(r).strip()]
+        if reasons_raw is not None
+        else []
+    )
+    return {
+        "eligible": bool(row.get("eligible")),
+        "reasons": reasons,
+        "identity_status": (
+            str(row["identity_status"]) if row.get("identity_status") is not None else None
+        ),
+        "footprint_status": (
+            str(row["footprint_status"]) if row.get("footprint_status") is not None else None
+        ),
+    }
+
 
 def read_processed_observations(
     processed_dir: Path,
@@ -397,4 +694,4 @@ def _float_or_none(value: object) -> float | None:
     return float(value)
 
 
-__all__ = ["Repository", "read_processed_observations"]
+__all__ = ["Repository", "load_model_bundle", "read_processed_observations"]

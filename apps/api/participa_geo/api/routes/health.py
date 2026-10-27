@@ -16,8 +16,6 @@ from participa_geo.api.errors import problem
 
 router = APIRouter()
 
-HEALTH_CHECK_NAMES = ("database", "migrations", "dataset", "model", "gis")
-
 
 class LiveStatus(BaseModel):
     status: str
@@ -31,8 +29,7 @@ async def live() -> LiveStatus:
 
 @router.get("/ready")
 async def ready(request: Request):
-    checks = request.app.state.health_checks
-    results = {name: bool(checks[name]()) for name in HEALTH_CHECK_NAMES}
+    results = {name: bool(value) for name, value in request.app.state.readiness().items()}
     if all(results.values()):
         return {"status": "ready", "checks": results}
 

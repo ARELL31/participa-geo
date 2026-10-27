@@ -361,14 +361,50 @@ class HistoryRecord:
     footprint_status: str | None
 
 
+@dataclass(frozen=True)
+class ModelRecord:
+    """One persisted model run (the DTO fields of ``/models``, no FastAPI)."""
+
+    model_run_id: UUID
+    family: str
+    parameters: dict | None
+    features: list | None
+    cut_dates: dict | None
+    hashes: dict | None
+    dependencies: dict | None
+    metrics: dict | None
+    exclusions: dict | None
+    created_at: datetime | None
+
+
+@dataclass(frozen=True)
+class PredictionRecord:
+    """One persisted prediction (the DTO fields of ``/predictions``, no FastAPI)."""
+
+    territory_id: UUID
+    municipality_code: str
+    municipality_name: str
+    target_year: int
+    estimated_abstention_pct: float | None
+    historical_error_lower_pct: float | None
+    historical_error_upper_pct: float | None
+    risk: str | None
+    risk_unstable: bool
+    eligible: bool
+    quality: dict | None
+    model_run_id: UUID
+
+
 __all__ = [
     "Base",
     "DatasetVersion",
     "ElectionYear",
     "Geometry",
     "HistoryRecord",
+    "ModelRecord",
     "ModelRun",
     "Observation",
+    "PredictionRecord",
     "Prediction",
     "ReportArtifact",
     "Scenario",

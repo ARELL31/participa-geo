@@ -20,7 +20,9 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from participa_geo.api.errors import register_exception_handlers, request_id_var
-from participa_geo.api.routes import health
+from participa_geo.api.readiness import build_readiness
+from participa_geo.api.routes import gis, health, history, models, predictions, territories
+from participa_geo.db.session import api_engine
 from participa_geo.settings import Settings
 
 API_PREFIX = "/api/v1"
@@ -149,18 +151,7 @@ class JsonSizeLimitMiddleware:
         await self.app(scope, limited_receive, send)
 
 
-def _default_health_checks() -> dict:
-    # Stubs: replaced by real checks in T2–T5. The API never connects as migrator.
-    return {
-        "database": lambda: False,
-        "migrations": lambda: False,
-        "dataset": lambda: False,
-        "model": lambda: False,
-        "gis": lambda: False,
-    }
-
-
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     settings = settings or Settings()
     app = FastAPI(
         title="PARTICIPA-GEO API",
@@ -168,7 +159,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description="Análisis municipal de participación electoral (Jalisco).",
     )
     app.state.settings = settings
-    app.state.health_checks = _default_health_checks()
+    # The web process connects only as the least-privilege ``api`` role. The
+    # engine is created lazily (no connection until a request/readiness probe).
+    app.state.api_engine = api_engine(settings)
+    app.state.readiness = readiness or build_readiness(settings, app.state.api_engine)
 
     logging.getLogger("participa_geo").setLevel(settings.log_level.upper())
 
@@ -179,5 +173,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(health.router, prefix=f"{API_PREFIX}/health", tags=["health"])
+    app.include_router(territories.router, prefix=API_PREFIX)
+    app.include_router(history.router, prefix=API_PREFIX)
+    app.include_router(models.router, prefix=API_PREFIX)
+    app.include_router(predictions.router, prefix=API_PREFIX)
+    app.include_router(gis.router, prefix=API_PREFIX)
 
     return app

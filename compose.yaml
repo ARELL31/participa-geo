@@ -43,6 +43,7 @@ services:
       - ./gis:/workspace/gis
       - ./alembic.ini:/workspace/alembic.ini:ro
       - ./alembic:/workspace/alembic:ro
+      - ./infrastructure:/workspace/infrastructure:ro
       - ./compose.yaml:/workspace/compose.yaml:ro
       - ./.env.example:/workspace/.env.example:ro
       # Read/write the git-ignored data sources and processed artifacts, plus the
