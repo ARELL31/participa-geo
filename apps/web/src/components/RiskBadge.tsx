@@ -3,10 +3,10 @@ import { CircleCheck, CircleHelp, CircleMinus, TriangleAlert } from "lucide-reac
 export type RiskLevel = "low" | "medium" | "high" | "insufficient";
 
 const CONFIG = {
-  low: { label: "Bajo", Icon: CircleCheck },
-  medium: { label: "Medio", Icon: CircleMinus },
-  high: { label: "Alto", Icon: TriangleAlert },
-  insufficient: { label: "Insuficiente", Icon: CircleHelp },
+  low: { label: "Riesgo bajo", Icon: CircleCheck },
+  medium: { label: "Riesgo medio", Icon: CircleMinus },
+  high: { label: "Riesgo alto", Icon: TriangleAlert },
+  insufficient: { label: "Información insuficiente", Icon: CircleHelp },
 } as const satisfies Record<RiskLevel, { label: string; Icon: typeof CircleCheck }>;
 
 type RiskBadgeProps = {

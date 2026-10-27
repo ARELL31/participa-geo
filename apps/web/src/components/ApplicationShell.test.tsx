@@ -76,17 +76,26 @@ describe("ApplicationShell", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks modules pending without fake actions", async () => {
+  it("marks reports pending without fake actions", async () => {
     const user = userEvent.setup();
     renderApp("/");
     expect(
       screen.getByRole("link", { name: /^Predicción/ }),
-    ).toHaveAccessibleName(/Pendiente/);
-    await user.click(screen.getByRole("link", { name: /^Predicción/ }));
+    ).not.toHaveAccessibleName(/Pendiente/);
+    expect(
+      screen.getByRole("link", { name: /^Escenarios/ }),
+    ).not.toHaveAccessibleName(/Pendiente/);
+
+    const reportsLink = screen.getByRole("link", { name: /^Reportes/ });
+    expect(reportsLink).toHaveAccessibleName(/Pendiente/);
+    await user.click(reportsLink);
     const main = screen.getByRole("main");
     expect(within(main).getByText("Pendiente")).toBeInTheDocument();
     expect(
-      within(main).getByRole("heading", { level: 1, name: "Predicción 2027" }),
+      within(main).getByRole("heading", {
+        level: 1,
+        name: "Reportes y exportaciones",
+      }),
     ).toBeInTheDocument();
     expect(within(main).queryAllByRole("button")).toHaveLength(0);
     expect(within(main).queryAllByRole("link")).toHaveLength(0);

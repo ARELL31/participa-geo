@@ -1,6 +1,15 @@
 import { http, HttpResponse } from "msw";
 
-import type { HistoryDTO, Page, TerritoryDTO } from "../lib/api";
+import type {
+  HistoryDTO,
+  ModelDTO,
+  Page,
+  PredictionDTO,
+  RecommendationDTO,
+  ScenarioDTO,
+  ScenarioResultDTO,
+  TerritoryDTO,
+} from "../lib/api";
 
 export const TERRITORY_A = "3f8d0f5e-9a4c-4b7d-9f2a-6d1c8e5b7a10";
 export const TERRITORY_B = "8c2e4b1a-7d3f-4e6a-8b5c-1f9d2a7e4c30";
@@ -143,4 +152,412 @@ export function wfsHandler(features: ReturnType<typeof municipalityFeature>[]) {
 
 export function emptyWfsHandler() {
   return wfsHandler([]);
+}
+
+export const MODEL_RUN_ID = "5bc387ce-6646-5b49-9c4f-ad302f4c422a";
+export const SCENARIO_ID = "9b2c5f1e-4d3a-4c6b-8e7f-1a2b3c4d5e6f";
+
+const SELECTED_BAND_LABEL =
+  "rango de error histórico de referencia trasladado condicionalmente; no es un intervalo causal";
+
+function territoryUuid(code: string): string {
+  return `00000000-0000-4000-8000-${code.padStart(12, "0")}`;
+}
+
+function riskFor(value: number | null): "low" | "medium" | "high" | "insufficient" {
+  if (value === null) return "insufficient";
+  if (value < 40) return "low";
+  if (value < 50) return "medium";
+  return "high";
+}
+
+/**
+ * The real model evidence is exposed through ``ModelDTO.metrics``. The fixture
+ * mirrors the persisted evaluation exactly so the UI is tested against the
+ * selected-family truth (M0 4.93 vs M1 8.90 in validation 2021).
+ */
+export function modelRun(overrides: Partial<ModelDTO> = {}): ModelDTO {
+  return {
+    model_run_id: MODEL_RUN_ID,
+    family: "M0",
+    target_year: 2027,
+    reference_date: "2025-12-15",
+    features: [
+      "same_type_abstention_pct",
+      "previous_abstention_pct",
+      "previous_young_share",
+      "previous_senior_share",
+      "previous_rural_share",
+      "is_midterm",
+    ],
+    parameters: {
+      alpha: 1.0,
+      description:
+        "M0 reference: same-municipality same-type abstention at t-6 (2021).",
+      limitations: [
+        "Reference cartography 2025-12-15; identity_status=verified_catalogue is a prerequisite and footprint_status=not_verified (no historical boundary equality verified).",
+        "Association only; coefficients are additive contributions in the transformed scale and carry no causal interpretation.",
+      ],
+      feature_order: [
+        "same_type_abstention_pct",
+        "previous_abstention_pct",
+        "previous_young_share",
+        "previous_senior_share",
+        "previous_rural_share",
+        "is_midterm",
+      ],
+      candidate_m1: {
+        note: "Candidate with sociodemographics (not selected); fitted on 2015/2018 for the 2021 selection.",
+        intercept: 36.33175773517596,
+        coefficients: [
+          5.6780063510597705,
+          1.7960028211993655,
+          -1.1363858048551327,
+          -2.8070461676487373,
+          -0.8227393484111305,
+          -3.3618270133221575,
+        ],
+      },
+    },
+    cut_dates: {
+      validation_year: 2021,
+      test_year: 2024,
+      target_year: 2027,
+      reference_date: "2025-12-15",
+    },
+    metrics: {
+      metrics: {
+        m0: {
+          "2021": {
+            mae: 4.93363617513041,
+            bias: -4.720197497571386,
+            n: 91,
+            rmse: 5.6533344695760155,
+          },
+          "2024": {
+            mae: 3.431783670594166,
+            bias: -3.041854696197415,
+            n: 75,
+            rmse: 4.532157034905183,
+          },
+        },
+        m1: {
+          "2021": {
+            mae: 8.89982962915524,
+            bias: -8.89982962915524,
+            n: 91,
+            rmse: 9.465587637630087,
+          },
+          "2024": {
+            mae: 4.816708316733803,
+            bias: 2.1803851875009332,
+            n: 75,
+            rmse: 5.95949667586275,
+          },
+        },
+      },
+      selection: { m0_mae_2021: 4.93363617513041, m1_mae_2021: 8.89982962915524 },
+      selected_family: "M0",
+      validation_year: 2021,
+      test_year: 2024,
+      band: {
+        amplitude_pp: 8.561771770259021,
+        n_errors_2021: 91,
+        label: "historical error reference (rango de error histórico de referencia)",
+      },
+      cohorts: {
+        "2024": { eligible_count: 75, excluded_count: 50, total_count: 125 },
+        "2027": {
+          eligible_count: 85,
+          excluded_count: 40,
+          total_count: 125,
+          eligible_ln: 6054287,
+          total_ln: 6619379,
+        },
+      },
+    },
+    limitations: [
+      "Association only; coefficients are additive contributions in the transformed scale and carry no causal interpretation.",
+    ],
+    created_at: "2026-10-26T12:00:00Z",
+    ...overrides,
+  };
+}
+
+export function prediction(overrides: Partial<PredictionDTO> = {}): PredictionDTO {
+  return {
+    territory_id: territoryUuid("999"),
+    municipality_code: "999",
+    municipality_name: "MUNICIPIO 999",
+    target_year: 2027,
+    estimated_abstention_pct: 42,
+    historical_error_lower_pct: 33.44,
+    historical_error_upper_pct: 50.56,
+    risk: "medium",
+    risk_unstable: false,
+    eligible: true,
+    quality: {
+      eligible: true,
+      reasons: [],
+      identity_status: "verified_catalogue",
+      footprint_status: "not_verified",
+    },
+    model_run_id: MODEL_RUN_ID,
+    ...overrides,
+  };
+}
+
+/**
+ * 125 forecast rows: code 001 is insufficient, 002/003/004 are the readable
+ * eligible municipalities used by scenario tests, and 70 of the 85 eligible
+ * rows carry ``risk_unstable=true`` (the persisted truth).
+ */
+export function forecastCohort(): PredictionDTO[] {
+  return Array.from({ length: 125 }, (_, index) => {
+    const code = String(index + 1).padStart(3, "0");
+    const eligible = index >= 1 && index <= 85;
+    const knownValues: Record<string, { name: string; value: number }> = {
+      "002": { name: "ACATLAN DE JUAREZ", value: 45.11343804537522 },
+      "003": { name: "AHUALULCO DE MERCADO", value: 33.10344827586207 },
+      "004": { name: "AMACUECA", value: 31.984418956935727 },
+      "005": { name: "AMATITAN", value: 35.61550861118181 },
+    };
+    const known = knownValues[code];
+    const value = eligible
+      ? known?.value ?? 20 + (index % 35)
+      : null;
+    const name =
+      code === "001"
+        ? "ACATIC"
+        : known?.name ?? `MUNICIPIO ${code}`;
+    return prediction({
+      territory_id: territoryUuid(code),
+      municipality_code: code,
+      municipality_name: name,
+      estimated_abstention_pct: value,
+      historical_error_lower_pct:
+        value === null ? null : Math.max(0, value - 4.28),
+      historical_error_upper_pct:
+        value === null ? null : Math.min(100, value + 4.28),
+      risk: riskFor(value),
+      risk_unstable: eligible && index <= 70,
+      eligible,
+      quality: {
+        eligible,
+        reasons: eligible ? [] : ["high_unknown_share"],
+        identity_status: "verified_catalogue",
+        footprint_status: "not_verified",
+      },
+    });
+  });
+}
+
+export function predictionsHandler(items: PredictionDTO[] = forecastCohort()) {
+  return http.get("*/api/v1/predictions", ({ request }) => {
+    const url = new URL(request.url);
+    return HttpResponse.json(
+      page(items, Object.fromEntries(url.searchParams)),
+    );
+  });
+}
+
+export function modelsHandler(items: ModelDTO[] = [modelRun()]) {
+  return http.get("*/api/v1/models", () => HttpResponse.json(page(items)));
+}
+
+export function modelHandler(item: ModelDTO = modelRun()) {
+  return http.get("*/api/v1/models/:modelRunId", () =>
+    HttpResponse.json(item),
+  );
+}
+
+export function scenarioResult(
+  source: PredictionDTO,
+  reduction: number,
+  selected: boolean,
+): ScenarioResultDTO {
+  const baseline = source.eligible ? source.estimated_abstention_pct ?? null : null;
+  const hypothetical =
+    baseline === null ? null : selected ? Math.max(0, baseline - reduction) : baseline;
+  const effective =
+    baseline === null || hypothetical === null ? 0 : baseline - hypothetical;
+  return {
+    territory_id: source.territory_id,
+    municipality_code: source.municipality_code,
+    municipality_name: source.municipality_name,
+    baseline_abstention_pct: baseline,
+    hypothetical_abstention_pct: hypothetical,
+    baseline_error_lower_pct: source.historical_error_lower_pct ?? null,
+    baseline_error_upper_pct: source.historical_error_upper_pct ?? null,
+    hypothetical_error_lower_pct:
+      source.historical_error_lower_pct === null ||
+      source.historical_error_lower_pct === undefined
+        ? null
+        : Math.max(0, source.historical_error_lower_pct - effective),
+    hypothetical_error_upper_pct:
+      source.historical_error_upper_pct === null ||
+      source.historical_error_upper_pct === undefined
+        ? null
+        : Math.min(100, source.historical_error_upper_pct - effective),
+    requested_reduction_pp: reduction,
+    effective_reduction_pp: effective,
+    risk_a: source.risk === "low" || source.risk === "medium" || source.risk === "high"
+      ? source.risk
+      : "insufficient",
+    risk_b: riskFor(hypothetical),
+    risk_a_unstable: source.risk_unstable,
+    risk_b_unstable: selected ? source.risk_unstable : source.risk_unstable,
+    selected,
+  };
+}
+
+export function scenarioDTO(
+  predictions: PredictionDTO[],
+  options: {
+    reduction?: number;
+    selectedTerritoryIds?: string[];
+    assumptionCode?: "preventive_exploration" | "model_sensitivity";
+    scenarioId?: string;
+  } = {},
+): ScenarioDTO {
+  const reduction = options.reduction ?? 3;
+  const selectedIds = new Set(options.selectedTerritoryIds ?? []);
+  const assumptionCode = options.assumptionCode ?? "preventive_exploration";
+  return {
+    scenario_id: options.scenarioId ?? SCENARIO_ID,
+    model_run_id: MODEL_RUN_ID,
+    target_year: 2027,
+    requested_reduction_pp: reduction,
+    assumption_code: assumptionCode,
+    assumption_version: "1.0",
+    rationale_text:
+      assumptionCode === "preventive_exploration"
+        ? "Supuesto de exploración preventiva: la reducción solicitada es un ejercicio aritmético de sensibilidad sobre municipios seleccionados; no representa una eficacia causal demostrada ni una proyección de personas movilizadas."
+        : "Supuesto de sensibilidad del modelo: se compara un cambio hipotético acotado para observar si la clasificación de riesgo cambia; no agrega evidencia causal ni cuantifica la incertidumbre del efecto.",
+    rules_version: "scenario-rules-1.0.0",
+    input_sha256: "a".repeat(64),
+    model_sha256: "b".repeat(64),
+    error_band_label: SELECTED_BAND_LABEL,
+    selected_territory_ids: [...selectedIds],
+    results: predictions
+      .slice()
+      .sort((a, b) => a.municipality_code.localeCompare(b.municipality_code))
+      .map((item) => scenarioResult(item, reduction, selectedIds.has(item.territory_id))),
+    created_at: "2026-10-26T12:00:00Z",
+  };
+}
+
+export function scenarioHandler(item: ScenarioDTO = scenarioDTO(forecastCohort())) {
+  return http.get("*/api/v1/scenarios/:scenarioId", () =>
+    HttpResponse.json(item),
+  );
+}
+
+export function scenarioCreateHandler(
+  build: (body: {
+    model_run_id: string;
+    target_year: 2027;
+    territory_ids: string[];
+    reduction_pp: number;
+    assumption_code: "preventive_exploration" | "model_sensitivity";
+  }) => ScenarioDTO = (body) =>
+    scenarioDTO(forecastCohort(), {
+      reduction: body.reduction_pp,
+      selectedTerritoryIds: body.territory_ids,
+      assumptionCode: body.assumption_code,
+    }),
+) {
+  return http.post("*/api/v1/scenarios", async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof build>[0];
+    return HttpResponse.json(build(body), { status: 201 });
+  });
+}
+
+export function recommendation(
+  source: PredictionDTO,
+): RecommendationDTO {
+  const rule =
+    source.risk === "high"
+      ? {
+          code: "institutional_review",
+          priority: "high" as const,
+          title: "Considerar revisión institucional",
+          action:
+            "Considerar información cívica y revisión institucional; no constituye una obligación ni una asignación de recursos.",
+          reasons: ["risk_high"],
+        }
+      : source.risk === "medium"
+        ? {
+            code: "preventive_monitoring",
+            priority: "medium" as const,
+            title: "Mantener seguimiento preventivo",
+            action:
+              "Mantener seguimiento preventivo de la categoría de riesgo y revisar la banda de error histórica antes de priorizar.",
+            reasons: ["risk_medium"],
+          }
+        : source.risk === "low"
+          ? {
+              code: "continue_monitoring",
+              priority: "low" as const,
+              title: "Continuar monitoreo",
+              action:
+                "Continuar el monitoreo periódico sin asignar recursos por esta señal aislada.",
+              reasons: ["risk_low"],
+            }
+          : {
+              code: "improve_data_quality",
+              priority: "data" as const,
+              title: "Mejorar datos antes de priorizar",
+              action:
+                "Revisar la calidad y completar la información del territorio antes de usarlo para priorización; no imputar un valor numérico ni presentar la ausencia como abstención cero.",
+              reasons: ["high_unknown_share"],
+            };
+  return {
+    territory_id: source.territory_id,
+    municipality_code: source.municipality_code,
+    municipality_name: source.municipality_name,
+    target_year: 2027,
+    risk:
+      source.risk === "low" ||
+      source.risk === "medium" ||
+      source.risk === "high"
+        ? source.risk
+        : "insufficient",
+    risk_unstable: source.risk_unstable,
+    eligible: source.eligible,
+    model_run_id: MODEL_RUN_ID,
+    rules_version: "recommendation-rules-1.0.0",
+    recommendations: [
+      {
+        ...rule,
+        version: "recommendation-rules-1.0.0",
+      },
+    ],
+  };
+}
+
+export function recommendationsHandler(
+  items: RecommendationDTO[] = forecastCohort().map(recommendation),
+) {
+  return http.get("*/api/v1/recommendations", ({ request }) => {
+    const url = new URL(request.url);
+    return HttpResponse.json(
+      page(items, Object.fromEntries(url.searchParams)),
+    );
+  });
+}
+
+export function wfsErrorHandler(status = 503) {
+  return http.get("*/api/v1/gis/wfs", () =>
+    HttpResponse.json(
+      {
+        type: "urn:participa-geo:error:unavailable",
+        title: "Servicio no disponible",
+        status,
+        detail: "No fue posible cargar la cartografía municipal.",
+        code: "unavailable",
+      },
+      { status },
+    ),
+  );
 }

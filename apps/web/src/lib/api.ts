@@ -7,6 +7,13 @@ type Schemas = components["schemas"];
 
 export type TerritoryDTO = Schemas["TerritoryDTO"];
 export type HistoryDTO = Schemas["HistoryDTO"];
+export type ModelDTO = Schemas["ModelDTO"];
+export type PredictionDTO = Schemas["PredictionDTO"];
+export type PredictionQuality = Schemas["PredictionQuality"];
+export type ScenarioDTO = Schemas["ScenarioDTO"];
+export type ScenarioRequest = Schemas["ScenarioRequest"];
+export type ScenarioResultDTO = Schemas["ScenarioResultDTO"];
+export type RecommendationDTO = Schemas["RecommendationDTO"];
 
 /**
  * ``Page[T]`` is derived from the generated OpenAPI envelope; only the item
@@ -18,6 +25,9 @@ export type Page<T> = Omit<Schemas["Page_HistoryDTO_"], "items"> & {
 
 export type TerritoryPage = Page<TerritoryDTO>;
 export type HistoryPage = Page<HistoryDTO>;
+export type ModelPage = Page<ModelDTO>;
+export type PredictionPage = Page<PredictionDTO>;
+export type RecommendationPage = Page<RecommendationDTO>;
 
 /** Standard GeoJSON, not a second copy of the API DTOs. */
 export type MunicipalityFeatureCollection = FeatureCollection<
@@ -139,6 +149,92 @@ export async function fetchHistory(
   return getJson<HistoryPage>(path, options.signal);
 }
 
+export async function fetchModels(
+  options: { pageSize?: number; signal?: AbortSignal } = {},
+): Promise<ModelPage> {
+  const path = withQuery("/api/v1/models", {
+    page: 1,
+    page_size: options.pageSize ?? 25,
+  });
+  return getJson<ModelPage>(path, options.signal);
+}
+
+export async function fetchModel(
+  modelRunId: string,
+  signal?: AbortSignal,
+): Promise<ModelDTO> {
+  return getJson<ModelDTO>(
+    `/api/v1/models/${encodeURIComponent(modelRunId)}`,
+    signal,
+  );
+}
+
+/**
+ * ``target_year`` is fixed at 2027 by the contract. The backend declares it as
+ * a ``Literal[2027]`` default that rejects a string query value, so the client
+ * omits the parameter and relies on the fixed server default instead of
+ * sending an invalid duplicate.
+ */
+export async function fetchPredictions(
+  options: {
+    modelRunId?: string | null;
+    pageSize?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<PredictionPage> {
+  const path = withQuery("/api/v1/predictions", {
+    model_run_id: options.modelRunId ?? null,
+    page: 1,
+    page_size: options.pageSize ?? 125,
+  });
+  return getJson<PredictionPage>(path, options.signal);
+}
+
+export async function fetchRecommendations(
+  options: {
+    modelRunId?: string | null;
+    pageSize?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<RecommendationPage> {
+  const path = withQuery("/api/v1/recommendations", {
+    model_run_id: options.modelRunId ?? null,
+    page: 1,
+    page_size: options.pageSize ?? 125,
+  });
+  return getJson<RecommendationPage>(path, options.signal);
+}
+
+export async function createScenario(
+  body: ScenarioRequest,
+  signal?: AbortSignal,
+): Promise<ScenarioDTO> {
+  const response = await fetch("/api/v1/scenarios", {
+    method: "POST",
+    signal,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "same-origin",
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await readProblem(response);
+  }
+  return (await response.json()) as ScenarioDTO;
+}
+
+export async function fetchScenario(
+  scenarioId: string,
+  signal?: AbortSignal,
+): Promise<ScenarioDTO> {
+  return getJson<ScenarioDTO>(
+    `/api/v1/scenarios/${encodeURIComponent(scenarioId)}`,
+    signal,
+  );
+}
+
 export async function fetchMunicipalityFeatures(
   year: ElectionYear,
   signal?: AbortSignal,
@@ -188,4 +284,11 @@ export const queryKeys = {
     ["history", "series", { territoryId }] as const,
   municipalFeatures: (year: ElectionYear) =>
     ["gis", "wfs", "participation_history", year] as const,
+  models: () => ["models"] as const,
+  predictions: (modelRunId: string | null) =>
+    ["predictions", { modelRunId, targetYear: 2027 }] as const,
+  recommendations: (modelRunId: string | null) =>
+    ["recommendations", { modelRunId, targetYear: 2027 }] as const,
+  scenario: (scenarioId: string | null) =>
+    ["scenario", scenarioId] as const,
 };

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { TerritoryPage } from "../features/territory/TerritoryPage";
+import { ExecutivePage } from "../features/executive/ExecutivePage";
+import { PredictionPage } from "../features/prediction/PredictionPage";
+import { ScenarioPage } from "../features/scenarios/ScenarioPage";
 import { ApplicationShell } from "../components/ApplicationShell";
 import { PageState } from "../components/PageState";
-import { RiskBadge } from "../components/RiskBadge";
 import {
   DEFAULT_FILTERS,
   GlobalFiltersContext,
@@ -38,11 +40,9 @@ function readFilters(): FilterState {
 function PendingModule({
   title,
   message,
-  showRiskLegend = false,
 }: {
   title: string;
   message: string;
-  showRiskLegend?: boolean;
 }) {
   return (
     <div className="page">
@@ -51,31 +51,7 @@ function PendingModule({
         headingLevel={1}
         title={title}
         message={message}
-      >
-        {showRiskLegend ? (
-          <div className="risk-legend">
-            <h2>Escala de riesgo prevista</h2>
-            <p>
-              Las categorías se muestran siempre con etiqueta textual e icono;
-              el gris representa información insuficiente y nunca un cero.
-            </p>
-            <ul>
-              <li>
-                <RiskBadge risk="low" /> Abstención estimada por debajo del 40 %.
-              </li>
-              <li>
-                <RiskBadge risk="medium" /> Abstención estimada entre 40 % y 50 %.
-              </li>
-              <li>
-                <RiskBadge risk="high" /> Abstención estimada de 50 % o más.
-              </li>
-              <li>
-                <RiskBadge risk="insufficient" /> Datos insuficientes para estimar.
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </PageState>
+      />
     </div>
   );
 }
@@ -135,23 +111,14 @@ export function App() {
         />
       </div>
     );
+  } else if (moduleId === "executive") {
+    content = <ExecutivePage />;
   } else if (moduleId === "territory") {
     content = <TerritoryPage />;
   } else if (moduleId === "prediction") {
-    content = (
-      <PendingModule
-        title="Predicción 2027"
-        message="El módulo de predicción explicable se implementará en una entrega posterior. Esta pantalla no contiene controles operativos ni datos simulados."
-        showRiskLegend
-      />
-    );
+    content = <PredictionPage />;
   } else if (moduleId === "scenarios") {
-    content = (
-      <PendingModule
-        title="Escenarios hipotéticos"
-        message="La comparación A/B con supuestos trazables se implementará en una entrega posterior. No hay acciones disponibles todavía."
-      />
-    );
+    content = <ScenarioPage />;
   } else if (moduleId === "reports") {
     content = (
       <PendingModule
@@ -159,7 +126,7 @@ export function App() {
         message="La generación y descarga de reportes se implementará en una entrega posterior. No se ofrecen exportaciones ni cifras de ejemplo."
       />
     );
-  } else if (moduleId === "not-found") {
+  } else {
     content = (
       <div className="page">
         <PageState
@@ -181,13 +148,6 @@ export function App() {
           }
         />
       </div>
-    );
-  } else {
-    content = (
-      <PendingModule
-        title="Panel ejecutivo"
-        message="El resumen ejecutivo se implementará en una entrega posterior. No se muestran indicadores de ejemplo."
-      />
     );
   }
 

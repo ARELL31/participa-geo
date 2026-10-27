@@ -22,7 +22,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
     path: "/",
     label: "Panel ejecutivo",
     description: "Resumen de cobertura y señales territoriales",
-    status: "pending",
+    status: "available",
   },
   {
     id: "territory",
@@ -36,14 +36,14 @@ export const NAVIGATION: readonly NavigationItem[] = [
     path: "/prediction",
     label: "Predicción",
     description: "Abstención estimada para 2027",
-    status: "pending",
+    status: "available",
   },
   {
     id: "scenarios",
     path: "/scenarios",
     label: "Escenarios",
     description: "Comparación hipotética A/B",
-    status: "pending",
+    status: "available",
   },
   {
     id: "reports",

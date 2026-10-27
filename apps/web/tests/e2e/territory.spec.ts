@@ -95,7 +95,7 @@ test("keyboard navigation reaches the module link and activates it with Enter", 
   await page.goto("/");
   const predictionLink = page.getByRole("link", { name: /Predicción/ });
   await expect(predictionLink).toBeVisible();
-  await expect(predictionLink).toHaveAccessibleName(/Pendiente/);
+  await expect(predictionLink).not.toHaveAccessibleName(/Pendiente/);
   const skip = page.getByRole("link", { name: "Saltar al contenido" });
   await page.keyboard.press("Tab");
   await expect(skip).toBeFocused();
