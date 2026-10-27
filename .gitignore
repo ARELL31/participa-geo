@@ -1,0 +1,36 @@
+# --- Secrets (never commit) ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Data: raw inputs, processed artifacts, samples (kept out of Git) ---
+data/raw/
+data/processed/
+data/samples/
+data/dist/
+
+# --- Build / delivery output ---
+dist/
+build/
+*.egg
+
+# --- Node (web app, later tasks) ---
+node_modules/
+
+# --- Tooling metadata (local superpowers ledger) ---
+.superpowers/
+
+# --- OS / editor ---
+.DS_Store
+*.swp

@@ -1,0 +1,14 @@
+# Build context exclusions: keep secrets, Git metadata and heavy data out of
+# the Docker build context (and never in the image).
+.git
+.env
+.superpowers
+.venv
+**/__pycache__
+**/*.pyc
+data/raw
+data/processed
+data/samples
+data/dist
+dist
+node_modules

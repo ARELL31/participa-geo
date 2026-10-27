@@ -1,0 +1,87 @@
+name: participa-geo
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    command:
+      - uvicorn
+      - participa_geo.main:create_app
+      - --factory
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      JSON_MAX_BYTES: ${JSON_MAX_BYTES:-32768}
+      SKIP_DEMO_DATA: ${SKIP_DEMO_DATA:-true}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-participa_geo}
+      DB_API_USER: ${DB_API_USER:-api}
+      DB_API_PASSWORD: ${DB_API_PASSWORD:?DB_API_PASSWORD is required}
+      GIS_ADMIN_USER: ${GIS_ADMIN_USER:-admin}
+      GIS_ADMIN_PASSWORD: ${GIS_ADMIN_PASSWORD:?GIS_ADMIN_PASSWORD is required}
+      GIS_BASE_URL: http://geoserver:8080/geoserver
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./apps/api:/workspace/apps/api
+      - ./tests:/workspace/tests
+      - ./compose.yaml:/workspace/compose.yaml:ro
+      - ./.env.example:/workspace/.env.example:ro
+    depends_on:
+      - db
+      - geoserver
+    networks:
+      - internal
+
+  db:
+    image: postgis/postgis:17-3.6@sha256:5d4c5c5d10b415bec52b0b9cea1ae93ace3a451ff10ab8f8974988e336274452
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pg_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:-participa_geo}
+      DB_MIGRATOR_USER: ${DB_MIGRATOR_USER:-migrator}
+      DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:?DB_MIGRATOR_PASSWORD is required}
+      DB_WRITER_USER: ${DB_WRITER_USER:-writer}
+      DB_WRITER_PASSWORD: ${DB_WRITER_PASSWORD:?DB_WRITER_PASSWORD is required}
+      DB_API_USER: ${DB_API_USER:-api}
+      DB_API_PASSWORD: ${DB_API_PASSWORD:?DB_API_PASSWORD is required}
+      DB_GIS_READER_USER: ${DB_GIS_READER_USER:-gis_reader}
+      DB_GIS_READER_PASSWORD: ${DB_GIS_READER_PASSWORD:?DB_GIS_READER_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/docker/db-init.sh:/docker-entrypoint-initdb.d/10-db-init.sh:ro
+    networks:
+      - internal
+    # No host ports: the database is reachable only on the internal network.
+
+  geoserver:
+    image: docker.osgeo.org/geoserver:2.28.6@sha256:9f3b93ce6bfeff0f560a3867eeb76d5b5b46afacde8712ad4a793c27fd773a85
+    environment:
+      GEOSERVER_ADMIN_USER: ${GIS_ADMIN_USER:-admin}
+      GEOSERVER_ADMIN_PASSWORD: ${GIS_ADMIN_PASSWORD:?GIS_ADMIN_PASSWORD is required}
+      SKIP_DEMO_DATA: "true"
+      INSTALL_EXTENSIONS: "false"
+      EXTRA_JAVA_OPTS: "-Xms256m -Xmx1g"
+    volumes:
+      - geodata:/opt/geoserver_data
+    networks:
+      - internal
+    # No host ports: GeoServer administrative access is internal-network only.
+
+volumes:
+  pgdata:
+  geodata:
+
+networks:
+  internal:
+    driver: bridge
+    # db and geoserver publish no host ports, so they are reachable only from
+    # within this network. Docker's `internal: true` flag was intentionally not
+    # used: it blocks outbound traffic but also breaks port publishing for the
+    # api service in Engine 29.9.2.

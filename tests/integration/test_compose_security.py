@@ -1,0 +1,87 @@
+"""Declarative security checks over ``compose.yaml`` and ``.env.example``.
+
+These tests run inside the api container (``docker compose run --rm --no-deps
+api pytest tests/integration/test_compose_security.py``) and inspect the compose
+file mounted at the repository root. They do not start the database or
+GeoServer; they verify the declarative configuration only.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+COMPOSE_PATH = REPO_ROOT / "compose.yaml"
+ENV_EXAMPLE_PATH = REPO_ROOT / ".env.example"
+
+COMPOSE_TEXT = COMPOSE_PATH.read_text()
+COMPOSE = yaml.safe_load(COMPOSE_TEXT)
+
+SERVICES = COMPOSE["services"]
+
+
+def _env(service: str) -> dict[str, str]:
+    """Flatten the ``environment`` of a service to a plain dict (list or map)."""
+    raw = SERVICES[service]["environment"]
+    if isinstance(raw, dict):
+        return {str(k): str(v) for k, v in raw.items()}
+    result: dict[str, str] = {}
+    for item in raw:
+        key, _, value = item.partition("=")
+        result[key] = value
+    return result
+
+
+def test_db_and_geoserver_publish_no_host_ports():
+    for name in ("db", "geoserver"):
+        assert "ports" not in SERVICES[name], f"{name} must not publish host ports"
+
+
+def test_api_publishes_loopback_only():
+    assert SERVICES["api"]["ports"] == ["127.0.0.1:8000:8000"]
+
+
+def test_images_are_pinned_by_digest():
+    for name in ("db", "geoserver"):
+        image = SERVICES[name]["image"]
+        assert "@sha256:" in image, f"{name} image must be pinned by digest"
+
+
+def test_password_secrets_have_no_default():
+    db_env = _env("db")
+    geoserver_env = _env("geoserver")
+    api_env = _env("api")
+
+    # Required (no default fallback) interpolation for every secret.
+    assert db_env["POSTGRES_PASSWORD"].startswith("${POSTGRES_PASSWORD:?")
+    assert db_env["DB_API_PASSWORD"].startswith("${DB_API_PASSWORD:?")
+    assert db_env["DB_MIGRATOR_PASSWORD"].startswith("${DB_MIGRATOR_PASSWORD:?")
+    assert db_env["DB_WRITER_PASSWORD"].startswith("${DB_WRITER_PASSWORD:?")
+    assert db_env["DB_GIS_READER_PASSWORD"].startswith("${DB_GIS_READER_PASSWORD:?")
+    assert geoserver_env["GEOSERVER_ADMIN_PASSWORD"].startswith("${GIS_ADMIN_PASSWORD:?")
+    assert api_env["DB_API_PASSWORD"].startswith("${DB_API_PASSWORD:?")
+    assert api_env["GIS_ADMIN_PASSWORD"].startswith("${GIS_ADMIN_PASSWORD:?")
+
+    # No literal default credentials anywhere in the compose file.
+    lowered = COMPOSE_TEXT.lower()
+    assert "password: postgres" not in lowered
+    assert "password: geoserver" not in lowered
+
+
+def test_db_and_geoserver_reachable_only_from_backend_network():
+    # Isolation is via "no published ports": db and geoserver attach only to the
+    # internal bridge network and expose nothing on the host.
+    assert "internal" in COMPOSE["networks"]
+    assert COMPOSE["networks"]["internal"].get("driver") == "bridge"
+    for name in ("db", "geoserver"):
+        assert SERVICES[name]["networks"] == ["internal"]
+
+
+def test_env_example_has_placeholders_not_secrets():
+    text = ENV_EXAMPLE_PATH.read_text()
+    assert "change-me-" in text
+    # Placeholders, not real credential defaults shipped as usable values.
+    for forbidden in ("POSTGRES_PASSWORD=postgres", "GIS_ADMIN_PASSWORD=geoserver"):
+        assert forbidden not in text
