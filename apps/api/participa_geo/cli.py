@@ -104,6 +104,33 @@ def _gis_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _train(args: argparse.Namespace) -> int:
+    from participa_geo.db.repository import read_processed_observations
+    from participa_geo.db.session import session_scope, writer_engine
+    from participa_geo.prediction.cohorts import read_identity_statuses
+    from participa_geo.prediction.training import train_release
+    from participa_geo.settings import Settings
+
+    settings = Settings()
+    _, observations = read_processed_observations(Path(args.processed_dir))
+
+    with session_scope(writer_engine(settings)) as session:
+        identity_statuses = read_identity_statuses(session)
+
+    bundle = train_release(
+        observations,
+        Path(args.output_dir),
+        identity_statuses=identity_statuses,
+    )
+
+    print(
+        f"trained family {bundle.family} (model_run_id {bundle.model_run_id}): "
+        f"{bundle.candidate_count} candidates and "
+        f"{bundle.total_count} prediction records written to {args.output_dir}"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="participa_geo",
@@ -176,6 +203,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     gis_verify = gis_sub.add_parser("verify", help="Verificar WMS/WFS de sólo lectura.")
     gis_verify.set_defaults(handler=_gis_verify)
+
+    train = subparsers.add_parser(
+        "train",
+        help="Entrenar el modelo interpretable y escribir los artefactos.",
+    )
+    train.add_argument(
+        "--processed-dir",
+        required=True,
+        help="Directorio de artefactos procesados (p. ej. data/processed).",
+    )
+    train.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
+    )
+    train.set_defaults(handler=_train)
 
     return parser
 
