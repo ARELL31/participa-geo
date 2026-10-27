@@ -1659,6 +1659,8 @@
             "enum": [
               "history_csv",
               "history_xlsx",
+              "model_evidence_csv",
+              "model_evidence_xlsx",
               "scenario_csv",
               "scenario_geojson",
               "scenario_pdf",
@@ -1769,6 +1771,8 @@
             "enum": [
               "history_csv",
               "history_xlsx",
+              "model_evidence_csv",
+              "model_evidence_xlsx",
               "scenario_csv",
               "scenario_geojson",
               "scenario_pdf",

@@ -110,3 +110,81 @@ def test_gis_gateway_rejects_count_over_limit(api_client):
 def test_gis_gateway_rejects_unknown_request(api_client):
     response = api_client.get("/api/v1/gis/wms", params={"request": "RestAdmin"})
     assert response.status_code == 422
+
+
+def _feature_info(**overrides):
+    params = {
+        "request": "GetFeatureInfo",
+        "layers": "municipalities",
+        "query_layers": "municipalities",
+        "bbox": "-106.0,18.0,-101.0,23.0",
+        "width": "256",
+        "height": "256",
+        "i": "10",
+        "j": "10",
+        "srs": "EPSG:3857",
+        "info_format": "application/json",
+    }
+    params.update(overrides)
+    return params
+
+
+def test_gis_gateway_rejects_foreign_query_layers(api_client):
+    response = api_client.get(
+        "/api/v1/gis/wms",
+        params=_feature_info(query_layers="topp:states"),
+    )
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+
+
+def test_gis_gateway_requires_query_layers_inside_layers(api_client):
+    response = api_client.get(
+        "/api/v1/gis/wms",
+        params=_feature_info(
+            layers="municipalities", query_layers="predictions"
+        ),
+    )
+    assert response.status_code == 422
+
+
+def test_gis_gateway_validates_feature_info_bbox_pixel_and_format(api_client):
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms", params=_feature_info(bbox="nan,18,-101,23")
+        ).status_code
+        == 422
+    )
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms",
+            params=_feature_info(bbox="-106,23,-101,18"),
+        ).status_code
+        == 422
+    )
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms", params=_feature_info(i="256")
+        ).status_code
+        == 422
+    )
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms", params=_feature_info(j="-1")
+        ).status_code
+        == 422
+    )
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms",
+            params=_feature_info(info_format="text/html"),
+        ).status_code
+        == 422
+    )
+    assert (
+        api_client.get(
+            "/api/v1/gis/wms",
+            params=_feature_info(width="0"),
+        ).status_code
+        == 422
+    )

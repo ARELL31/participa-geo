@@ -123,16 +123,19 @@ class RequestContextMiddleware:
         try:
             await self.app(scope, receive, send_with_headers)
         finally:
-            request_id_var.reset(token)
+            # Log while the contextvar still holds the id, and pass it explicitly
+            # so the record is correct even if the formatter runs later.
             logger.info(
                 "http_request",
                 extra={
+                    "request_id": request_id,
                     "method": scope.get("method"),
                     "path": scope.get("path"),
                     "status": status[0],
                     "duration_ms": round((time.perf_counter() - start) * 1000, 2),
                 },
             )
+            request_id_var.reset(token)
 
 
 class JsonSizeLimitMiddleware:

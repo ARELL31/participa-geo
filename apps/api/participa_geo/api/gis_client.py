@@ -38,6 +38,7 @@ WMS_VERSIONS = frozenset({"1.1.1", "1.3.0"})
 WFS_VERSIONS = frozenset({"1.0.0", "1.1.0", "2.0.0"})
 WMS_CRS = frozenset({"EPSG:4326", "EPSG:3857"})
 WMS_FORMATS = frozenset({"image/png", "image/jpeg"})
+WMS_INFO_FORMATS = frozenset({"text/plain", "application/json"})
 WFS_OUTPUT_FORMATS = frozenset(
     {"application/json", "json", "application/gml+xml; version=3.2", "gml32", "GML3"}
 )
@@ -118,15 +119,34 @@ def _validate_bbox(value: str | None) -> None:
         raise _invalid("bbox no ordenado")
 
 
-def _validate_size(width: str | None, height: str | None) -> None:
+def _parse_size(width: str | None, height: str | None) -> tuple[int, int]:
     if width is None or height is None:
-        raise _invalid("GetMap requiere width y height")
+        raise _invalid("GetMap/GetFeatureInfo requiere width y height")
     try:
         w, h = int(width), int(height)
     except ValueError:
         raise _invalid("width/height no entero") from None
     if not (1 <= w <= MAX_WIDTH and 1 <= h <= MAX_HEIGHT):
         raise _invalid("width/height fuera de límites")
+    return w, h
+
+
+def _validate_size(width: str | None, height: str | None) -> None:
+    _parse_size(width, height)
+
+
+def _validate_pixel(
+    i: str | None, j: str | None, width: str | None, height: str | None
+) -> None:
+    if i is None or j is None:
+        raise _invalid("GetFeatureInfo requiere i y j")
+    w, h = _parse_size(width, height)
+    try:
+        pixel_i, pixel_j = int(i), int(j)
+    except ValueError:
+        raise _invalid("i/j no entero") from None
+    if not (0 <= pixel_i < w and 0 <= pixel_j < h):
+        raise _invalid("i/j fuera de los límites del mapa")
 
 
 def _validate_crs(value: str | None, key: str, allowed: frozenset) -> None:
@@ -188,18 +208,42 @@ def validate_wms_request(params: Mapping[str, str]) -> dict[str, str]:
         layers = out.get("layers")
         if not layers:
             raise _invalid(f"{request} requiere layers")
-        out["layers"] = _normalize_layers(layers)
+        normalized_layers = _normalize_layers(layers)
+        out["layers"] = normalized_layers
+        _validate_bbox(out.get("bbox"))
+        _validate_crs(out.get("srs"), "srs", WMS_CRS)
+        _validate_crs(out.get("crs"), "crs", WMS_CRS)
+        if "srs" not in out and "crs" not in out:
+            out["srs"] = "EPSG:3857"
         if request == "GetMap":
-            _validate_bbox(out.get("bbox"))
             _validate_size(out.get("width"), out.get("height"))
-            _validate_crs(out.get("srs"), "srs", WMS_CRS)
-            _validate_crs(out.get("crs"), "crs", WMS_CRS)
             fmt = out.get("format", "image/png")
             if fmt not in WMS_FORMATS:
                 raise _invalid("format no permitido")
             out["format"] = fmt
-            if "srs" not in out and "crs" not in out:
-                out["srs"] = "EPSG:3857"
+        else:
+            query_layers = out.get("query_layers")
+            if not query_layers:
+                raise _invalid("GetFeatureInfo requiere query_layers")
+            normalized_query = _normalize_layers(query_layers)
+            published = set(normalized_layers.split(","))
+            if any(
+                layer not in published for layer in normalized_query.split(",")
+            ):
+                raise _invalid(
+                    "query_layers debe referirse a capas incluidas en layers"
+                )
+            out["query_layers"] = normalized_query
+            _validate_pixel(
+                out.get("i"),
+                out.get("j"),
+                out.get("width"),
+                out.get("height"),
+            )
+            info_format = out.get("info_format", "text/plain")
+            if info_format not in WMS_INFO_FORMATS:
+                raise _invalid("info_format no permitido")
+            out["info_format"] = info_format
     elif request == "GetCapabilities" and "layers" in out:
         out["layers"] = _normalize_layers(out["layers"])
 
@@ -374,6 +418,7 @@ __all__ = [
     "GeoServerError",
     "MAX_COUNT",
     "PUBLISHED_LAYERS",
+    "WMS_INFO_FORMATS",
     "WORKSPACE",
     "validate_wfs_request",
     "validate_wms_request",

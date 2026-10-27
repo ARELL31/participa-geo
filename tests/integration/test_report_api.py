@@ -86,6 +86,29 @@ def test_history_csv_export_and_download(db_api_client, tmp_path):
     assert all(row["territory_id"] == "" for row in rows)
 
 
+def test_model_evidence_export_is_user_facing(db_api_client, tmp_path):
+    db_api_client.app.state.report_store = _store(tmp_path)
+    response = db_api_client.post(
+        "/api/v1/reports", json={"kind": "model_evidence_csv"}
+    )
+    assert response.status_code == 201, response.text
+    artifact = response.json()
+    assert artifact["kind"] == "model_evidence_csv"
+    download = db_api_client.get(artifact["download_url"])
+    assert download.status_code == 200
+    text = download.content.decode("utf-8-sig")
+    rows = list(
+        csv.DictReader(
+            [line for line in text.splitlines() if line and not line.startswith("#")]
+        )
+    )
+    assert rows
+    record_types = {row["record_type"] for row in rows}
+    assert "feature" in record_types
+    assert "exclusion" in record_types
+    assert "contribution_candidate_m1" in record_types
+
+
 def test_scenario_csv_matches_persisted_api(db_api_client, tmp_path):
     scenario = _create_scenario(db_api_client)
     db_api_client.app.state.report_store = _store(tmp_path)

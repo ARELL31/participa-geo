@@ -171,6 +171,8 @@ def _scenario_context(context: DeliveryContext) -> DeliveryContext:
         target_year=2027,
         requested_reduction_pp=3.0,
         effective_reduction_pp=3.0,
+        effective_reduction_min_pp=3.0,
+        effective_reduction_max_pp=3.0,
         assumption_code="preventive_exploration",
         assumption_version="1.0",
         rationale_text="Supuesto de prueba revisado.",

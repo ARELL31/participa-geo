@@ -19,6 +19,8 @@ from participa_geo.api.schemas.history import ElectionYear
 ReportKind = Literal[
     "history_csv",
     "history_xlsx",
+    "model_evidence_csv",
+    "model_evidence_xlsx",
     "scenario_csv",
     "scenario_geojson",
     "scenario_pdf",
@@ -32,6 +34,7 @@ ReportFormat = Literal["csv", "xlsx", "geojson", "pdf", "png", "zip"]
 ReportStatus = Literal["ready", "failed"]
 
 HISTORY_KINDS = frozenset({"history_csv", "history_xlsx"})
+MODEL_KINDS = frozenset({"model_evidence_csv", "model_evidence_xlsx"})
 SCENARIO_KINDS = frozenset(
     {
         "scenario_csv",
@@ -51,6 +54,8 @@ REPORT_RULES_VERSION = "report-rules-1.0.0"
 FORMAT_BY_KIND: dict[str, ReportFormat] = {
     "history_csv": "csv",
     "history_xlsx": "xlsx",
+    "model_evidence_csv": "csv",
+    "model_evidence_xlsx": "xlsx",
     "scenario_csv": "csv",
     "scenario_geojson": "geojson",
     "scenario_pdf": "pdf",
@@ -121,6 +126,7 @@ __all__ = [
     "HISTORY_KINDS",
     "INSTITUTIONAL_KINDS",
     "MEDIA_TYPE_BY_FORMAT",
+    "MODEL_KINDS",
     "REPORT_RULES_VERSION",
     "SCENARIO_KINDS",
     "ReportArtifactDTO",

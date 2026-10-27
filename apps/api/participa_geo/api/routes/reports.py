@@ -25,6 +25,7 @@ from participa_geo.api.schemas.history import HistoryDTO
 from participa_geo.api.schemas.reports import (
     INSTITUTIONAL_KINDS,
     MEDIA_TYPE_BY_FORMAT,
+    MODEL_KINDS,
     REPORT_RULES_VERSION,
     ReportArtifactDTO,
     ReportRequest,
@@ -42,7 +43,11 @@ from participa_geo.reporting.store import (
     ReportStore,
     ReportStoreError,
 )
-from participa_geo.reporting.tables import export_history, export_scenario_csv
+from participa_geo.reporting.tables import (
+    export_history,
+    export_model_evidence,
+    export_scenario_csv,
+)
 from participa_geo.scenarios.service import ScenarioService
 
 router = APIRouter()
@@ -279,6 +284,48 @@ def create_report(
                 client_key=client,
             )
             response.status_code = status.HTTP_200_OK
+            return artifact
+
+        if body.kind in MODEL_KINDS:
+            model_run_id = repo.get_published_model_run_id()
+            if model_run_id is None:
+                raise _problem(
+                    request,
+                    status_code=409,
+                    code="conflict",
+                    title="Estado en conflicto",
+                    detail="No se ha cargado ningún modelo.",
+                )
+            meta = build_meta(
+                dataset_version_ids=repo.get_dataset_version_ids(),
+                model_run_id=model_run_id,
+                geographic_warning=GEOGRAPHIC_WARNING,
+                filters={"report_kind": body.kind},
+            )
+            fmt = "csv" if body.kind.endswith("_csv") else "xlsx"
+
+            def builder() -> bytes:
+                return export_model_evidence(
+                    fmt,
+                    repo_root() / "data" / "processed" / "model",
+                    meta,
+                    sources=sources,
+                )
+
+            media_type = MEDIA_TYPE_BY_FORMAT[fmt]
+            artifact = store.get_or_create(
+                body,
+                builder=builder,
+                filename=f"participa-geo-evidencia-modelo.{fmt}",
+                media_type=media_type,
+                sources=sources,
+                cache_key=_cache_key(body, meta),
+                client_key=client,
+                model_run_id=model_run_id,
+            )
+            response.status_code = (
+                status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
+            )
             return artifact
 
         scenario: ScenarioDTO | None = None

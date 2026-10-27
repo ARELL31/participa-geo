@@ -267,6 +267,23 @@ def test_recommendations_are_versioned_and_neutral(db_api_client):
         assert "improve_data_quality" in codes
 
 
+def test_recommendations_target_year_2027_accepted_and_2026_rejected(db_api_client):
+    accepted = db_api_client.get(
+        "/api/v1/recommendations",
+        params={"target_year": 2027, "page_size": 1},
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["items"][0]["target_year"] == 2027
+
+    rejected = db_api_client.get(
+        "/api/v1/recommendations",
+        params={"target_year": 2026},
+    )
+    assert rejected.status_code == 422
+    assert rejected.headers["content-type"].startswith("application/problem+json")
+    assert rejected.json()["code"] == "validation_error"
+
+
 def test_openapi_declares_scenario_contract():
     openapi = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
     for path in (

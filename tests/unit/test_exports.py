@@ -32,9 +32,14 @@ from participa_geo.reporting.maps import (
     MapRenderError,
     render_scenario_map,
 )
-from participa_geo.reporting.pdf import generate_executive, generate_methodology
+from participa_geo.reporting.pdf import (
+    generate_executive,
+    generate_methodology,
+    generate_scenario_pdf,
+)
 from participa_geo.reporting.tables import (
     export_history,
+    export_model_evidence,
     export_scenario_csv,
 )
 
@@ -453,6 +458,8 @@ def test_pdf_text_contains_real_results_and_assumptions(delivery_context: Delive
     assert "no implica efecto causal" in text.lower()
     assert "2025-12-15" in text
     assert "fuentes" in text.lower()
+    assert "Explicación aditiva del candidato M1" in text
+    assert "model_evidence_csv" in text
 
     executive = "\n".join(
         page.extract_text() or ""
@@ -495,6 +502,242 @@ def test_pdf_numbers_are_derived_from_context(delivery_context: DeliveryContext)
     assert "66" in executive
     assert "1200" in executive
     assert "750" not in executive
+
+
+def test_scenario_effective_reduction_is_reported_as_range():
+    scenario = _real_scenario()
+    clipped_results = [
+        row.model_copy(
+            update={
+                "baseline_abstention_pct": 1.0,
+                "hypothetical_abstention_pct": 0.0,
+                "effective_reduction_pp": 1.0,
+            }
+        )
+        if row.selected
+        else row
+        for row in scenario.results
+    ]
+    clipped = scenario.model_copy(update={"results": clipped_results})
+    context = load_delivery_context(scenario=clipped)
+    assert context.scenario is not None
+    assert context.scenario.effective_reduction_min_pp == pytest.approx(1.0)
+    assert context.scenario.effective_reduction_max_pp == pytest.approx(1.0)
+
+    text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(context))).pages
+    )
+    assert "3.0 pp / 1.0 pp (rango seleccionado)" in text
+    scenario_text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(
+            io.BytesIO(generate_scenario_pdf(clipped, META, context=context))
+        ).pages
+    )
+    assert "3.0 pp / 1.0 pp" in scenario_text
+
+
+def test_pdf_exclusion_reasons_are_derived_per_cut(delivery_context: DeliveryContext):
+    from participa_geo.reporting.delivery import ExclusionFact
+
+    mutated = replace(
+        delivery_context,
+        cohort=replace(
+            delivery_context.cohort,
+            excluded_by_year={**delivery_context.cohort.excluded_by_year, 2027: 3},
+            exclusion_details={
+                **delivery_context.exclusion_details,
+                2027: (
+                    ExclusionFact("001", ("high_unknown_share", "missing_lag")),
+                    ExclusionFact("002", ("ambiguous_identity",)),
+                    ExclusionFact("003", ("known_administrative_change",)),
+                ),
+            },
+        ),
+    )
+    text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(mutated))).pages
+    )
+    assert "high_unknown_share (1)" in text
+    assert "missing_lag (1)" in text
+    assert "ambiguous_identity (1)" in text
+    assert "known_administrative_change (1)" in text
+
+
+def test_pdf_labels_2027_ln_coverage_with_2024_base(
+    delivery_context: DeliveryContext,
+):
+    assert delivery_context.cohort.ln_coverage_base_year == 2024
+    text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(delivery_context))).pages
+    )
+    assert "LN observada de 2024" in text
+    assert "antecedente" in text
+    assert "proyección de la LN 2027" in text
+
+
+def test_pdf_reports_empirical_2024_coverage_without_changing_amplitude(
+    delivery_context: DeliveryContext,
+):
+    covered = replace(
+        delivery_context,
+        model=replace(
+            delivery_context.model,
+            empirical_coverage_2024={
+                "n": 75,
+                "within": 40,
+                "share": 40 / 75,
+                "amplitude_pp": delivery_context.model.band_pp,
+                "minimum_n": 30,
+            },
+        ),
+    )
+    text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(covered))).pages
+    )
+    assert "40 de 75" in text
+    assert "53.3%" in text
+    assert f"{delivery_context.model.band_pp:.2f}" in text
+
+    too_small = replace(
+        delivery_context,
+        model=replace(delivery_context.model, empirical_coverage_2024=None),
+    )
+    small_text = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(too_small))).pages
+    )
+    assert "menos de 30" in small_text
+
+
+def test_model_evidence_csv_xlsx_contains_features_exclusions_and_contributions(
+    tmp_path: Path,
+):
+    model_dir = tmp_path / "model"
+    model_dir.mkdir()
+    (model_dir / "model.json").write_text(
+        json.dumps(
+            {
+                "family": "M0",
+                "target_year": 2027,
+                "model_run_id": "00000000-0000-5000-8000-0000000000aa",
+                "feature_order": [
+                    "same_type_abstention_pct",
+                    "is_midterm",
+                ],
+                "features_2027": [
+                    {
+                        "municipality_code": "001",
+                        "municipality_name": "ACATIC",
+                        "features": {
+                            "same_type_abstention_pct": 47.5,
+                            "is_midterm": 1.0,
+                        },
+                        "origins": {
+                            "same_type_abstention_pct": 2021,
+                            "is_midterm": None,
+                        },
+                    }
+                ],
+                "explanations": [
+                    {
+                        "municipality_code": "001",
+                        "intercept": 0.0,
+                        "contributions": {"same_type_abstention_pct": 47.5},
+                        "pre_clip_sum": 47.5,
+                    }
+                ],
+                "candidate_m1_explanations": [
+                    {
+                        "municipality_code": "001",
+                        "intercept": 36.3,
+                        "contributions": {"same_type_abstention_pct": 5.2},
+                        "pre_clip_sum": 41.5,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (model_dir / "evaluation.json").write_text(
+        json.dumps(
+            {
+                "exclusions": {
+                    "2027": [
+                        {
+                            "municipality_code": "001",
+                            "reasons": ["high_unknown_share", "missing_lag"],
+                        }
+                    ],
+                    "2024": [
+                        {
+                            "municipality_code": "002",
+                            "reasons": ["ambiguous_identity"],
+                        }
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    csv_payload = export_model_evidence("csv", model_dir, META)
+    fields, rows = _csv_rows(csv_payload)
+    assert fields == [
+        "record_type",
+        "cut_year",
+        "municipality_code",
+        "municipality_name",
+        "field",
+        "value",
+        "unit",
+        "source_year",
+        "reason",
+        "model_run_id",
+    ]
+    kinds = {row["record_type"] for row in rows}
+    assert kinds == {
+        "feature",
+        "exclusion",
+        "contribution_selected",
+        "contribution_candidate_m1",
+    }
+    by_key = {
+        (
+            row["record_type"],
+            row["cut_year"],
+            row["municipality_code"],
+            row["field"],
+        ): row
+        for row in rows
+    }
+    assert (
+        by_key[("feature", "2027", "001", "same_type_abstention_pct")]["value"]
+        == "47.5"
+    )
+    exclusion = by_key[("exclusion", "2027", "001", "")]
+    assert "high_unknown_share" in exclusion["reason"]
+    assert "missing_lag" in exclusion["reason"]
+    assert (
+        by_key[("contribution_candidate_m1", "2027", "001", "same_type_abstention_pct")][
+            "value"
+        ]
+        == "5.2"
+    )
+
+    workbook = load_workbook(
+        io.BytesIO(export_model_evidence("xlsx", model_dir, META)),
+        data_only=False,
+    )
+    assert {"Evidencia", "Metadatos", "Diccionario"} <= set(workbook.sheetnames)
+    evidence = workbook["Evidencia"]
+    headers = [cell.value for cell in evidence[1]]
+    assert headers[0] == "record_type"
+    assert evidence.max_row == len(rows) + 1
 
 
 def test_delivery_context_is_built_from_artifacts():

@@ -72,6 +72,25 @@ def test_insufficient_prediction_is_null(db_api_client):
         assert p["risk"] == "insufficient"
 
 
+def test_state_history_honours_page_and_page_size(db_api_client):
+    first = db_api_client.get(
+        "/api/v1/participation/history", params={"page": 1, "page_size": 1}
+    )
+    assert first.status_code == 200
+    body = first.json()
+    assert body["total"] == 6
+    assert body["page"] == 1 and body["page_size"] == 1
+    assert [row["year"] for row in body["items"]] == [2009]
+
+    second = db_api_client.get(
+        "/api/v1/participation/history", params={"page": 2, "page_size": 1}
+    )
+    assert second.status_code == 200
+    body = second.json()
+    assert body["total"] == 6
+    assert [row["year"] for row in body["items"]] == [2012]
+
+
 def test_invalid_year_and_page_rejected(db_api_client):
     # year=2023 is not a CCPC election year.
     response = db_api_client.get("/api/v1/participation/history", params={"year": 2023})

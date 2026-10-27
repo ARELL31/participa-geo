@@ -16,6 +16,7 @@ import io
 import json
 from collections.abc import Iterable, Sequence
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from openpyxl import Workbook
@@ -113,6 +114,32 @@ SCENARIO_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 SCENARIO_FIELDS: tuple[str, ...] = tuple(column[0] for column in SCENARIO_COLUMNS)
+
+MODEL_EVIDENCE_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
+    ("record_type", "tipo de evidencia", "catálogo", "feature, exclusion, contribution_selected o contribution_candidate_m1."),
+    ("cut_year", "corte", "entero/año", "Año del corte; 2027 para features y contribuciones."),
+    ("municipality_code", "código municipal", "texto", "Código INE de tres dígitos."),
+    ("municipality_name", "municipio", "texto", "Nombre publicado."),
+    ("field", "campo", "texto", "Variable o motivo de exclusión."),
+    ("value", "valor", "según campo", "Valor de la feature o contribución aditiva."),
+    ("unit", "unidad", "texto", "porcentaje, proporción 0–1, indicador o puntos porcentuales."),
+    ("source_year", "año de origen", "entero o vacío", "Año de la observación que origina la feature; vacío si es estructural."),
+    ("reason", "motivo de exclusión", "texto", "Motivos estables separados por punto y coma; vacío en features/contribuciones."),
+    ("model_run_id", "ejecución de modelo", "UUID", "Modelo publicado que origina la evidencia."),
+)
+
+MODEL_EVIDENCE_FIELDS: tuple[str, ...] = tuple(
+    column[0] for column in MODEL_EVIDENCE_COLUMNS
+)
+
+_FEATURE_UNITS: dict[str, str] = {
+    "same_type_abstention_pct": "porcentaje",
+    "previous_abstention_pct": "porcentaje",
+    "previous_young_share": "proporción 0–1",
+    "previous_senior_share": "proporción 0–1",
+    "previous_rural_share": "proporción 0–1",
+    "is_midterm": "indicador 0/1",
+}
 
 REPORT_DICTIONARY: tuple[tuple[str, str, str, str], ...] = (
     ("report_artifact", "report_id", "UUID", "Identificador determinista del artefacto; la URL de descarga no expone rutas."),
@@ -251,6 +278,144 @@ def export_scenario_csv(
     return buffer.getvalue().encode("utf-8-sig")
 
 
+def _load_model_evidence(model_dir: Path | str) -> tuple[dict, dict]:
+    model_dir = Path(model_dir)
+    model = json.loads((model_dir / "model.json").read_text(encoding="utf-8"))
+    evaluation = json.loads(
+        (model_dir / "evaluation.json").read_text(encoding="utf-8")
+    )
+    return model, evaluation
+
+
+def _model_evidence_rows(model: dict, evaluation: dict) -> list[dict[str, Any]]:
+    model_run_id = str(model.get("model_run_id", ""))
+    features = model.get("features_2027") or []
+    names = {
+        str(item.get("municipality_code", "")): str(
+            item.get("municipality_name", "")
+        )
+        for item in features
+    }
+    rows: list[dict[str, Any]] = []
+    for item in features:
+        code = str(item.get("municipality_code", ""))
+        origins = item.get("origins") or {}
+        for field, value in (item.get("features") or {}).items():
+            rows.append(
+                {
+                    "record_type": "feature",
+                    "cut_year": int(model.get("target_year", 2027)),
+                    "municipality_code": code,
+                    "municipality_name": item.get("municipality_name", ""),
+                    "field": field,
+                    "value": value,
+                    "unit": _FEATURE_UNITS.get(field, "escala transformada"),
+                    "source_year": origins.get(field),
+                    "reason": "",
+                    "model_run_id": model_run_id,
+                }
+            )
+    for year, exclusions in sorted(
+        (evaluation.get("exclusions") or {}).items(),
+        key=lambda item: int(item[0]),
+    ):
+        for exclusion in exclusions:
+            code = str(exclusion.get("municipality_code", ""))
+            rows.append(
+                {
+                    "record_type": "exclusion",
+                    "cut_year": int(year),
+                    "municipality_code": code,
+                    "municipality_name": names.get(code, ""),
+                    "field": "",
+                    "value": "",
+                    "unit": "",
+                    "source_year": "",
+                    "reason": ";".join(exclusion.get("reasons", [])),
+                    "model_run_id": model_run_id,
+                }
+            )
+    for item in model.get("explanations") or []:
+        for field, value in (item.get("contributions") or {}).items():
+            rows.append(
+                {
+                    "record_type": "contribution_selected",
+                    "cut_year": int(model.get("target_year", 2027)),
+                    "municipality_code": item.get("municipality_code", ""),
+                    "municipality_name": names.get(item.get("municipality_code", ""), ""),
+                    "field": field,
+                    "value": value,
+                    "unit": "puntos porcentuales (escala transformada)",
+                    "source_year": "",
+                    "reason": "",
+                    "model_run_id": model_run_id,
+                }
+            )
+    for item in model.get("candidate_m1_explanations") or []:
+        for field, value in (item.get("contributions") or {}).items():
+            rows.append(
+                {
+                    "record_type": "contribution_candidate_m1",
+                    "cut_year": int(model.get("target_year", 2027)),
+                    "municipality_code": item.get("municipality_code", ""),
+                    "municipality_name": names.get(item.get("municipality_code", ""), ""),
+                    "field": field,
+                    "value": value,
+                    "unit": "puntos porcentuales (escala transformada)",
+                    "source_year": "",
+                    "reason": "",
+                    "model_run_id": model_run_id,
+                }
+            )
+    return rows
+
+
+def export_model_evidence(
+    kind: str,
+    model_dir: Path | str,
+    meta: DatasetMeta,
+    *,
+    sources: dict | None = None,
+) -> bytes:
+    """User-facing CSV/XLSX with features, per-cut exclusions and contributions."""
+    fmt = _resolve_kind(kind)
+    model, evaluation = _load_model_evidence(model_dir)
+    rows = _model_evidence_rows(model, evaluation)
+    evidence_meta = meta.model_copy(
+        update={
+            "filters": {
+                **meta.filters,
+                "report_kind": f"model_evidence_{fmt}",
+                "model_family": model.get("family"),
+            }
+        }
+    )
+    if fmt == "csv":
+        buffer = io.StringIO()
+        for line in _metadata_lines(evidence_meta, sources):
+            buffer.write(line + "\n")
+        writer = csv.writer(buffer, lineterminator="\n")
+        writer.writerow(MODEL_EVIDENCE_FIELDS)
+        for row in rows:
+            writer.writerow([_cell(row.get(field)) for field in MODEL_EVIDENCE_FIELDS])
+        return buffer.getvalue().encode("utf-8-sig")
+
+    workbook = Workbook()
+    data = workbook.active
+    data.title = "Evidencia"
+    data.append(list(MODEL_EVIDENCE_FIELDS))
+    for row in rows:
+        data.append([_excel_value(row.get(field)) for field in MODEL_EVIDENCE_FIELDS])
+    _style_data_sheet(data, len(MODEL_EVIDENCE_FIELDS))
+    metadata = workbook.create_sheet("Metadatos")
+    _write_metadata_sheet(metadata, evidence_meta, sources)
+    dictionary = workbook.create_sheet("Diccionario")
+    _write_dictionary_sheet(dictionary, MODEL_EVIDENCE_COLUMNS)
+    stream = io.BytesIO()
+    workbook.save(stream)
+    return stream.getvalue()
+
+
 def scenario_dictionary_csv() -> bytes:
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
@@ -348,10 +513,13 @@ def _write_dictionary_sheet(sheet, columns: Sequence[tuple[str, str, str, str]])
 __all__ = [
     "HISTORY_COLUMNS",
     "HISTORY_FIELDS",
+    "MODEL_EVIDENCE_COLUMNS",
+    "MODEL_EVIDENCE_FIELDS",
     "REPORT_DICTIONARY",
     "SCENARIO_COLUMNS",
     "SCENARIO_FIELDS",
     "export_history",
+    "export_model_evidence",
     "export_scenario_csv",
     "history_dictionary_csv",
     "scenario_dictionary_csv",

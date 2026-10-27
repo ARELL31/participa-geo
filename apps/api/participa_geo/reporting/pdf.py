@@ -226,6 +226,28 @@ def _pp(value: float | None, digits: int = 2) -> str:
     return f"{value:.{digits}f} pp"
 
 
+def _effective_range(scenario) -> str:
+    """Report the real per-municipality effective reduction, never only the max."""
+    low = scenario.effective_reduction_min_pp
+    high = scenario.effective_reduction_max_pp
+    if low == high:
+        return f"{high:.1f} pp"
+    return f"{low:.1f}–{high:.1f} pp"
+
+
+def _reason_summary(facts) -> str:
+    """Derive exclusion reasons from evaluation data instead of hardcoding one."""
+    counts: dict[str, int] = {}
+    for fact in facts:
+        for reason in fact.reasons:
+            counts[reason] = counts.get(reason, 0) + 1
+    if not counts:
+        return "—"
+    return "; ".join(
+        f"{reason} ({count})" for reason, count in sorted(counts.items())
+    )
+
+
 def _table(
     rows: list[list[Any]],
     *,
@@ -596,15 +618,18 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
     story.append(PageBreak())
 
     # 5 — Calidad y exclusiones
-    cohort_rows: list[list[Any]] = [["Año", "Universo", "Elegibles", "Excluidos", "Motivo principal"]]
+    cohort_rows: list[list[Any]] = [
+        ["Año", "Universo", "Elegibles", "Excluidos", "Motivos (conteo)"]
+    ]
     for year in sorted(cohort.eligible_by_year):
+        facts = cohort.exclusion_details.get(year, ())
         cohort_rows.append(
             [
                 year,
                 cohort.total,
                 cohort.eligible_by_year[year],
-                cohort.excluded_by_year.get(year, 0),
-                "high_unknown_share",
+                cohort.excluded_by_year.get(year, len(facts)),
+                _reason_summary(facts),
             ]
         )
     story.extend(
@@ -625,8 +650,14 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Paragraph(
                 f"En 2027, {cohort.eligible} municipios son elegibles y {cohort.insufficient} "
                 "no lo son. La cobertura de lista nominal de los elegibles es "
-                f"{cohort.eligible_ln:,} de {cohort.total_ln:,} personas en el universo, "
-                "lo que debe leerse como cobertura de datos, no como representatividad "
+                f"{cohort.eligible_ln:,} de {cohort.total_ln:,} personas en el universo. "
+                + (
+                    f"La base es la LN observada de {cohort.ln_coverage_base_year}, "
+                    "último antecedente observado: no es una proyección de la LN 2027. "
+                    if cohort.ln_coverage_base_year
+                    else ""
+                )
+                + "Debe leerse como cobertura de datos, no como representatividad "
                 "de la población.",
                 styles["body"],
             ),
@@ -753,6 +784,38 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             ),
         ]
     )
+    if model.candidate_m1:
+        coefficients = list(model.candidate_m1.get("coefficients") or [])
+        candidate_rows: list[list[Any]] = [
+            ["Variable", "Coeficiente (escala transformada)"]
+        ]
+        for feature, coefficient in zip(
+            model.feature_order, coefficients, strict=False
+        ):
+            candidate_rows.append([feature, f"{coefficient:+.2f}"])
+        story.extend(
+            [
+                Spacer(1, 3 * mm),
+                Paragraph("Explicación aditiva del candidato M1", styles["h2"]),
+                Paragraph(
+                    "El candidato M1 publica intercepto, coeficientes y media/escala. "
+                    "Sus contribuciones aditivas por municipio y las del M0 "
+                    "seleccionado se persisten en el artefacto del modelo y se "
+                    "exportan en `model_evidence_csv`/`model_evidence_xlsx`; la "
+                    "pantalla de predicción las muestra para el municipio "
+                    "seleccionado. Son asociaciones en la escala transformada, no "
+                    "efectos causales.",
+                    styles["body"],
+                ),
+                _table(candidate_rows, widths=[85 * mm, 85 * mm]),
+                Paragraph(
+                    f"Intercepto M1: {float(model.candidate_m1.get('intercept', 0.0)):.2f} pp. "
+                    "La suma de contribuciones e intercepto corresponde al valor "
+                    "previo al recorte cuando éste ocurre.",
+                    styles["small"],
+                ),
+            ]
+        )
     story.append(PageBreak())
 
     # 8 — Validación e incertidumbre
@@ -787,6 +850,20 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 "La banda se traslada condicionalmente al escenario B y se recorta a 0–100. "
                 "No cuantifica el efecto de una intervención ni agrega evidencia. Cuando la "
                 "banda cruza un umbral de riesgo, la categoría se marca inestable.",
+                styles["body"],
+            ),
+            Paragraph(
+                (
+                    "Cobertura empírica del rango sobre los errores de "
+                    f"{model.test_year}: {model.empirical_coverage_2024['within']} de "
+                    f"{model.empirical_coverage_2024['n']} errores absolutos quedan dentro "
+                    f"de la amplitud congelada ({model.empirical_coverage_2024['share']:.1%}). "
+                    "Es una comprobación descriptiva fuera de tiempo; el resultado de 2024 "
+                    "no ajusta la amplitud ni la selección del modelo."
+                    if model.empirical_coverage_2024
+                    else "La cobertura empírica del rango no se publica: hay menos de 30 "
+                    "errores elegibles en el corte de prueba."
+                ),
                 styles["body"],
             ),
             Paragraph(
@@ -857,7 +934,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 ["Escenario", str(scenario.scenario_id)],
                 ["Año objetivo", scenario.target_year],
                 ["Municipios seleccionados", scenario.selected_count],
-                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {scenario.effective_reduction_pp:.1f} pp"],
+                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {_effective_range(scenario)} (rango seleccionado)"],
                 ["Supuesto", f"{scenario.assumption_code} v{scenario.assumption_version}"],
                 ["Reglas", scenario.rules_version],
                 ["Media A / B en seleccionados", f"{_pct(scenario.baseline_mean)} / {_pct(scenario.hypothetical_mean)}"],
@@ -879,7 +956,9 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Paragraph(
                 "A es la abstención estimada 2027 publicada. Para cada municipio seleccionado "
                 "y elegible, <b>B = max(0, A − reducción)</b>; los no seleccionados conservan "
-                "B = A y los insuficientes permanecen nulos. La reducción efectiva es A − B.",
+                "B = A y los insuficientes permanecen nulos. La reducción efectiva es A − B "
+                "y se publica como rango mínimo–máximo: si A es menor que la reducción "
+                "solicitada, B se recorta a cero y la reducción efectiva es menor.",
                 styles["body"],
             ),
             scenario_table,
@@ -1213,7 +1292,7 @@ def _executive_story(context: DeliveryContext, styles) -> list:
                 f"Escenario persistido {scenario.scenario_id}: {scenario.selected_count} "
                 f"municipios seleccionados, reducción solicitada "
                 f"{scenario.requested_reduction_pp:.1f} pp (efectiva "
-                f"{scenario.effective_reduction_pp:.1f} pp).",
+                f"{_effective_range(scenario)}).",
                 styles["slide_body"],
             ),
             Paragraph(
@@ -1305,9 +1384,15 @@ def generate_scenario_pdf(
     rows: list[list[Any]] = [
         ["Municipio", "A", "B", "Reducción efectiva", "Riesgo A", "Riesgo B", "Seleccionado"]
     ]
-    effective_reduction = max(
-        (row.effective_reduction_pp for row in scenario.results if row.selected),
-        default=0.0,
+    selected_effective = [
+        row.effective_reduction_pp for row in scenario.results if row.selected
+    ]
+    effective_min = min(selected_effective, default=0.0)
+    effective_max = max(selected_effective, default=0.0)
+    effective_text = (
+        f"{effective_max:.1f} pp"
+        if effective_min == effective_max
+        else f"{effective_min:.1f}–{effective_max:.1f} pp"
     )
     for result in sorted(scenario.results, key=lambda item: item.municipality_code):
         rows.append(
@@ -1339,7 +1424,7 @@ def generate_scenario_pdf(
         _table(
             [
                 ["Campo", "Valor"],
-                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {effective_reduction:.1f} pp"],
+                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {effective_text} (rango seleccionado)"],
                 ["Municipios seleccionados", len(scenario.selected_territory_ids)],
                 ["Resultados persistidos", len(scenario.results)],
                 ["Hash de entrada", scenario.input_sha256],
@@ -1348,7 +1433,14 @@ def generate_scenario_pdf(
             ],
             widths=[58 * mm, 112 * mm],
         ),
-        Spacer(1, 4 * mm),
+        Spacer(1, 3 * mm),
+        Paragraph(
+            "La reducción efectiva se informa como rango mínimo–máximo de los "
+            "municipios seleccionados. Si la abstención A es menor que la reducción "
+            "solicitada, B se recorta a cero y la efectiva es menor que la solicitada.",
+            styles["body"],
+        ),
+        Spacer(1, 3 * mm),
         Paragraph(f"Anexo: {len(scenario.results)} resultados municipales", styles["h2"]),
         LongTable(
             [

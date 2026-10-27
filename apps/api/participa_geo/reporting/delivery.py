@@ -61,6 +61,16 @@ class ModelFacts:
     n_test: int
     feature_order: tuple[str, ...]
     limitations: tuple[str, ...]
+    empirical_coverage_2024: dict | None = None
+    candidate_m1: dict | None = None
+
+
+@dataclass(frozen=True)
+class ExclusionFact:
+    """One excluded municipality and its stable reasons for a cut."""
+
+    municipality_code: str
+    reasons: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -77,6 +87,12 @@ class CohortFacts:
     baseline_max: float | None = None
     eligible_by_year: dict[int, int] = field(default_factory=dict)
     excluded_by_year: dict[int, int] = field(default_factory=dict)
+    #: Year whose observed LN is the coverage denominator for 2027 (2024).
+    ln_coverage_base_year: int | None = None
+    #: Per-cut excluded municipalities and their reasons (Spec §7).
+    exclusion_details: dict[int, tuple[ExclusionFact, ...]] = field(
+        default_factory=dict
+    )
 
 
 @dataclass(frozen=True)
@@ -87,7 +103,10 @@ class ScenarioFacts:
     input_sha256: str
     target_year: int
     requested_reduction_pp: float
+    #: Retained for compatibility: the maximum effective reduction in the selection.
     effective_reduction_pp: float
+    effective_reduction_min_pp: float
+    effective_reduction_max_pp: float
     assumption_code: str
     assumption_version: str
     rationale_text: str
@@ -113,6 +132,7 @@ class DeliveryContext:
     sources: tuple[SourceFact, ...]
     dataset_version_ids: tuple[UUID, ...]
     exclusions: dict[int, int]
+    exclusion_details: dict[int, tuple[ExclusionFact, ...]]
     limitations: tuple[str, ...]
     scenario: ScenarioFacts | None = None
     team_slug: str = "participa-geo"
@@ -148,6 +168,9 @@ def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
         key: sum(1 for row in results if row.risk_b == key)
         for key in ("low", "medium", "high", "insufficient")
     }
+    effective_values = [row.effective_reduction_pp for row in selected]
+    effective_min = min(effective_values, default=0.0)
+    effective_max = max(effective_values, default=0.0)
     return ScenarioFacts(
         scenario_id=scenario.scenario_id,
         model_run_id=scenario.model_run_id,
@@ -155,9 +178,9 @@ def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
         input_sha256=scenario.input_sha256,
         target_year=scenario.target_year,
         requested_reduction_pp=scenario.requested_reduction_pp,
-        effective_reduction_pp=max(
-            (row.effective_reduction_pp for row in selected), default=0.0
-        ),
+        effective_reduction_pp=effective_max,
+        effective_reduction_min_pp=effective_min,
+        effective_reduction_max_pp=effective_max,
         assumption_code=scenario.assumption_code,
         assumption_version=scenario.assumption_version,
         rationale_text=scenario.rationale_text,
@@ -236,6 +259,21 @@ def load_delivery_context(
         for year, values in cohorts.items()
         if str(year).isdigit()
     }
+    exclusion_details = {
+        int(year): tuple(
+            ExclusionFact(
+                municipality_code=str(item.get("municipality_code", "")),
+                reasons=tuple(str(reason) for reason in item.get("reasons", [])),
+            )
+            for item in values
+        )
+        for year, values in (evaluation.get("exclusions") or {}).items()
+        if str(year).isdigit()
+    }
+    ln_coverage_base_year = cohort_2027.get("ln_coverage_base_year")
+    ln_coverage_base_year = (
+        int(ln_coverage_base_year) if ln_coverage_base_year is not None else None
+    )
 
     metrics = evaluation.get("metrics", {})
     m0 = metrics.get("m0", {})
@@ -306,6 +344,8 @@ def load_delivery_context(
             n_test=int(m0.get(str(test_year), {}).get("n", 0)),
             feature_order=tuple(model.get("feature_order", [])),
             limitations=tuple(model.get("limitations", [])),
+            empirical_coverage_2024=band.get("empirical_coverage_2024"),
+            candidate_m1=model.get("candidate_m1"),
         ),
         cohort=CohortFacts(
             total=total,
@@ -320,6 +360,8 @@ def load_delivery_context(
             baseline_max=float(baseline_values.max()) if not baseline_values.empty else None,
             eligible_by_year=eligible_by_year,
             excluded_by_year=excluded_by_year,
+            ln_coverage_base_year=ln_coverage_base_year,
+            exclusion_details=exclusion_details,
         ),
         sources=sources,
         dataset_version_ids=tuple(
@@ -335,6 +377,7 @@ def load_delivery_context(
             for year, values in (evaluation.get("exclusions") or {}).items()
             if str(year).isdigit()
         },
+        exclusion_details=exclusion_details,
         limitations=limitations,
         scenario=_scenario_facts(scenario) if scenario is not None else None,
     )
@@ -361,6 +404,7 @@ def context_manifest(context: DeliveryContext) -> dict:
             "m1_mae_2024": context.model.m1_mae_2024,
             "band_pp": context.model.band_pp,
             "band_n": context.model.band_n,
+            "empirical_coverage_2024": context.model.empirical_coverage_2024,
         },
         "cohort": {
             "total": context.cohort.total,
@@ -375,6 +419,18 @@ def context_manifest(context: DeliveryContext) -> dict:
             "baseline_max": context.cohort.baseline_max,
             "eligible_by_year": context.cohort.eligible_by_year,
             "excluded_by_year": context.cohort.excluded_by_year,
+            "ln_coverage_base_year": context.cohort.ln_coverage_base_year,
+            "exclusion_reasons_by_year": {
+                str(year): {
+                    reason: sum(
+                        1 for fact in facts if reason in fact.reasons
+                    )
+                    for reason in sorted(
+                        {reason for fact in facts for reason in fact.reasons}
+                    )
+                }
+                for year, facts in context.exclusion_details.items()
+            },
         },
         "sources": [
             {
@@ -399,6 +455,8 @@ def context_manifest(context: DeliveryContext) -> dict:
             "target_year": scenario.target_year,
             "requested_reduction_pp": scenario.requested_reduction_pp,
             "effective_reduction_pp": scenario.effective_reduction_pp,
+            "effective_reduction_min_pp": scenario.effective_reduction_min_pp,
+            "effective_reduction_max_pp": scenario.effective_reduction_max_pp,
             "assumption_code": scenario.assumption_code,
             "assumption_version": scenario.assumption_version,
             "rationale_text": scenario.rationale_text,
@@ -516,6 +574,7 @@ REQUIRED_MEMBERS = (
     "data/processed/model/evaluation.json",
     "data/processed/model/manifest.json",
     "data/processed/model/predictions-2027.parquet",
+    "data/processed/model/exclusions-by-cut.csv",
     "data/processed/gis/reference-2025-12-15.geojson",
     "sources/SOURCES.md",
     "sources/sources.json",
