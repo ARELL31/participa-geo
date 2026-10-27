@@ -19,7 +19,8 @@ host. El proyecto usa un único `pyproject.toml`/`uv.lock` para Python y un úni
 | Python (imagen) | 3.12 (uv `python3.12-bookworm-slim`) |
 | PostgreSQL + PostGIS | `postgis/postgis:17-3.6` (digest fijado) |
 | GeoServer | `docker.osgeo.org/geoserver:2.28.6` (digest fijado) |
-| Node (web, T7) | 24 LTS (referencia) |
+| Node (web, T7) | 24 LTS (`node:24-bookworm-slim`, digest fijado) |
+| nginx (web, T7) | 1.29 (`nginx:1.29-bookworm`, digest fijado) |
 
 Los digests exactos están en `docs/architecture/dependencies.md`.
 
@@ -30,19 +31,21 @@ Los digests exactos están en `docs/architecture/dependencies.md`.
 cp .env.example .env
 #    editar .env: cambiar todos los valores "change-me-*"
 
-# 2. Construir la imagen de la API (descarga imagen base uv y wheels de PyPI).
-docker compose build api
+# 2. Construir las imágenes (API Python y web Node/nginx).
+docker compose build api web
 
-# 3. Levantar la API (sólo publica 127.0.0.1:8000).
-docker compose up -d api
+# 3. Levantar el stack. Sólo la web publica un puerto de host.
+docker compose up -d db geoserver api web
 
-# 4. Comprobar.
-curl -i http://127.0.0.1:8000/api/v1/health/live
-curl -i http://127.0.0.1:8000/api/v1/health/ready   # 503 hasta T2–T5
+# 4. Comprobar a través del proxy del mismo origen.
+curl -i http://127.0.0.1:8080/api/v1/health/live
+curl -i http://127.0.0.1:8080/api/v1/health/ready
+# Interfaz: http://127.0.0.1:8080/territory?year=2024
 ```
 
 `db` y `geoserver` no publican puertos de host: sólo son alcanzables dentro de la
-red `internal` de Compose. La API publica únicamente `127.0.0.1:8000`.
+red `internal` de Compose. La API tampoco publica un puerto de host; nginx en
+`web` reenvía `/api/` a `api:8000`. El navegador nunca habla con GeoServer.
 
 ### Comandos probados (T1)
 
@@ -82,25 +85,38 @@ docker compose run --rm api pytest tests/integration/test_postgis.py \
 Los comandos `db load`, `gis import` y `gis publish` son idempotentes (los
 identificadores `uuid5` y los `ON CONFLICT` evitan duplicados).
 
+### Comandos probados (T7, web)
+
+```sh
+docker compose run --rm --no-deps --build web-test npm run test -- --run
+docker compose --profile tools run --rm --no-deps web-e2e npx playwright test
+```
+
+Vitest cubre filtros de URL, shell, foco móvil, datos ausentes, respuestas
+tardías y alternativa tabular. Playwright corre contra la API real a través de
+`http://web:80`; no usa MSW. Los detalles y contrastes están en
+`docs/design-system/README.md`.
+
 ## Estructura
 
 ```text
 apps/api/participa_geo/   # API FastAPI y CLI
-infrastructure/docker/    # Dockerfile de la API y db-init.sh
+apps/web/                 # React/Vite/TS, MapLibre y pruebas web
+infrastructure/docker/    # Dockerfiles de API/web, nginx y db-init.sh
 tests/                    # unit, contract, integration
 docs/api/                 # contrato HTTP
 docs/architecture/        # dependencias e imágenes
+docs/design-system/       # tokens, shell y verificaciones de UI
 compose.yaml
 pyproject.toml / uv.lock
+apps/web/package-lock.json
 .env.example
 ```
 
 ## Pendiente (tareas siguientes)
 
-- T4: modelo Ridge interpretable y evaluación temporal.
-- T5: rutas de lectura y gateway GIS; exportación OpenAPI.
-- T6: escenarios y recomendaciones.
-- T7–T9: interfaz web, mapas comparativos y entregables institucionales.
+- T8: predicción explicable, comparación visual de escenarios y panel ejecutivo.
+- T9: reportes institucionales y exportaciones verificables.
 - T10: CI, ensayo limpio y aceptación final.
 
 Mientras no se carguen datos, migraciones, modelo y capas GIS, `/health/ready`

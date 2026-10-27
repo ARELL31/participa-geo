@@ -11,4 +11,9 @@ data/processed
 data/samples
 data/dist
 dist
-node_modules
+**/node_modules
+**/dist
+apps/web/test-results
+apps/web/playwright-report
+apps/web/coverage
+apps/web/.vite

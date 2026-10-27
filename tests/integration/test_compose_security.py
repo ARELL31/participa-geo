@@ -39,14 +39,29 @@ def test_db_and_geoserver_publish_no_host_ports():
         assert "ports" not in SERVICES[name], f"{name} must not publish host ports"
 
 
-def test_api_publishes_loopback_only():
-    assert SERVICES["api"]["ports"] == ["127.0.0.1:8000:8000"]
+def test_only_web_publishes_loopback_port():
+    assert "ports" not in SERVICES["api"], "api must be reachable only through web"
+    assert SERVICES["web"]["ports"] == ["127.0.0.1:8080:80"]
 
 
 def test_images_are_pinned_by_digest():
     for name in ("db", "geoserver"):
         image = SERVICES[name]["image"]
         assert "@sha256:" in image, f"{name} image must be pinned by digest"
+
+
+def test_web_dockerfile_uses_pinned_node_and_nginx():
+    dockerfile = (REPO_ROOT / "infrastructure/docker/web.Dockerfile").read_text()
+    assert "node:24-bookworm-slim@sha256:" in dockerfile
+    assert "nginx:1.29-bookworm@sha256:" in dockerfile
+    assert ":latest" not in dockerfile
+
+
+def test_web_proxies_the_api_and_never_geoserver():
+    nginx = (REPO_ROOT / "infrastructure/docker/nginx.conf").read_text().lower()
+    assert "proxy_pass http://api:8000;" in nginx
+    assert "proxy_pass http://geoserver" not in nginx
+    assert "proxy_pass http://participa_geo" not in nginx
 
 
 def test_password_secrets_have_no_default():
@@ -76,6 +91,8 @@ def test_db_and_geoserver_reachable_only_from_backend_network():
     assert "internal" in COMPOSE["networks"]
     assert COMPOSE["networks"]["internal"].get("driver") == "bridge"
     for name in ("db", "geoserver"):
+        assert SERVICES[name]["networks"] == ["internal"]
+    for name in ("api", "web"):
         assert SERVICES[name]["networks"] == ["internal"]
 
 

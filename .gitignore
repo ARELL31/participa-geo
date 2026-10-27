@@ -25,8 +25,13 @@ dist/
 build/
 *.egg
 
-# --- Node (web app, later tasks) ---
+# --- Node (web app) ---
 node_modules/
+apps/web/dist/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/coverage/
+apps/web/.vite/
 
 # --- Tooling metadata (local superpowers ledger) ---
 .superpowers/

@@ -1,0 +1,49 @@
+/*
+ * PARTICIPA-GEO design tokens.
+ *
+ * Only the approved palette is used. There is no dark mode. `--color-control`
+ * is a darker neutral for control boundaries so they reach the 3:1 non-text
+ * contrast requirement while `--color-border` stays a discreet divider.
+ */
+:root {
+  color-scheme: light;
+
+  --color-primary: #6f1739;
+  --color-primary-hover: #54102a;
+  --color-secondary: #8b1e3f;
+  --color-accent: #ad536d;
+  --color-background: #f7f6f5;
+  --color-surface: #ffffff;
+  --color-text: #252525;
+  --color-text-secondary: #666666;
+  --color-border: #e6e0e2;
+  --color-control: #666666;
+
+  --color-focus: #252525;
+  --color-focus-inverse: #ffffff;
+
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  --sidebar-width: 264px;
+  --header-height: 64px;
+  --content-max: 1440px;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+}
