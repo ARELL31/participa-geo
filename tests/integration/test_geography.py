@@ -57,3 +57,62 @@ def test_import_writes_auditable_geojson(postgis_session, gis_archive):
 
     assert audit.output_geojson is not None and audit.output_geojson.exists()
     assert audit.output_sha256 is not None
+
+
+def test_import_fails_loudly_when_origins_incomplete(
+    postgis_session, db_config, gis_archive
+):
+    """``gis import`` before ``db load`` must fail with a domain error, not 750
+    ``ambiguous`` correspondences."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.orm import Session
+
+    from pipelines.validation.geography import (
+        IncompleteOriginCatalogueError,
+        import_reference,
+    )
+
+    def _url(cfg, user, password):
+        return (
+            f"postgresql+psycopg://{user}:{password}"
+            f"@{cfg['host']}:{cfg['port']}/{cfg['db_name']}"
+        )
+
+    engine = create_engine(
+        _url(db_config, db_config["migrator_user"], db_config["migrator_password"])
+    )
+    with Session(engine) as session:
+        # Simulate an empty/partial origin catalogue in an isolated transaction.
+        session.execute(
+            text("DELETE FROM territory_version WHERE origin_year IS NOT NULL")
+        )
+        with pytest.raises(IncompleteOriginCatalogueError) as exc_info:
+            import_reference(gis_archive, session)
+        assert "db load" in str(exc_info.value)
+        session.rollback()
+    engine.dispose()
+
+
+def test_import_identity_uses_code_entity_and_name(postgis_session, gis_archive):
+    """A code+entity+normalized-name match is required for ``verified_catalogue``.
+
+    The import must never fall back to code presence alone. The loaded Jalisco
+    catalogue matches the INE 2025 shapefile on all 125 (entity 14, code,
+    normalized name), so no correspondence is ``ambiguous``.
+    """
+    from sqlalchemy import text
+
+    ambiguous = postgis_session.scalar(
+        text(
+            "SELECT count(*) FROM territory_correspondence "
+            "WHERE identity_status = 'ambiguous'"
+        )
+    )
+    assert ambiguous == 0
+    verified = postgis_session.scalar(
+        text(
+            "SELECT count(*) FROM territory_correspondence "
+            "WHERE identity_status = 'verified_catalogue'"
+        )
+    )
+    assert verified == 750

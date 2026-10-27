@@ -282,12 +282,17 @@ class Repository:
             SELECT NULL AS territory_id, o.year, NULL AS name, NULL AS municipality_code,
                    SUM(o.ln) AS ln, SUM(o.sv) AS sv, SUM(o.nv) AS nv, SUM(o.ns) AS ns,
                    CASE WHEN SUM(o.sv) + SUM(o.nv) > 0
-                        THEN 100.0 * SUM(o.sv) / (SUM(o.sv) + SUM(o.nv)) END AS participation_pct,
+                        THEN (100.0 * SUM(o.sv) / (SUM(o.sv) + SUM(o.nv)))::float8
+                   END AS participation_pct,
                    CASE WHEN SUM(o.sv) + SUM(o.nv) > 0
-                        THEN 100.0 * SUM(o.nv) / (SUM(o.sv) + SUM(o.nv)) END AS abstention_pct,
-                   CASE WHEN SUM(o.ln) > 0 THEN SUM(o.ns)::float / SUM(o.ln) END AS unknown_share,
-                   CASE WHEN SUM(o.ln) > 0 THEN 100.0 * SUM(o.nv) / SUM(o.ln) END AS ns_lower_pct,
-                   CASE WHEN SUM(o.ln) > 0 THEN 100.0 * (SUM(o.nv) + SUM(o.ns)) / SUM(o.ln)
+                        THEN (100.0 * SUM(o.nv) / (SUM(o.sv) + SUM(o.nv)))::float8
+                   END AS abstention_pct,
+                   CASE WHEN SUM(o.ln) > 0
+                        THEN (SUM(o.ns)::float8 / SUM(o.ln))::float8 END AS unknown_share,
+                   CASE WHEN SUM(o.ln) > 0
+                        THEN (100.0 * SUM(o.nv) / SUM(o.ln))::float8 END AS ns_lower_pct,
+                   CASE WHEN SUM(o.ln) > 0
+                        THEN (100.0 * (SUM(o.nv) + SUM(o.ns)) / SUM(o.ln))::float8
                    END AS ns_upper_pct,
                    NULL::boolean AS eligible,
                    NULL::text AS identity_status, NULL::text AS footprint_status

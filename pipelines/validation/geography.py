@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import tempfile
+import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -34,6 +35,7 @@ from sqlalchemy.orm import Session
 
 from participa_geo.ingestion.schema import (
     ELECTION_YEARS,
+    JALISCO_STATE_CODE,
     REFERENCE_DATE,
     observation_id,
     territory_id,
@@ -54,6 +56,32 @@ _MEMBER = "14/MUNICIPIO.shp"
 
 class GeographyImportError(RuntimeError):
     """Raised when the reference archive or geometry fails validation."""
+
+
+class IncompleteOriginCatalogueError(GeographyImportError):
+    """Raised when the CCPC origin catalogue is incomplete before ``gis import``.
+
+    The message is stable so callers and tests can assert on it. ``gis import``
+    must run after ``db load``; importing against an empty or partially-loaded
+    database fails loudly here instead of silently labelling correspondences
+    ``ambiguous``.
+    """
+
+    _PREFIX = "incomplete CCPC origin catalogue"
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(f"{self._PREFIX}: {detail}; run `db load` before `gis import`")
+
+
+def _normalize_name(value: str) -> str:
+    """Normalize a municipality name for catalogue comparison.
+
+    Strips diacritics, uppercases and collapses whitespace so that
+    ``"Acatlán de Juárez"`` and ``"ACATLAN DE JUAREZ"`` compare equal.
+    """
+    normalized = unicodedata.normalize("NFKD", value)
+    normalized = "".join(c for c in normalized if not unicodedata.combining(c))
+    return " ".join(normalized.upper().split())
 
 
 @dataclass(frozen=True)
@@ -118,6 +146,57 @@ def _read_reference_frame(archive: Path) -> gpd.GeoDataFrame:
     return frame
 
 
+def _load_origin_catalogue(session: Session) -> dict[str, str]:
+    """Return ``{municipality_code: normalized_name}`` for the CCPC origins.
+
+    The catalogue is read from the origin ``territory_version`` rows loaded by
+    ``db load`` (code + entity + name), never from code presence alone. It fails
+    loudly when the expected origin set (125 municipalities × 6 years, one name
+    each) is incomplete, so ``gis import`` cannot silently label correspondences
+    ``ambiguous`` because of a run-order mistake.
+    """
+    rows = session.execute(
+        text(
+            "SELECT state_code, municipality_code, name, origin_year "
+            "FROM territory_version WHERE origin_year IS NOT NULL"
+        )
+    ).all()
+
+    years_by_code: dict[str, set[int]] = {}
+    names_by_code: dict[str, set[str]] = {}
+    for state_code, code, name, year in rows:
+        if state_code != JALISCO_STATE_CODE:
+            raise IncompleteOriginCatalogueError(
+                f"unexpected state_code {state_code!r} for municipality {code}"
+            )
+        years_by_code.setdefault(code, set()).add(int(year))
+        names_by_code.setdefault(code, set()).add(_normalize_name(name))
+
+    if len(years_by_code) != 125:
+        raise IncompleteOriginCatalogueError(
+            f"expected 125 municipalities, found {len(years_by_code)}"
+        )
+
+    expected_years = set(ELECTION_YEARS)
+    incomplete = sorted(
+        code for code, years in years_by_code.items() if years != expected_years
+    )
+    if incomplete:
+        raise IncompleteOriginCatalogueError(
+            f"municipalities missing election years: {incomplete[:10]}"
+        )
+
+    inconsistent = sorted(
+        code for code, names in names_by_code.items() if len(names) != 1
+    )
+    if inconsistent:
+        raise IncompleteOriginCatalogueError(
+            f"municipalities with inconsistent names: {inconsistent[:10]}"
+        )
+
+    return {code: next(iter(names_by_code[code])) for code in names_by_code}
+
+
 def import_reference(archive: Path, session: Session) -> GeographyAudit:
     """Import the verified INE 2025 reference geometry and correspondences.
 
@@ -151,16 +230,9 @@ def import_reference(archive: Path, session: Session) -> GeographyAudit:
             f"geometry outside Jalisco bounds: lon [{minx}, {maxx}], lat [{miny}, {maxy}]"
         )
 
-    # Catalogue of origin identities already loaded by ``db load``.
-    known_codes = {
-        row[0]
-        for row in session.execute(
-            text(
-                "SELECT DISTINCT municipality_code FROM territory_version "
-                "WHERE origin_year IS NOT NULL"
-            )
-        )
-    }
+    # Catalogue of CCPC origin identities loaded by ``db load``. Reading it
+    # fails loudly if the origin set is incomplete (run-order guard).
+    catalogue = _load_origin_catalogue(session)
 
     reference_date = date.fromisoformat(REFERENCE_DATE)
     reference_count = 0
@@ -200,9 +272,14 @@ def import_reference(archive: Path, session: Session) -> GeographyAudit:
         )
         reference_count += 1
 
-        # Identity status: catalogue code/name match is verified (research),
-        # but historical footprint equality is NOT verified.
-        identity = "verified_catalogue" if code in known_codes else "ambiguous"
+        # Identity status: a verified catalogue match requires code + entity +
+        # normalized name (never code presence alone); historical footprint
+        # equality is NOT verified.
+        identity = (
+            "verified_catalogue"
+            if catalogue.get(code) == _normalize_name(name)
+            else "ambiguous"
+        )
         footprint = "not_verified"
         for year in ELECTION_YEARS:
             origin_id = observation_id(state_code, code, year)
@@ -261,4 +338,9 @@ def import_reference(archive: Path, session: Session) -> GeographyAudit:
     )
 
 
-__all__ = ["GeographyAudit", "GeographyImportError", "import_reference"]
+__all__ = [
+    "GeographyAudit",
+    "GeographyImportError",
+    "IncompleteOriginCatalogueError",
+    "import_reference",
+]
