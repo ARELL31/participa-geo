@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ScenarioPage } from "./ScenarioPage";
 import { GlobalFiltersContext } from "../../app/filters";
@@ -10,10 +10,14 @@ import {
   forecastCohort,
   modelsHandler,
   predictionsHandler,
+  reportArtifact,
+  reportCreateHandler,
+  reportDownloadHandler,
   scenarioCreateHandler,
   scenarioDTO,
   scenarioHandler,
   SCENARIO_ID,
+  lastCreatedReport,
   wfsErrorHandler,
   wfsHandler,
 } from "../../test/fixtures";
@@ -127,8 +131,9 @@ describe("ScenarioPage", () => {
     expect(
       screen.getByText("Escenario hipotético — no implica efecto causal"),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Exportar CSV" })).toBeDisabled();
-    expect(screen.getByText(/Disponible en T9/)).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Exportar CSV" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not offer insufficient municipalities in the bounded checklist", async () => {
@@ -307,6 +312,52 @@ describe("ScenarioPage", () => {
     await waitFor(() =>
       expect(screen.getByText(SCENARIO_ID)).toBeVisible(),
     );
+  });
+
+  it("exports the persisted scenario through the real report API", async () => {
+    const persisted = scenarioDTO(PREDICTIONS, {
+      reduction: 3,
+      selectedTerritoryIds: [ELIGIBLE.territory_id],
+    });
+    server.use(
+      ...baseHandlers(),
+      scenarioHandler(persisted),
+      reportCreateHandler((body) =>
+        reportArtifact({
+          kind: body.kind as "scenario_csv",
+          filename: "participa-geo-escenario.csv",
+        }),
+      ),
+      reportDownloadHandler(() => ({
+        body: "municipality_code,abstention_pct\n002,45.113438\n",
+        headers: { "Content-Type": "text/csv" },
+      })),
+    );
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderPage(`/scenarios?scenario_id=${SCENARIO_ID}`);
+
+    const csv = await screen.findByRole(
+      "button",
+      { name: "Exportar CSV" },
+      { timeout: 4_000 },
+    );
+    expect(csv).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Exportar GeoJSON" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Mapa PNG" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Mapa PDF" })).toBeEnabled();
+    await user.click(csv);
+
+    await waitFor(() => {
+      expect(lastCreatedReport()?.kind).toBe("scenario_csv");
+    });
+    expect(clickSpy).toHaveBeenCalled();
+    expect(
+      await screen.findByText(/Archivo generado: participa-geo-escenario.csv/),
+    ).toBeVisible();
+    clickSpy.mockRestore();
   });
 
   it("keeps the A/B table and an explicit error when GIS fails", async () => {

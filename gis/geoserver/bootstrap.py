@@ -42,7 +42,12 @@ LAYERS: dict[str, dict[str, str]] = {
     "scenario_results": {"view": "scenario_results", "style": "risk"},
 }
 
-_STYLE_FILES = {"history": "history.sld", "risk": "risk.sld"}
+_STYLE_FILES = {"history": "history.sld", "risk": "risk.sld", "risk_a": "risk_a.sld"}
+
+#: Alternate styles exposed on a layer. The scenario layer carries both A and B
+#: so an internal GetMap can request ``styles=risk_a`` or the default ``risk``
+#: (risk_b) without inventing a second geometry layer.
+ALTERNATE_STYLES: dict[str, list[str]] = {"scenario_results": ["risk_a"]}
 
 _READY_TIMEOUT_S = 180.0
 _READY_POLL_S = 2.0
@@ -180,7 +185,15 @@ def _ensure_style(base_url: str, auth: dict[str, str], name: str) -> None:
 def _apply_style(
     base_url: str, auth: dict[str, str], layer: str, style: str
 ) -> None:
-    payload = json.dumps({"layer": {"defaultStyle": {"name": style}}})
+    styles = [{"name": name} for name in ALTERNATE_STYLES.get(layer, [])]
+    payload = json.dumps(
+        {
+            "layer": {
+                "defaultStyle": {"name": style},
+                "styles": styles,
+            }
+        }
+    )
     _http(
         "PUT",
         f"{base_url}/rest/layers/{WORKSPACE}:{layer}",

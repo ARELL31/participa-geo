@@ -97,6 +97,31 @@ tardías y alternativa tabular. Playwright corre contra la API real a través de
 `http://web:80`; no usa MSW. Los detalles y contrastes están en
 `docs/design-system/README.md`.
 
+## Comandos probados (T9, entregables)
+
+```sh
+# Requiere un escenario persistido (UUID de /api/v1/scenarios) y el stack GIS activo.
+docker compose run --rm api python -m participa_geo.cli deliver \
+  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo
+docker compose run --rm api python -m participa_geo.cli verify-delivery \
+  --archive dist/hackathon/technical.zip
+```
+
+`deliver` escribe el reporte metodológico (12 páginas), la presentación
+ejecutiva (9 diapositivas), CSV/GeoJSON/PDF del escenario, mapas A/B y el
+`technical.zip` con manifiesto/checksums. También publica los tres documentos
+institucionales en `data/processed/reports/institutional`, que es lo único que
+la API sirve para `methodology_pdf`, `executive_pdf` y `technical_zip`; si no se
+han generado, `POST /reports` devuelve `409 institutional_package_not_generated`
+(sin cola ni estado pendiente).
+
+El ZIP incluye los seis CSV CCPC de Jalisco, el ZIP cartográfico original,
+diccionarios, agregados/artefactos del modelo, código/docs, reportes/mapas y
+checksums. Excluye `.git`, `node_modules`, cachés, `.env`, cartas firmadas,
+contactos y datos personales. Las condiciones de redistribución de INE y
+cartografía se documentan en `docs/hackathon/source-licenses.md` y requieren
+confirmación humana antes de una publicación abierta.
+
 ## Estructura
 
 ```text
@@ -115,8 +140,6 @@ apps/web/package-lock.json
 
 ## Pendiente (tareas siguientes)
 
-- T8: predicción explicable, comparación visual de escenarios y panel ejecutivo.
-- T9: reportes institucionales y exportaciones verificables.
 - T10: CI, ensayo limpio y aceptación final.
 
 Mientras no se carguen datos, migraciones, modelo y capas GIS, `/health/ready`

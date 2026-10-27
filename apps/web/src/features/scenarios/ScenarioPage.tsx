@@ -22,6 +22,7 @@ import {
 } from "./ScenarioForm";
 import { ScenarioMaps } from "./ScenarioMaps";
 import { ScenarioTable } from "./ScenarioTable";
+import { ExportActions } from "../reports/ExportActions";
 
 const EMPTY_FORM: ScenarioFormValues = {
   selectedTerritoryIds: [],
@@ -494,6 +495,57 @@ export function ScenarioPage() {
             <p className="scenario-result__id">
               Escenario persistido · <code>{scenario.scenario_id}</code>
             </p>
+          </section>
+
+          <section className="summary-card" aria-labelledby="scenario-exports-heading">
+            <div className="card-heading">
+              <div>
+                <h2 id="scenario-exports-heading">Exportar este escenario</h2>
+                <p>
+                  Descargue los 125 resultados persistidos, el GeoJSON con la
+                  referencia 2025, un PDF del escenario o los mapas A/B generados
+                  por GeoServer. Los mapas conservan la misma leyenda y el mismo
+                  corte; si GIS falla, la exportación falla de forma explícita.
+                </p>
+              </div>
+              <span className="status-pill status-pill--neutral">A/B</span>
+            </div>
+            <ExportActions
+              caption="Exportaciones del escenario persistido"
+              request={{ scenario_id: scenario.scenario_id }}
+              actions={[
+                {
+                  kind: "scenario_csv",
+                  label: "Exportar CSV",
+                  description:
+                    "CSV con A/B, bandas, riesgo, supuestos y hashes del escenario.",
+                },
+                {
+                  kind: "scenario_geojson",
+                  label: "Exportar GeoJSON",
+                  description:
+                    "125 geometrías EPSG:4326 de la referencia 2025-12-15.",
+                },
+                {
+                  kind: "scenario_pdf",
+                  label: "Exportar PDF",
+                  description:
+                    "Resumen y anexo de los 125 resultados municipales.",
+                },
+                {
+                  kind: "scenario_map_png",
+                  label: "Mapa PNG",
+                  description:
+                    "Mapa A/B compuesto desde GeoServer, 1200×900 por panel.",
+                },
+                {
+                  kind: "scenario_map_pdf",
+                  label: "Mapa PDF",
+                  description:
+                    "Mapa A/B en PDF con fuente, corte, modelo y supuestos.",
+                },
+              ]}
+            />
           </section>
 
           <ScenarioMaps

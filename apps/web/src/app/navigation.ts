@@ -50,7 +50,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
     path: "/reports",
     label: "Reportes",
     description: "Exportaciones verificables",
-    status: "pending",
+    status: "available",
   },
 ] as const;
 

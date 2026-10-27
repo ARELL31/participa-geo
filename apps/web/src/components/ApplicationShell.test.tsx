@@ -8,6 +8,7 @@ import {
   emptyWfsHandler,
   historyHandler,
   historyYear,
+  reportsHandler,
   TERRITORY_A,
   territoriesHandler,
   territory,
@@ -76,9 +77,10 @@ describe("ApplicationShell", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks reports pending without fake actions", async () => {
+  it("opens reports with real export controls and no pending placeholder", async () => {
+    server.use(reportsHandler([]));
     const user = userEvent.setup();
-    renderApp("/");
+    renderApp("/reports");
     expect(
       screen.getByRole("link", { name: /^Predicción/ }),
     ).not.toHaveAccessibleName(/Pendiente/);
@@ -87,18 +89,28 @@ describe("ApplicationShell", () => {
     ).not.toHaveAccessibleName(/Pendiente/);
 
     const reportsLink = screen.getByRole("link", { name: /^Reportes/ });
-    expect(reportsLink).toHaveAccessibleName(/Pendiente/);
-    await user.click(reportsLink);
+    expect(reportsLink).not.toHaveAccessibleName(/Pendiente/);
     const main = screen.getByRole("main");
-    expect(within(main).getByText("Pendiente")).toBeInTheDocument();
     expect(
-      within(main).getByRole("heading", {
+      await within(main).findByRole("heading", {
         level: 1,
         name: "Reportes y exportaciones",
       }),
     ).toBeInTheDocument();
-    expect(within(main).queryAllByRole("button")).toHaveLength(0);
-    expect(within(main).queryAllByRole("link")).toHaveLength(0);
+    expect(
+      await within(main).findByRole(
+        "button",
+        { name: "Descargar historial CSV" },
+        { timeout: 4_000 },
+      ),
+    ).toBeEnabled();
+    expect(
+      within(main).getByText(/Aún no hay documentos institucionales generados/),
+    ).toBeVisible();
+    expect(
+      within(main).queryByRole("button", { name: /Descargar metodología/ }),
+    ).not.toBeInTheDocument();
+    await user.click(reportsLink);
   });
 
   it("opens the mobile sidebar as a dialog and returns focus on Escape", async () => {

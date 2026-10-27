@@ -1,0 +1,802 @@
+"""Real delivery context derived from the T2/T4 artifacts and a persisted scenario.
+
+Nothing here is a template of invented numbers: the counts, metrics, versions,
+sources and limitations are read from ``municipal-observations.parquet``,
+``quality.json``, ``provenance.json``, ``model.json``, ``evaluation.json``,
+``manifest.json`` and ``predictions-2027.parquet``. A scenario (when supplied)
+comes from the persisted database row.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import zipfile
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+from uuid import UUID, uuid4
+
+from participa_geo.api.schemas.scenarios import ScenarioDTO
+from participa_geo.reporting.tables import (
+    history_dictionary_csv,
+    scenario_dictionary_csv,
+)
+
+
+def repo_root() -> Path:
+    """Find the repository root without relying on the current directory."""
+    for candidate in Path(__file__).resolve().parents:
+        if (candidate / "pyproject.toml").is_file():
+            return candidate
+    return Path.cwd()
+
+
+@dataclass(frozen=True)
+class SourceFact:
+    year: int
+    source_url: str
+    member: str
+    sha256: str
+    municipality_count: int | None = None
+    ln: int | None = None
+
+
+@dataclass(frozen=True)
+class ModelFacts:
+    family: str
+    model_run_id: UUID
+    validation_year: int
+    test_year: int
+    mae_2021: float
+    m1_mae_2021: float
+    mae_2024: float
+    m1_mae_2024: float
+    band_pp: float
+    band_n: int
+    n_validation: int
+    n_test: int
+    feature_order: tuple[str, ...]
+    limitations: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CohortFacts:
+    total: int
+    eligible: int
+    insufficient: int
+    unstable: int
+    eligible_ln: int
+    total_ln: int
+    risk_counts: dict[str, int] = field(default_factory=dict)
+    baseline_min: float | None = None
+    baseline_median: float | None = None
+    baseline_max: float | None = None
+    eligible_by_year: dict[int, int] = field(default_factory=dict)
+    excluded_by_year: dict[int, int] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ScenarioFacts:
+    scenario_id: UUID
+    model_run_id: UUID
+    model_sha256: str
+    input_sha256: str
+    target_year: int
+    requested_reduction_pp: float
+    effective_reduction_pp: float
+    assumption_code: str
+    assumption_version: str
+    rationale_text: str
+    rules_version: str
+    error_band_label: str
+    selected_count: int
+    risk_a_counts: dict[str, int]
+    risk_b_counts: dict[str, int]
+    risk_a_unstable: int
+    risk_b_unstable: int
+    baseline_mean: float | None
+    hypothetical_mean: float | None
+
+
+@dataclass(frozen=True)
+class DeliveryContext:
+    generated_at: datetime
+    reference_date: str
+    data_aggregate_sha256: str
+    versions: dict[str, str]
+    model: ModelFacts
+    cohort: CohortFacts
+    sources: tuple[SourceFact, ...]
+    exclusions: dict[int, int]
+    limitations: tuple[str, ...]
+    scenario: ScenarioFacts | None = None
+    team_slug: str = "participa-geo"
+    eje: str = "Participación y territorio"
+
+
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _float(value: Any) -> float:
+    return float(value)
+
+
+def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
+    results = scenario.results
+    selected = [row for row in results if row.selected]
+    baseline_values = [
+        row.baseline_abstention_pct
+        for row in results
+        if row.baseline_abstention_pct is not None
+    ]
+    hypothetical_values = [
+        row.hypothetical_abstention_pct
+        for row in selected
+        if row.hypothetical_abstention_pct is not None
+    ]
+    risk_a_counts = {
+        key: sum(1 for row in results if row.risk_a == key)
+        for key in ("low", "medium", "high", "insufficient")
+    }
+    risk_b_counts = {
+        key: sum(1 for row in results if row.risk_b == key)
+        for key in ("low", "medium", "high", "insufficient")
+    }
+    return ScenarioFacts(
+        scenario_id=scenario.scenario_id,
+        model_run_id=scenario.model_run_id,
+        model_sha256=scenario.model_sha256,
+        input_sha256=scenario.input_sha256,
+        target_year=scenario.target_year,
+        requested_reduction_pp=scenario.requested_reduction_pp,
+        effective_reduction_pp=max(
+            (row.effective_reduction_pp for row in selected), default=0.0
+        ),
+        assumption_code=scenario.assumption_code,
+        assumption_version=scenario.assumption_version,
+        rationale_text=scenario.rationale_text,
+        rules_version=scenario.rules_version,
+        error_band_label=scenario.error_band_label,
+        selected_count=len(selected),
+        risk_a_counts=risk_a_counts,
+        risk_b_counts=risk_b_counts,
+        risk_a_unstable=sum(1 for row in results if row.risk_a_unstable),
+        risk_b_unstable=sum(1 for row in results if row.risk_b_unstable),
+        baseline_mean=(
+            sum(baseline_values) / len(baseline_values) if baseline_values else None
+        ),
+        hypothetical_mean=(
+            sum(hypothetical_values) / len(hypothetical_values)
+            if hypothetical_values
+            else None
+        ),
+    )
+
+
+def load_delivery_context(
+    model_dir: Path | str | None = None,
+    processed_dir: Path | str | None = None,
+    *,
+    scenario: ScenarioDTO | None = None,
+    generated_at: datetime | None = None,
+) -> DeliveryContext:
+    """Build the immutable facts shared by the methodology/executive documents."""
+    import pandas as pd
+
+    root = repo_root()
+    processed = Path(processed_dir) if processed_dir else root / "data" / "processed"
+    model_dir = Path(model_dir) if model_dir else processed / "model"
+
+    manifest = _read_json(model_dir / "manifest.json")
+    evaluation = _read_json(model_dir / "evaluation.json")
+    model = _read_json(model_dir / "model.json")
+    provenance = _read_json(processed / "provenance.json")
+    predictions = pd.read_parquet(model_dir / "predictions-2027.parquet")
+
+    total = len(predictions)
+    eligible = int(predictions["eligible"].fillna(False).sum())
+    insufficient = total - eligible
+    unstable = int(
+        predictions.loc[predictions["eligible"].fillna(False), "risk_unstable"]
+        .fillna(False)
+        .sum()
+    )
+    risk_counts = {
+        key: int((predictions["risk"].fillna("insufficient") == key).sum())
+        for key in ("low", "medium", "high", "insufficient")
+    }
+    baseline_values = predictions.loc[
+        predictions["eligible"].fillna(False), "estimated_abstention_pct"
+    ].dropna()
+    eligible_ln = int(
+        predictions.loc[
+            predictions["eligible"].fillna(False), "estimated_abstention_pct"
+        ]
+        .notna()
+        .sum()
+    )
+    # LN coverage is not in the prediction artifact; use the evaluation cohort.
+    cohorts = evaluation.get("cohorts", {})
+    cohort_2027 = cohorts.get("2027", {})
+    eligible_ln_value = int(cohort_2027.get("eligible_ln", 0))
+    total_ln_value = int(cohort_2027.get("total_ln", 0))
+    eligible_by_year = {
+        int(year): int(values.get("eligible_count", 0))
+        for year, values in cohorts.items()
+        if str(year).isdigit()
+    }
+    excluded_by_year = {
+        int(year): int(values.get("excluded_count", 0))
+        for year, values in cohorts.items()
+        if str(year).isdigit()
+    }
+
+    metrics = evaluation.get("metrics", {})
+    m0 = metrics.get("m0", {})
+    m1 = metrics.get("m1", {})
+    validation_year = int(evaluation.get("validation_year", 2021))
+    test_year = int(evaluation.get("test_year", 2024))
+    band = evaluation.get("band", {})
+    selection = evaluation.get("selection", {})
+
+    sources = tuple(
+        SourceFact(
+            year=int(source.get("year", 0)),
+            source_url=str(source.get("source_url", "")),
+            member=str(source.get("member", "")),
+            sha256=str(source.get("sha256", "")),
+            municipality_count=source.get("municipality_count"),
+            ln=(source.get("totals") or {}).get("ln"),
+        )
+        for source in sorted(
+            provenance.get("sources", []), key=lambda item: int(item.get("year", 0))
+        )
+    )
+
+    limitations = tuple(
+        dict.fromkeys(
+            list(manifest.get("limitations", []))
+            + list(model.get("limitations", []))
+            + [
+                "Los conteos CCPC excluyen casillas especiales y residentes en el extranjero; "
+                "sus tasas no son cómputos electorales oficiales.",
+                "La referencia cartográfica es 2025-12-15; footprint_status=not_verified: "
+                "no se promete igualdad histórica de límites.",
+                "El semáforo es analítico, no una clasificación oficial del INE.",
+            ]
+        )
+    )
+
+    return DeliveryContext(
+        generated_at=generated_at or datetime.now(UTC),
+        reference_date=str(manifest.get("reference_date", "2025-12-15")),
+        data_aggregate_sha256=str(
+            manifest.get("data_aggregate_sha256")
+            or provenance.get("aggregate_sha256", "")
+        ),
+        versions={str(k): str(v) for k, v in (manifest.get("versions") or {}).items()},
+        model=ModelFacts(
+            family=str(evaluation.get("selected_family", model.get("family", "M0"))),
+            model_run_id=UUID(str(manifest.get("model_run_id", model.get("model_run_id")))),
+            validation_year=validation_year,
+            test_year=test_year,
+            mae_2021=_float(m0.get(str(validation_year), {}).get("mae", selection.get("m0_mae_2021", 0.0))),
+            m1_mae_2021=_float(m1.get(str(validation_year), {}).get("mae", selection.get("m1_mae_2021", 0.0))),
+            mae_2024=_float(m0.get(str(test_year), {}).get("mae", 0.0)),
+            m1_mae_2024=_float(m1.get(str(test_year), {}).get("mae", 0.0)),
+            band_pp=_float(band.get("amplitude_pp", 0.0)),
+            band_n=int(band.get("n_errors_2021", 0)),
+            n_validation=int(m0.get(str(validation_year), {}).get("n", 0)),
+            n_test=int(m0.get(str(test_year), {}).get("n", 0)),
+            feature_order=tuple(model.get("feature_order", [])),
+            limitations=tuple(model.get("limitations", [])),
+        ),
+        cohort=CohortFacts(
+            total=total,
+            eligible=eligible,
+            insufficient=insufficient,
+            unstable=unstable,
+            eligible_ln=eligible_ln_value or eligible_ln,
+            total_ln=total_ln_value,
+            risk_counts=risk_counts,
+            baseline_min=float(baseline_values.min()) if not baseline_values.empty else None,
+            baseline_median=float(baseline_values.median()) if not baseline_values.empty else None,
+            baseline_max=float(baseline_values.max()) if not baseline_values.empty else None,
+            eligible_by_year=eligible_by_year,
+            excluded_by_year=excluded_by_year,
+        ),
+        sources=sources,
+        exclusions={
+            int(year): len(values)
+            for year, values in (evaluation.get("exclusions") or {}).items()
+            if str(year).isdigit()
+        },
+        limitations=limitations,
+        scenario=_scenario_facts(scenario) if scenario is not None else None,
+    )
+
+
+def context_manifest(context: DeliveryContext) -> dict:
+    """A compact, machine-readable summary embedded in PDFs and the ZIP."""
+    payload: dict = {
+        "team_slug": context.team_slug,
+        "eje": context.eje,
+        "generated_at": context.generated_at.isoformat(),
+        "reference_date": context.reference_date,
+        "data_aggregate_sha256": context.data_aggregate_sha256,
+        "versions": context.versions,
+        "model": {
+            "family": context.model.family,
+            "model_run_id": str(context.model.model_run_id),
+            "validation_year": context.model.validation_year,
+            "test_year": context.model.test_year,
+            "mae_2021": context.model.mae_2021,
+            "m1_mae_2021": context.model.m1_mae_2021,
+            "mae_2024": context.model.mae_2024,
+            "m1_mae_2024": context.model.m1_mae_2024,
+            "band_pp": context.model.band_pp,
+            "band_n": context.model.band_n,
+        },
+        "cohort": {
+            "total": context.cohort.total,
+            "eligible": context.cohort.eligible,
+            "insufficient": context.cohort.insufficient,
+            "unstable": context.cohort.unstable,
+            "eligible_ln": context.cohort.eligible_ln,
+            "total_ln": context.cohort.total_ln,
+            "risk_counts": context.cohort.risk_counts,
+            "baseline_min": context.cohort.baseline_min,
+            "baseline_median": context.cohort.baseline_median,
+            "baseline_max": context.cohort.baseline_max,
+            "eligible_by_year": context.cohort.eligible_by_year,
+            "excluded_by_year": context.cohort.excluded_by_year,
+        },
+        "sources": [
+            {
+                "year": source.year,
+                "source_url": source.source_url,
+                "member": source.member,
+                "sha256": source.sha256,
+                "municipality_count": source.municipality_count,
+                "ln": source.ln,
+            }
+            for source in context.sources
+        ],
+        "limitations": list(context.limitations),
+    }
+    if context.scenario is not None:
+        scenario = context.scenario
+        payload["scenario"] = {
+            "scenario_id": str(scenario.scenario_id),
+            "model_run_id": str(scenario.model_run_id),
+            "model_sha256": scenario.model_sha256,
+            "input_sha256": scenario.input_sha256,
+            "target_year": scenario.target_year,
+            "requested_reduction_pp": scenario.requested_reduction_pp,
+            "effective_reduction_pp": scenario.effective_reduction_pp,
+            "assumption_code": scenario.assumption_code,
+            "assumption_version": scenario.assumption_version,
+            "rationale_text": scenario.rationale_text,
+            "rules_version": scenario.rules_version,
+            "error_band_label": scenario.error_band_label,
+            "selected_count": scenario.selected_count,
+            "risk_a_counts": scenario.risk_a_counts,
+            "risk_b_counts": scenario.risk_b_counts,
+            "risk_a_unstable": scenario.risk_a_unstable,
+            "risk_b_unstable": scenario.risk_b_unstable,
+            "baseline_mean": scenario.baseline_mean,
+            "hypothetical_mean": scenario.hypothetical_mean,
+        }
+    return payload
+
+
+class DeliveryError(RuntimeError):
+    """Raised when the technical package cannot be built or verified."""
+
+
+@dataclass(frozen=True)
+class DeliveryManifest:
+    archive: Path
+    sha256: str
+    size_bytes: int
+    file_count: int
+    manifest: dict = field(default_factory=dict)
+
+
+FORBIDDEN_PARTS = {
+    ".git",
+    ".superpowers",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "dist",
+    "build",
+    "test-results",
+    "playwright-report",
+    "coverage",
+    "cartas",
+    "cartas_firmadas",
+}
+FORBIDDEN_NAME_FRAGMENTS = ("secret", "credential", "credencial", "password", "private_key")
+
+ALLOWLIST_FILES = (
+    "README.md",
+    "pyproject.toml",
+    "uv.lock",
+    "compose.yaml",
+    "alembic.ini",
+    "data/sources.json",
+    "apps/web/package.json",
+    "apps/web/package-lock.json",
+    "apps/web/index.html",
+    "apps/web/tsconfig.json",
+    "apps/web/tsconfig.app.json",
+    "apps/web/tsconfig.node.json",
+    "apps/web/vite.config.ts",
+    "apps/web/playwright.config.ts",
+    "apps/web/eslint.config.js",
+)
+
+ALLOWLIST_DIRS: tuple[tuple[str, frozenset[str]], ...] = (
+    ("apps/api/participa_geo", frozenset({".py"})),
+    ("apps/web/src", frozenset({".ts", ".tsx", ".css"})),
+    ("apps/web/tests", frozenset({".ts"})),
+    ("pipelines", frozenset({".py"})),
+    ("gis", frozenset({".py", ".sld"})),
+    ("alembic", frozenset({".py", ".mako", ".ini"})),
+    ("infrastructure", frozenset({".py", ".sh", ".conf"})),
+    ("docs", frozenset({".md", ".ttf", ".txt"})),
+    ("data/processed/model", frozenset({".json", ".csv", ".parquet"})),
+)
+
+ALLOWLIST_EXPLICIT = (
+    "data/raw/ccpc/jalisco-2009.csv",
+    "data/raw/ccpc/jalisco-2012.csv",
+    "data/raw/ccpc/jalisco-2015.csv",
+    "data/raw/ccpc/jalisco-2018.csv",
+    "data/raw/ccpc/jalisco-2021.csv",
+    "data/raw/ccpc/jalisco-2024.csv",
+    "data/raw/gis/ine-jalisco-2025-12-15.zip",
+    "data/processed/municipal-observations.parquet",
+    "data/processed/quality.json",
+    "data/processed/provenance.json",
+    "data/processed/gis/reference-2025-12-15.geojson",
+    "data/processed/gis/reference-2025-12-15.geojson.sha256",
+)
+
+REQUIRED_MEMBERS = (
+    "README.md",
+    "pyproject.toml",
+    "uv.lock",
+    "compose.yaml",
+    "data/sources.json",
+    "data/raw/ccpc/jalisco-2009.csv",
+    "data/raw/ccpc/jalisco-2012.csv",
+    "data/raw/ccpc/jalisco-2015.csv",
+    "data/raw/ccpc/jalisco-2018.csv",
+    "data/raw/ccpc/jalisco-2021.csv",
+    "data/raw/ccpc/jalisco-2024.csv",
+    "data/raw/gis/ine-jalisco-2025-12-15.zip",
+    "data/processed/municipal-observations.parquet",
+    "data/processed/quality.json",
+    "data/processed/provenance.json",
+    "data/processed/model/model.json",
+    "data/processed/model/evaluation.json",
+    "data/processed/model/manifest.json",
+    "data/processed/model/predictions-2027.parquet",
+    "data/processed/gis/reference-2025-12-15.geojson",
+    "dictionaries/history.csv",
+    "dictionaries/scenario.csv",
+    "docs/hackathon/delivery-checklist.md",
+    "docs/hackathon/source-licenses.md",
+    "reports/methodology.pdf",
+    "reports/executive.pdf",
+)
+
+
+def _is_forbidden(relative: Path) -> bool:
+    parts = {part.lower() for part in relative.parts}
+    if parts & FORBIDDEN_PARTS:
+        return True
+    name = relative.name.lower()
+    if name == ".env" or name.startswith(".env."):
+        return True
+    return any(fragment in name for fragment in FORBIDDEN_NAME_FRAGMENTS)
+
+
+def _candidate_files(root: Path) -> list[Path]:
+    candidates: list[Path] = []
+    allowed_explicit = set(ALLOWLIST_EXPLICIT) | set(ALLOWLIST_FILES)
+    for relative in allowed_explicit:
+        path = root / relative
+        if path.is_file():
+            candidates.append(path)
+    for directory, suffixes in ALLOWLIST_DIRS:
+        base = root / directory
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if path.is_file() and path.suffix.lower() in suffixes:
+                candidates.append(path)
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for path in candidates:
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if _is_forbidden(relative):
+            continue
+        seen.add(resolved)
+        unique.append(path)
+    return sorted(unique, key=lambda item: item.relative_to(root).as_posix())
+
+
+def _add_bytes(
+    archive: zipfile.ZipFile,
+    arcname: str,
+    payload: bytes,
+    files: dict[str, dict[str, Any]],
+) -> None:
+    digest = hashlib.sha256(payload).hexdigest()
+    archive.writestr(arcname, payload)
+    files[arcname] = {"sha256": digest, "bytes": len(payload)}
+
+
+def _add_path(
+    archive: zipfile.ZipFile,
+    arcname: str,
+    path: Path,
+    files: dict[str, dict[str, Any]],
+) -> None:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as source, archive.open(arcname, "w") as target:
+        while True:
+            chunk = source.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+            size += len(chunk)
+            target.write(chunk)
+    files[arcname] = {"sha256": digest.hexdigest(), "bytes": size}
+
+
+def _license_review_text() -> str:
+    return (
+        "Fuentes INE CCPC: se conservan URL, miembro, corte y checksum. La página "
+        "pública del INE no publica una licencia de redistribución explícita; el "
+        "usuario debe confirmar las condiciones antes de una publicación abierta. "
+        "Si no las confirma, sustituya los CSV/ZIP originales por checksums e "
+        "instrucciones de descarga. Ver docs/hackathon/source-licenses.md."
+    )
+
+
+def build_technical_zip(
+    context: DeliveryContext,
+    output: Path | str,
+    *,
+    root: Path | str | None = None,
+    reports: dict[str, Path | str | bytes] | None = None,
+    strict: bool = True,
+    team_slug: str | None = None,
+) -> DeliveryManifest:
+    """Build and atomically publish the allowlisted technical ZIP."""
+    source_root = Path(root) if root is not None else repo_root()
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.parent / f".tmp-{uuid4().hex}.zip"
+
+    files: dict[str, dict[str, Any]] = {}
+    try:
+        with zipfile.ZipFile(
+            temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6
+        ) as archive:
+            for path in _candidate_files(source_root):
+                relative = path.relative_to(source_root).as_posix()
+                _add_path(archive, relative, path, files)
+
+            _add_bytes(
+                archive,
+                "dictionaries/history.csv",
+                history_dictionary_csv(),
+                files,
+            )
+            _add_bytes(
+                archive,
+                "dictionaries/scenario.csv",
+                scenario_dictionary_csv(),
+                files,
+            )
+
+            for arcname, value in (reports or {}).items():
+                safe = Path(arcname).as_posix().lstrip("/")
+                if ".." in Path(safe).parts or _is_forbidden(Path(safe)):
+                    raise DeliveryError(f"ruta de reporte no permitida: {arcname}")
+                if isinstance(value, (bytes, bytearray)):
+                    _add_bytes(archive, safe, bytes(value), files)
+                else:
+                    path = Path(value)
+                    if not path.is_file():
+                        raise DeliveryError(f"reporte faltante: {path}")
+                    _add_path(archive, safe, path, files)
+
+            missing = [member for member in REQUIRED_MEMBERS if member not in files]
+            if strict and missing:
+                raise DeliveryError(
+                    "faltan archivos obligatorios en el paquete: " + ", ".join(missing)
+                )
+
+            manifest = {
+                "manifest_version": "1.0",
+                "team_slug": team_slug or context.team_slug,
+                "eje": context.eje,
+                "generated_at": context.generated_at.isoformat(),
+                "reference_date": context.reference_date,
+                "data_aggregate_sha256": context.data_aggregate_sha256,
+                "complete": bool(strict and not missing),
+                "missing": missing,
+                "model": context_manifest(context)["model"],
+                "cohort": context_manifest(context)["cohort"],
+                "scenario": context_manifest(context).get("scenario"),
+                "sources": context_manifest(context)["sources"],
+                "assumptions": (
+                    context.scenario.rationale_text if context.scenario else None
+                ),
+                "error_band_label": (
+                    context.scenario.error_band_label if context.scenario else None
+                ),
+                "license_review": _license_review_text(),
+                "not_included": [
+                    ".git",
+                    "node_modules",
+                    "caches",
+                    ".env",
+                    "cartas firmadas / contactos",
+                    "secretos",
+                    "datos personales",
+                ],
+                "files": files,
+            }
+            manifest_payload = (
+                json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+            ).encode("utf-8")
+            _add_bytes(archive, "MANIFEST.json", manifest_payload, files)
+
+            checksum_lines = "".join(
+                f"{entry['sha256']}  {name}\n"
+                for name, entry in sorted(files.items())
+                if name != "CHECKSUMS.sha256"
+            )
+            _add_bytes(
+                archive,
+                "CHECKSUMS.sha256",
+                checksum_lines.encode("utf-8"),
+                files,
+            )
+        os.replace(temporary, output)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+    digest = hashlib.sha256()
+    with output.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return DeliveryManifest(
+        archive=output,
+        sha256=digest.hexdigest(),
+        size_bytes=output.stat().st_size,
+        file_count=len(files),
+        manifest=manifest,
+    )
+
+
+def _parse_checksums(payload: str) -> dict[str, str]:
+    checksums: dict[str, str] = {}
+    for line in payload.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split("  ", 1)
+        if len(parts) != 2:
+            raise DeliveryError("línea de checksum inválida")
+        checksums[parts[1]] = parts[0]
+    return checksums
+
+
+def verify_archive(archive_path: Path | str) -> dict:
+    """Verify names, manifest, required files and every SHA-256 checksum."""
+    path = Path(archive_path)
+    if not path.is_file():
+        raise DeliveryError(f"archivo inexistente: {path}")
+    errors: list[str] = []
+    try:
+        with zipfile.ZipFile(path) as archive:
+            names = archive.namelist()
+            duplicates = {name for name in names if names.count(name) > 1}
+            if duplicates:
+                errors.append(f"miembros duplicados: {sorted(duplicates)}")
+            for name in names:
+                if _is_forbidden(Path(name)):
+                    errors.append(f"miembro prohibido: {name}")
+            if "MANIFEST.json" not in names:
+                raise DeliveryError("el paquete no contiene MANIFEST.json")
+            manifest = json.loads(archive.read("MANIFEST.json"))
+            files = manifest.get("files") or {}
+            if not isinstance(files, dict):
+                raise DeliveryError("MANIFEST.json no contiene el mapa de archivos")
+            for name in names:
+                if name in {"MANIFEST.json", "CHECKSUMS.sha256"}:
+                    continue
+                if name not in files:
+                    errors.append(f"archivo no declarado: {name}")
+                    continue
+                payload = archive.read(name)
+                digest = hashlib.sha256(payload).hexdigest()
+                if digest != files[name].get("sha256"):
+                    errors.append(f"hash no coincide: {name}")
+                if len(payload) != int(files[name].get("bytes", -1)):
+                    errors.append(f"tamaño no coincide: {name}")
+            for name in files:
+                if name not in names:
+                    errors.append(f"archivo declarado ausente: {name}")
+            if "CHECKSUMS.sha256" in names:
+                checksums = _parse_checksums(
+                    archive.read("CHECKSUMS.sha256").decode("utf-8")
+                )
+                for name, expected in checksums.items():
+                    if name not in names:
+                        errors.append(f"checksum de archivo ausente: {name}")
+                    elif hashlib.sha256(archive.read(name)).hexdigest() != expected:
+                        errors.append(f"checksum no coincide: {name}")
+            if manifest.get("complete"):
+                for member in REQUIRED_MEMBERS:
+                    if member not in names:
+                        errors.append(f"falta el miembro obligatorio: {member}")
+    except zipfile.BadZipFile as exc:
+        raise DeliveryError("el archivo no es un ZIP válido") from exc
+
+    if errors:
+        raise DeliveryError("; ".join(errors[:20]))
+    return {
+        "archive": str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "size_bytes": path.stat().st_size,
+        "file_count": len(files),
+        "complete": bool(manifest.get("complete")),
+        "team_slug": manifest.get("team_slug"),
+        "generated_at": manifest.get("generated_at"),
+        "members": names,
+    }
+
+
+__all__ = [
+    "ALLOWLIST_DIRS",
+    "ALLOWLIST_EXPLICIT",
+    "ALLOWLIST_FILES",
+    "CohortFacts",
+    "DeliveryContext",
+    "DeliveryError",
+    "DeliveryManifest",
+    "FORBIDDEN_PARTS",
+    "ModelFacts",
+    "REQUIRED_MEMBERS",
+    "ScenarioFacts",
+    "SourceFact",
+    "build_technical_zip",
+    "context_manifest",
+    "load_delivery_context",
+    "repo_root",
+    "verify_archive",
+]

@@ -13,6 +13,7 @@ import json
 import logging
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -28,10 +29,12 @@ from participa_geo.api.routes import (
     models,
     predictions,
     recommendations,
+    reports,
     scenarios,
     territories,
 )
 from participa_geo.db.session import api_engine
+from participa_geo.reporting.store import ReportStore
 from participa_geo.scenarios.service import ScenarioRateLimiter
 from participa_geo.settings import Settings
 
@@ -176,6 +179,20 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     # Process-local scenario limiter (10/min and one active request per client);
     # valid for the single-worker MVP only.
     app.state.scenario_rate_limiter = ScenarioRateLimiter()
+    # Generated exports are written atomically under a git-ignored directory.
+    # Institutional documents are only served if the CLI has published them.
+    from participa_geo.reporting.delivery import repo_root
+
+    reports_root = Path(settings.reports_dir)
+    if not reports_root.is_absolute():
+        reports_root = repo_root() / reports_root
+    institutional_root = Path(settings.institutional_reports_dir)
+    if not institutional_root.is_absolute():
+        institutional_root = repo_root() / institutional_root
+    app.state.report_store = ReportStore(
+        reports_root,
+        institutional_dir=institutional_root,
+    )
 
     logging.getLogger("participa_geo").setLevel(settings.log_level.upper())
 
@@ -193,5 +210,6 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     app.include_router(scenarios.router, prefix=API_PREFIX)
     app.include_router(recommendations.router, prefix=API_PREFIX)
     app.include_router(gis.router, prefix=API_PREFIX)
+    app.include_router(reports.router, prefix=API_PREFIX)
 
     return app

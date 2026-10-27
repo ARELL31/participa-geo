@@ -302,14 +302,19 @@ class GeoServerClient:
         *,
         srs: str = "EPSG:3857",
         format: str = "image/png",
+        styles: str = "",
     ) -> bytes:
-        """Fetch one WMS GetMap (internal filters built from UUID/year)."""
+        """Fetch one WMS GetMap (internal filters built from UUID/year).
+
+        ``styles`` is a server-side style name only; it is never taken from a
+        client request, so this cannot be used to load an arbitrary SLD.
+        """
         params: dict[str, str] = {
             "service": "WMS",
             "version": "1.1.1",
             "request": "GetMap",
             "layers": f"{WORKSPACE}:{layer.value}",
-            "styles": "",
+            "styles": styles,
             "bbox": f"{bbox.minx},{bbox.miny},{bbox.maxx},{bbox.maxy}",
             "width": str(width),
             "height": str(height),

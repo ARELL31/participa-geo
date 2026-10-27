@@ -52,3 +52,18 @@ Object.defineProperty(window, "scrollTo", {
   writable: true,
   value: () => {},
 });
+
+if (typeof URL.createObjectURL !== "function") {
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    writable: true,
+    value: () => "blob:participa-geo-test",
+  });
+}
+if (typeof URL.revokeObjectURL !== "function") {
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    writable: true,
+    value: () => {},
+  });
+}

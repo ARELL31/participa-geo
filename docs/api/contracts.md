@@ -309,3 +309,63 @@ seguimiento preventivo/institucional según riesgo, monitoreo de categoría
 inestable y advertencia de equidad/cobertura. No hay optimización de presupuesto,
 perfilado partidista, segmentación persuasiva ni inferencia individual; el texto
 proviene de plantillas fijas, nunca de entrada del usuario.
+
+## Reportes y exportaciones
+
+### `POST /reports`
+
+Cuerpo cerrado (`extra="forbid"`); no admite URL, ruta, plantilla ni texto libre:
+
+```json
+{
+  "kind": "scenario_csv",
+  "scenario_id": "00000000-0000-0000-0000-000000000010",
+  "territory_id": null,
+  "year": null
+}
+```
+
+`kind` es el enum cerrado: `history_csv`, `history_xlsx`, `scenario_csv`,
+`scenario_geojson`, `scenario_pdf`, `scenario_map_png`, `scenario_map_pdf`,
+`methodology_pdf`, `executive_pdf`, `technical_zip`.
+
+- `scenario_id` es obligatorio para `scenario_*`; en otros tipos se rechaza.
+- `territory_id`/`year` sólo aplican a `history_*`.
+- Las exportaciones pequeñas son síncronas (sin cola, sin `pending`).
+- `201` creado; `200` caché por hash de filtros/versiones/modelo/escenario/supuestos.
+- `409 institutional_package_not_generated` si `methodology_pdf`,
+  `executive_pdf` o `technical_zip` no han sido generados por la CLI. La API no
+  los genera ni los encola.
+- `429 rate_limited` si hay una exportación activa por cliente o se superan 10
+  nuevas por minuto (extensión `retry_after_seconds`).
+- `503 unavailable` si GIS falla al componer mapas o si se agota la cuota de
+  1 GiB de datos generados (`quota_exceeded`).
+- Límites: historia ≤750 filas, escenario exactamente 125; mapas 1200×900,
+  timeout GIS 5 s, total 30 s, archivo pequeño ≤20 MiB.
+
+Respuesta `ReportArtifactDTO` (nunca incluye una ruta local):
+
+```json
+{
+  "report_id": "…UUID…",
+  "kind": "scenario_csv",
+  "format": "csv",
+  "status": "ready",
+  "size_bytes": 54000,
+  "sha256": "…64 hex…",
+  "created_at": "2026-10-27T00:00:00Z",
+  "download_url": "/api/v1/reports/…/download",
+  "filename": "participa-geo-escenario-….csv",
+  "cached": false,
+  "scenario_id": "…",
+  "model_run_id": "…",
+  "sources": {}
+}
+```
+
+### `GET /reports`, `GET /reports/{id}`, `GET /reports/{id}/download`
+
+`GET /reports` devuelve `Page[ReportArtifactDTO]` con los artefactos generados
+(institucionales incluidos si existen). `GET /reports/{id}` devuelve metadatos o
+`404`. La descarga devuelve el MIME y `Content-Disposition` con hash verificable;
+un artefacto desconocido es `404` y uno no disponible es `409`.

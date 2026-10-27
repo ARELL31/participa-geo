@@ -436,8 +436,14 @@ export function ExecutivePage() {
         <p className="source-note">
           Fuente: ejecución {model.model_run_id} · corte {model.reference_date}.
           Recomendaciones preventivas: reglas{" "}
-          {recommendations[0]?.rules_version ?? "no disponibles"}. Reportes y
-          exportaciones: Disponible en T9.
+          {recommendations[0]?.rules_version ?? "no disponibles"}.{" "}
+          <a
+            href="/reports"
+            onClick={(event) => moduleLink(event, "/reports")}
+          >
+            Reportes y exportaciones
+          </a>{" "}
+          con fuentes, hashes y documentos institucionales.
         </p>
       </section>
     </div>

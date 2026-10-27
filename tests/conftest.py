@@ -133,6 +133,14 @@ def gis_archive() -> Path:
 
 
 @pytest.fixture(scope="session")
+def delivery_context():
+    """Real delivery context derived from the T2/T4 artifacts (T9)."""
+    from participa_geo.reporting.delivery import load_delivery_context
+
+    return load_delivery_context(MODEL_DIR, PROCESSED)
+
+
+@pytest.fixture(scope="session")
 def postgis_session(db_config: dict):
     """Migrate and load the test database, yielding a migrator ``Session``."""
     from participa_geo.db.models import Base

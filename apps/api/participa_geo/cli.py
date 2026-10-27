@@ -8,7 +8,9 @@ must not duplicate this logic.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 
 from participa_geo import __version__
@@ -145,6 +147,221 @@ def _model_load(args: argparse.Namespace) -> int:
     return 0
 
 
+def _write_atomic(path: Path, payload: bytes) -> None:
+    """Write one delivery file through a same-directory temporary file."""
+    from uuid import uuid4
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.parent / f".tmp-{uuid4().hex}"
+    try:
+        with temporary.open("wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def run_delivery(
+    scenario_id,
+    output_dir: Path,
+    team_slug: str,
+    *,
+    settings=None,
+    include_sources: bool = True,
+) -> dict:
+    """Generate the institutional documents, maps and technical package.
+
+    This is the implementation shared by the CLI and the integration test. It
+    fails explicitly (no placeholder) when a real GeoServer A/B map cannot be
+    obtained.
+    """
+    from participa_geo.api.gis_client import GeoServerClient
+    from participa_geo.api.schemas.reports import MEDIA_TYPE_BY_FORMAT
+    from participa_geo.db.session import api_engine, session_scope
+    from participa_geo.reporting.delivery import (
+        build_technical_zip,
+        load_delivery_context,
+        repo_root,
+        verify_archive,
+    )
+    from participa_geo.reporting.geojson import export_scenario_geojson
+    from participa_geo.reporting.maps import render_scenario_map
+    from participa_geo.reporting.pdf import (
+        generate_executive,
+        generate_methodology,
+        generate_scenario_pdf,
+    )
+    from participa_geo.reporting.store import ReportStore
+    from participa_geo.reporting.tables import export_scenario_csv
+    from participa_geo.scenarios.service import ScenarioService
+    from participa_geo.settings import Settings
+
+    settings = settings or Settings()
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with session_scope(api_engine(settings)) as session:
+        scenario = ScenarioService(session).get(scenario_id)
+        if scenario is None:
+            raise SystemExit(f"scenario {scenario_id} does not exist")
+
+    context = load_delivery_context(scenario=scenario)
+    meta = _delivery_meta(context)
+
+    methodology = generate_methodology(context)
+    executive = generate_executive(context)
+    scenario_csv = export_scenario_csv(scenario, meta)
+    reference = repo_root() / "data" / "processed" / "gis" / "reference-2025-12-15.geojson"
+    scenario_geojson = export_scenario_geojson(scenario, reference, meta)
+    scenario_pdf = generate_scenario_pdf(scenario, meta, context=context)
+    gis_client = GeoServerClient(settings.gis_base_url, timeout=5.0)
+    map_png = render_scenario_map(scenario, "png", client=gis_client)
+    map_pdf = render_scenario_map(scenario, "pdf", client=gis_client)
+
+    reports = {
+        "reports/methodology.pdf": methodology,
+        "reports/executive.pdf": executive,
+        "reports/scenario.csv": scenario_csv,
+        "reports/scenario.geojson": scenario_geojson,
+        "reports/scenario.pdf": scenario_pdf,
+        "reports/scenario-map.png": map_png,
+        "reports/scenario-map.pdf": map_pdf,
+    }
+    for arcname, payload in reports.items():
+        _write_atomic(output_dir / Path(arcname).name, payload)
+
+    archive = output_dir / "technical.zip"
+    built = build_technical_zip(
+        context,
+        archive,
+        root=repo_root(),
+        reports=reports,
+        strict=include_sources,
+        team_slug=team_slug,
+    )
+    verification = verify_archive(archive)
+    summary = {
+        "team_slug": team_slug,
+        "scenario_id": str(scenario.scenario_id),
+        "model_run_id": str(scenario.model_run_id),
+        "output_dir": str(output_dir),
+        "technical_zip": {
+            "path": str(archive),
+            "sha256": built.sha256,
+            "size_bytes": built.size_bytes,
+            "file_count": built.file_count,
+        },
+        "verification": verification,
+        "files": {
+            name: {
+                "bytes": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "media_type": MEDIA_TYPE_BY_FORMAT[
+                    "pdf"
+                    if name.endswith(".pdf")
+                    else "png"
+                    if name.endswith(".png")
+                    else "geojson"
+                    if name.endswith(".geojson")
+                    else "csv"
+                ],
+            }
+            for name, payload in reports.items()
+        },
+    }
+    _write_atomic(
+        output_dir / "DELIVERY.json",
+        (
+            json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        ).encode("utf-8"),
+    )
+
+    reports_root = Path(settings.reports_dir)
+    if not reports_root.is_absolute():
+        reports_root = repo_root() / reports_root
+    institutional_root = Path(settings.institutional_reports_dir)
+    if not institutional_root.is_absolute():
+        institutional_root = repo_root() / institutional_root
+    store = ReportStore(reports_root, institutional_dir=institutional_root)
+    store.publish_institutional(
+        "methodology_pdf",
+        methodology,
+        filename="methodology.pdf",
+        media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        model_run_id=scenario.model_run_id,
+        scenario_id=scenario.scenario_id,
+    )
+    store.publish_institutional(
+        "executive_pdf",
+        executive,
+        filename="executive.pdf",
+        media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        model_run_id=scenario.model_run_id,
+        scenario_id=scenario.scenario_id,
+    )
+    store.publish_institutional(
+        "technical_zip",
+        archive.read_bytes(),
+        filename="technical.zip",
+        media_type=MEDIA_TYPE_BY_FORMAT["zip"],
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        model_run_id=scenario.model_run_id,
+        scenario_id=scenario.scenario_id,
+    )
+    return summary
+
+
+def _delivery_meta(context):
+    from participa_geo.api.metadata import build_meta
+
+    return build_meta(
+        model_run_id=context.model.model_run_id,
+        reference_date=context.reference_date,
+        generated_at=context.generated_at,
+        geographic_warning=(
+            "Referencia cartográfica INE 2025-12-15. No implica igualdad de "
+            "límites históricos (footprint_status=not_verified)."
+        ),
+        filters={"scenario_id": str(context.scenario.scenario_id)}
+        if context.scenario
+        else {},
+    )
+
+
+def _deliver(args: argparse.Namespace) -> int:
+    from uuid import UUID
+
+    try:
+        scenario_id = UUID(args.scenario_id)
+    except ValueError:
+        print("scenario-id debe ser un UUID")
+        return 2
+    summary = run_delivery(
+        scenario_id,
+        Path(args.output_dir),
+        args.team_slug,
+        include_sources=not args.skip_sources,
+    )
+    print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+def _verify_delivery(args: argparse.Namespace) -> int:
+    from participa_geo.reporting.delivery import DeliveryError, verify_archive
+
+    try:
+        report = verify_archive(Path(args.archive))
+    except DeliveryError as exc:
+        print(f"delivery verification failed: {exc}")
+        return 1
+    print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="participa_geo",
@@ -249,6 +466,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
     )
     model_load.set_defaults(handler=_model_load)
+
+    deliver = subparsers.add_parser(
+        "deliver",
+        help="Generar reportes institucionales, mapas y el paquete técnico.",
+    )
+    deliver.add_argument(
+        "--scenario-id",
+        required=True,
+        help="UUID de un escenario persistido y elegible.",
+    )
+    deliver.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directorio de entrega (p. ej. dist/hackathon).",
+    )
+    deliver.add_argument(
+        "--team-slug",
+        default="participa-geo",
+        help="Identificador del equipo en el manifiesto (por defecto participa-geo).",
+    )
+    deliver.add_argument(
+        "--skip-sources",
+        action="store_true",
+        help="No exigir los seis CSV/ZIP originales (sólo para diagnóstico local).",
+    )
+    deliver.set_defaults(handler=_deliver)
+
+    verify_delivery = subparsers.add_parser(
+        "verify-delivery",
+        help="Verificar manifiesto, miembros y checksums de un paquete técnico.",
+    )
+    verify_delivery.add_argument(
+        "--archive",
+        required=True,
+        help="Ruta del technical.zip a verificar.",
+    )
+    verify_delivery.set_defaults(handler=_verify_delivery)
 
     return parser
 

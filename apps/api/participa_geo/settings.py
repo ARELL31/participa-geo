@@ -48,4 +48,10 @@ class Settings(BaseSettings):
     gis_admin_password: str = Field(..., min_length=1)
     gis_base_url: str = "http://geoserver:8080/geoserver"
 
+    # Generated reports (git-ignored). Institutional PDFs/ZIP are only served
+    # after the CLI ``deliver`` command has published them here.
+    reports_dir: str = "data/processed/reports"
+    institutional_reports_dir: str = "data/processed/reports/institutional"
+    reference_geojson_path: str = "data/processed/gis/reference-2025-12-15.geojson"
+
     skip_demo_data: bool = True

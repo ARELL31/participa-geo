@@ -211,6 +211,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_api_v1_reports_get"];
+        put?: never;
+        /** Create Report */
+        post: operations["create_report_api_v1_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report */
+        get: operations["get_report_api_v1_reports__report_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{report_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Report */
+        get: operations["download_report_api_v1_reports__report_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -386,6 +438,18 @@ export interface components {
             total: number;
             meta: components["schemas"]["DatasetMeta"];
         };
+        /** Page[ReportArtifactDTO] */
+        Page_ReportArtifactDTO_: {
+            /** Items */
+            items: components["schemas"]["ReportArtifactDTO"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            meta: components["schemas"]["DatasetMeta"];
+        };
         /** Page[TerritoryDTO] */
         Page_TerritoryDTO_: {
             /** Items */
@@ -505,6 +569,78 @@ export interface components {
             rules_version: string;
             /** Recommendations */
             recommendations: components["schemas"]["Recommendation"][];
+        };
+        /**
+         * ReportArtifactDTO
+         * @description Metadata for one generated artifact; never exposes a local path.
+         */
+        ReportArtifactDTO: {
+            /**
+             * Report Id
+             * Format: uuid
+             */
+            report_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "history_csv" | "history_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "csv" | "xlsx" | "geojson" | "pdf" | "png" | "zip";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "failed";
+            /** Size Bytes */
+            size_bytes: number;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Download Url */
+            download_url: string;
+            /**
+             * Filename
+             * @default
+             */
+            filename: string;
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Model Run Id */
+            model_run_id?: string | null;
+            /** Sources */
+            sources?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ReportRequest
+         * @description One closed export request; extra fields (URLs, paths) are rejected.
+         */
+        ReportRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "history_csv" | "history_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Territory Id */
+            territory_id?: string | null;
+            /** Year */
+            year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
         };
         /**
          * ScenarioDTO
@@ -1020,6 +1156,133 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_reports_api_v1_reports_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ReportArtifactDTO_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_api_v1_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportArtifactDTO"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_api_v1_reports__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportArtifactDTO"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_api_v1_reports__report_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

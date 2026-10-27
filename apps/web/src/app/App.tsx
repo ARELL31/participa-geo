@@ -4,6 +4,7 @@ import { TerritoryPage } from "../features/territory/TerritoryPage";
 import { ExecutivePage } from "../features/executive/ExecutivePage";
 import { PredictionPage } from "../features/prediction/PredictionPage";
 import { ScenarioPage } from "../features/scenarios/ScenarioPage";
+import { ReportsPage } from "../features/reports/ReportsPage";
 import { ApplicationShell } from "../components/ApplicationShell";
 import { PageState } from "../components/PageState";
 import {
@@ -35,25 +36,6 @@ function readFilters(): FilterState {
           : new RangeError("Los filtros de la URL no son válidos."),
     };
   }
-}
-
-function PendingModule({
-  title,
-  message,
-}: {
-  title: string;
-  message: string;
-}) {
-  return (
-    <div className="page">
-      <PageState
-        variant="pending"
-        headingLevel={1}
-        title={title}
-        message={message}
-      />
-    </div>
-  );
 }
 
 export function App() {
@@ -120,12 +102,7 @@ export function App() {
   } else if (moduleId === "scenarios") {
     content = <ScenarioPage />;
   } else if (moduleId === "reports") {
-    content = (
-      <PendingModule
-        title="Reportes y exportaciones"
-        message="La generación y descarga de reportes se implementará en una entrega posterior. No se ofrecen exportaciones ni cifras de ejemplo."
-      />
-    );
+    content = <ReportsPage />;
   } else {
     content = (
       <div className="page">

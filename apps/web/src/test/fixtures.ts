@@ -6,6 +6,7 @@ import type {
   Page,
   PredictionDTO,
   RecommendationDTO,
+  ReportArtifactDTO,
   ScenarioDTO,
   ScenarioResultDTO,
   TerritoryDTO,
@@ -560,4 +561,63 @@ export function wfsErrorHandler(status = 503) {
       { status },
     ),
   );
+}
+
+export const REPORT_ID = "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+
+export function reportArtifact(
+  overrides: Partial<ReportArtifactDTO> = {},
+): ReportArtifactDTO {
+  return {
+    report_id: REPORT_ID,
+    kind: "history_csv",
+    format: "csv",
+    status: "ready",
+    size_bytes: 2048,
+    sha256:
+      "68de0514fe0fc8c45989c9282cc58af033bb510c4640f75c7b571cf205e31a4d",
+    created_at: "2026-10-26T12:00:00Z",
+    download_url: `/api/v1/reports/${REPORT_ID}/download`,
+    filename: "participa-geo-historial-2024.csv",
+    cached: false,
+    sources: {},
+    ...overrides,
+  };
+}
+
+export function reportsHandler(items: ReportArtifactDTO[] = []) {
+  return http.get("*/api/v1/reports", () => HttpResponse.json(page(items)));
+}
+
+let lastReportRequest: ReportArtifactDTO | null = null;
+
+export function reportCreateHandler(
+  resolve: (body: Record<string, unknown>) => ReportArtifactDTO = () =>
+    reportArtifact(),
+) {
+  return http.post("*/api/v1/reports", async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const artifact = resolve(body);
+    lastReportRequest = artifact;
+    return HttpResponse.json(artifact, { status: 201 });
+  });
+}
+
+export function lastCreatedReport(): ReportArtifactDTO | null {
+  return lastReportRequest;
+}
+
+export function reportDownloadHandler(
+  resolve: (reportId: string) => { body: string; headers?: Record<string, string> } = () => ({
+    body: "municipality_code,abstention_pct\n001,43.0\n",
+    headers: { "Content-Type": "text/csv" },
+  }),
+) {
+  return http.get("*/api/v1/reports/:reportId/download", ({ params }) => {
+    const result = resolve(String(params.reportId));
+    return new HttpResponse(result.body, {
+      status: 200,
+      headers: result.headers ?? { "Content-Type": "application/octet-stream" },
+    });
+  });
 }

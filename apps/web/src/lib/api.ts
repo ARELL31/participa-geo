@@ -14,6 +14,9 @@ export type ScenarioDTO = Schemas["ScenarioDTO"];
 export type ScenarioRequest = Schemas["ScenarioRequest"];
 export type ScenarioResultDTO = Schemas["ScenarioResultDTO"];
 export type RecommendationDTO = Schemas["RecommendationDTO"];
+export type ReportArtifactDTO = Schemas["ReportArtifactDTO"];
+export type ReportRequest = Schemas["ReportRequest"];
+export type ReportKind = ReportArtifactDTO["kind"];
 
 /**
  * ``Page[T]`` is derived from the generated OpenAPI envelope; only the item
@@ -28,6 +31,7 @@ export type HistoryPage = Page<HistoryDTO>;
 export type ModelPage = Page<ModelDTO>;
 export type PredictionPage = Page<PredictionDTO>;
 export type RecommendationPage = Page<RecommendationDTO>;
+export type ReportPage = Page<ReportArtifactDTO>;
 
 /** Standard GeoJSON, not a second copy of the API DTOs. */
 export type MunicipalityFeatureCollection = FeatureCollection<
@@ -235,6 +239,75 @@ export async function fetchScenario(
   );
 }
 
+export async function createReport(
+  body: ReportRequest,
+  signal?: AbortSignal,
+): Promise<ReportArtifactDTO> {
+  const response = await fetch("/api/v1/reports", {
+    method: "POST",
+    signal,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "same-origin",
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await readProblem(response);
+  }
+  return (await response.json()) as ReportArtifactDTO;
+}
+
+export async function fetchReports(
+  options: { pageSize?: number; signal?: AbortSignal } = {},
+): Promise<ReportPage> {
+  const path = withQuery("/api/v1/reports", {
+    page: 1,
+    page_size: options.pageSize ?? 50,
+  });
+  return getJson<ReportPage>(path, options.signal);
+}
+
+export async function fetchReport(
+  reportId: string,
+  signal?: AbortSignal,
+): Promise<ReportArtifactDTO> {
+  return getJson<ReportArtifactDTO>(
+    `/api/v1/reports/${encodeURIComponent(reportId)}`,
+    signal,
+  );
+}
+
+/** Fetch a generated artifact and hand the bytes to the browser download. */
+export async function downloadReport(
+  artifact: ReportArtifactDTO,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(artifact.download_url, {
+    signal,
+    credentials: "same-origin",
+    headers: { Accept: "*/*" },
+  });
+  if (!response.ok) {
+    throw await readProblem(response);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = artifact.filename || `reporte-${artifact.report_id}`;
+    anchor.rel = "noopener";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    // Revoke after the click has been dispatched; the browser retains the blob.
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
+  }
+}
+
 export async function fetchMunicipalityFeatures(
   year: ElectionYear,
   signal?: AbortSignal,
@@ -291,4 +364,5 @@ export const queryKeys = {
     ["recommendations", { modelRunId, targetYear: 2027 }] as const,
   scenario: (scenarioId: string | null) =>
     ["scenario", scenarioId] as const,
+  reports: () => ["reports"] as const,
 };

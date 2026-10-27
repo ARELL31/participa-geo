@@ -55,8 +55,8 @@ describe("ExecutivePage", () => {
       screen.getByText(/M0 no utiliza variables sociodemográficas en producción/),
     ).toBeVisible();
     expect(
-      screen.getByText(/Reportes y exportaciones: Disponible en T9/),
-    ).toBeVisible();
+      screen.getByRole("link", { name: "Reportes y exportaciones" }),
+    ).toHaveAttribute("href", "/reports");
 
     const distribution = screen.getByRole("table", {
       name: "Distribución de riesgo predicho 2027",

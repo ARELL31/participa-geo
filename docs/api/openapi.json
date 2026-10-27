@@ -661,6 +661,185 @@
           }
         }
       }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Create Report",
+        "operationId": "create_report_api_v1_reports_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportArtifactDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_api_v1_reports_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ReportArtifactDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Report",
+        "operationId": "get_report_api_v1_reports__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportArtifactDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{report_id}/download": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Download Report",
+        "operationId": "download_report_api_v1_reports__report_id__download_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1137,6 +1316,41 @@
         ],
         "title": "Page[RecommendationDTO]"
       },
+      "Page_ReportArtifactDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportArtifactDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[ReportArtifactDTO]"
+      },
       "Page_TerritoryDTO_": {
         "properties": {
           "items": {
@@ -1432,6 +1646,191 @@
         ],
         "title": "RecommendationDTO",
         "description": "One territory's recommendations under a published model run."
+      },
+      "ReportArtifactDTO": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "history_csv",
+              "history_xlsx",
+              "scenario_csv",
+              "scenario_geojson",
+              "scenario_pdf",
+              "scenario_map_png",
+              "scenario_map_pdf",
+              "methodology_pdf",
+              "executive_pdf",
+              "technical_zip"
+            ],
+            "title": "Kind"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "xlsx",
+              "geojson",
+              "pdf",
+              "png",
+              "zip"
+            ],
+            "title": "Format"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "default": ""
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "model_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Run Id"
+          },
+          "sources": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "kind",
+          "format",
+          "status",
+          "size_bytes",
+          "sha256",
+          "created_at",
+          "download_url"
+        ],
+        "title": "ReportArtifactDTO",
+        "description": "Metadata for one generated artifact; never exposes a local path."
+      },
+      "ReportRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "history_csv",
+              "history_xlsx",
+              "scenario_csv",
+              "scenario_geojson",
+              "scenario_pdf",
+              "scenario_map_png",
+              "scenario_map_pdf",
+              "methodology_pdf",
+              "executive_pdf",
+              "technical_zip"
+            ],
+            "title": "Kind"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "territory_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Id"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  2009,
+                  2012,
+                  2015,
+                  2018,
+                  2021,
+                  2024
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "ReportRequest",
+        "description": "One closed export request; extra fields (URLs, paths) are rejected."
       },
       "ScenarioDTO": {
         "properties": {

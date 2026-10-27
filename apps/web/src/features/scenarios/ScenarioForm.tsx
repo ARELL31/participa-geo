@@ -1,4 +1,4 @@
-import { Download, FileWarning } from "lucide-react";
+import { FileWarning } from "lucide-react";
 import type { FormEvent } from "react";
 
 import type { PredictionDTO } from "../../lib/api";
@@ -165,18 +165,10 @@ export function ScenarioForm({
           >
             {submitting ? "Creando escenario…" : "Crear escenario"}
           </button>
-          <button
-            type="button"
-            className="button button--secondary"
-            disabled
-            aria-describedby="export-disabled-note"
-          >
-            <Download aria-hidden="true" size={16} strokeWidth={1.8} />
-            Exportar CSV
-          </button>
         </div>
-        <p id="export-disabled-note" className="export-note">
-          Disponible en T9. Todavía no se genera ni descarga ningún archivo.
+        <p className="export-note">
+          Las exportaciones del escenario aparecen cuando el resultado queda
+          persistido; no se ofrecen botones sin archivo real.
         </p>
       </form>
     </section>

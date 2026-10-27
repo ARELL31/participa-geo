@@ -59,6 +59,10 @@ Dependencias de desarrollo/pruebas (`[dependency-groups].dev`): `pytest` (MIT),
 `httpx` (BSD-3-Clause), `pyyaml` (MIT), `ruff` (MIT), `mypy` (MIT), `pypdf`
 (BSD-3-Clause).
 
+Fuente de los PDF: Inter Regular/SemiBold, © The Inter Project Authors, SIL Open
+Font License 1.1. Los TTF y `OFL.txt` viven en `docs/hackathon/fonts/` y se
+cargan localmente; no se instala la fuente en el host ni se descarga en runtime.
+
 ## Descargas previstas
 
 - Al construir la imagen `api`: imagen base `ghcr.io/astral-sh/uv` (~250 MB) y
