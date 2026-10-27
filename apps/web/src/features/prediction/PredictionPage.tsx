@@ -84,6 +84,7 @@ export function PredictionPage() {
   const predictions = predictionsQuery.data?.items ?? [];
   const summary = summarizePredictions(predictions, metrics);
   const filtered = filterPredictions(predictions, riskFilter);
+  const predictionsReady = predictionsQuery.isSuccess;
   const exclusionReasons = Array.from(
     new Set(
       predictions
@@ -95,6 +96,13 @@ export function PredictionPage() {
     exclusionReasons.length > 0
       ? exclusionReasons.join(", ")
       : "alta proporción de no especificados";
+  const unstableValue = predictionsQuery.isPending
+    ? "Cargando…"
+    : predictionsQuery.isError
+      ? "No disponible"
+      : `${summary.unstable} de ${summary.eligible}`;
+  const targetYearMismatch =
+    predictionsReady && predictions.some((item) => item.target_year !== 2027);
 
   const selectedPrediction = territoryId
     ? predictions.find((item) => item.territory_id === territoryId)
@@ -149,6 +157,19 @@ export function PredictionPage() {
           variant="empty"
           title="Sin ejecuciones de modelo publicadas"
           message="No hay una predicción persistida para 2027. La pantalla no muestra cifras de ejemplo."
+        />
+      </div>
+    );
+  }
+
+  if (targetYearMismatch) {
+    return (
+      <div className="page prediction-page">
+        <PredictionHeading />
+        <PageState
+          variant="error"
+          title="Respuesta de predicción incompatible"
+          message="La API devolvió filas cuyo target_year no corresponde al horizonte fijo 2027. No se etiquetan como predicción 2027 ni se muestran como evidencia."
         />
       </div>
     );
@@ -215,10 +236,10 @@ export function PredictionPage() {
           </div>
           <div className="kpi">
             <dt>Categoría inestable</dt>
-            <dd>{`${summary.unstable} de ${summary.eligible}`}</dd>
+            <dd data-testid="unstable-kpi">{unstableValue}</dd>
             <p className="kpi__note">
               La banda cruza un umbral de riesgo; la etiqueta se muestra como
-              inestable.
+              inestable. El conteo depende de las filas de predicción.
             </p>
           </div>
           <div className="kpi">
@@ -234,10 +255,27 @@ export function PredictionPage() {
           </div>
         </dl>
 
-        <p className="source-note">
-          Exclusiones: {summary.insufficient} municipios no elegibles por{" "}
-          {exclusionText}. La banda es un rango de error histórico de referencia,
-          no una certeza de 2027.
+        <p className="source-note" data-testid="exclusion-note">
+          {predictionsQuery.isPending ? (
+            <>
+              Exclusiones: cargando el detalle de las filas de predicción. La
+              banda es un rango de error histórico de referencia, no una certeza
+              de 2027.
+            </>
+          ) : predictionsQuery.isError ? (
+            <>
+              Exclusiones: no disponibles porque falló la consulta de
+              predicciones. El conteo de cobertura proviene de las métricas del
+              modelo y no se sustituye por cero. La banda es un rango de error
+              histórico de referencia, no una certeza de 2027.
+            </>
+          ) : (
+            <>
+              Exclusiones: {summary.insufficient} municipios no elegibles por{" "}
+              {exclusionText}. La banda es un rango de error histórico de
+              referencia, no una certeza de 2027.
+            </>
+          )}
         </p>
       </section>
 

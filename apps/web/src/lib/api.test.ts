@@ -2,10 +2,11 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { ElectionYear } from "../app/filters";
-import { ApiProblem, fetchHistory } from "./api";
+import { ApiProblem, fetchHistory, fetchPredictions } from "./api";
 import {
   historyYear,
   page,
+  prediction,
   TERRITORY_A,
 } from "../test/fixtures";
 import { server } from "../test/server";
@@ -52,5 +53,22 @@ describe("fetchHistory year contract", () => {
     await expect(
       fetchHistory({ year: 2023 as unknown as ElectionYear }),
     ).rejects.toMatchObject({ status: 422, code: "validation_error" });
+  });
+});
+
+describe("fetchPredictions target year contract", () => {
+  it("sends the fixed target_year=2027 explicitly", async () => {
+    const seen: Array<string | null> = [];
+    server.use(
+      http.get("*/api/v1/predictions", ({ request }) => {
+        const url = new URL(request.url);
+        seen.push(url.searchParams.get("target_year"));
+        return HttpResponse.json(page([prediction()]));
+      }),
+    );
+
+    const response = await fetchPredictions();
+    expect(seen).toEqual(["2027"]);
+    expect(response.items[0]?.target_year).toBe(2027);
   });
 });

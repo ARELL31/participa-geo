@@ -333,6 +333,18 @@ describe("ScenarioPage", () => {
     expect(container.querySelector(".scenario-map")).toBeNull();
   });
 
+  it("shows an empty state when the model catalogue is empty instead of waiting forever", async () => {
+    server.use(modelsHandler([]));
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Sin modelo publicado" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Preparando el simulador municipal"),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows loading and empty states without fake figures", async () => {
     server.use(
       modelsHandler(),

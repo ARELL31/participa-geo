@@ -170,10 +170,9 @@ export async function fetchModel(
 }
 
 /**
- * ``target_year`` is fixed at 2027 by the contract. The backend declares it as
- * a ``Literal[2027]`` default that rejects a string query value, so the client
- * omits the parameter and relies on the fixed server default instead of
- * sending an invalid duplicate.
+ * ``target_year`` is fixed at 2027 and is sent explicitly. The API coerces the
+ * query string to the integer literal, so 2027 is accepted and any other year
+ * is rejected with a validation problem.
  */
 export async function fetchPredictions(
   options: {
@@ -184,6 +183,7 @@ export async function fetchPredictions(
 ): Promise<PredictionPage> {
   const path = withQuery("/api/v1/predictions", {
     model_run_id: options.modelRunId ?? null,
+    target_year: 2027,
     page: 1,
     page_size: options.pageSize ?? 125,
   });

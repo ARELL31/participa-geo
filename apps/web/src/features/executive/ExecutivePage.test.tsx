@@ -61,6 +61,16 @@ describe("ExecutivePage", () => {
     const distribution = screen.getByRole("table", {
       name: "Distribución de riesgo predicho 2027",
     });
+    expect(
+      within(distribution).getByRole("columnheader", {
+        name: "Porcentaje del total",
+      }),
+    ).toBeVisible();
+    expect(
+      within(distribution).queryByRole("columnheader", {
+        name: "Participación",
+      }),
+    ).not.toBeInTheDocument();
     const insufficient = within(distribution).getByRole("row", {
       name: /Información insuficiente/,
     });
@@ -78,5 +88,20 @@ describe("ExecutivePage", () => {
     expect(
       within(signals).getAllByText("Considerar revisión institucional").length,
     ).toBeGreaterThan(0);
+  });
+
+  it("shows an empty state when the model catalogue is empty instead of waiting forever", async () => {
+    server.use(modelsHandler([]));
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Sin indicadores publicados" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Cargando resumen ejecutivo"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Cargando evidencia del modelo"),
+    ).not.toBeInTheDocument();
   });
 });

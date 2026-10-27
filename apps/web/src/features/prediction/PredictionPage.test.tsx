@@ -9,6 +9,7 @@ import {
   forecastCohort,
   modelsHandler,
   modelRun,
+  page,
   predictionsHandler,
 } from "../../test/fixtures";
 import { server } from "../../test/server";
@@ -79,6 +80,98 @@ describe("PredictionPage", () => {
     const badge = row.querySelector(".risk-badge");
     expect(badge).toHaveAttribute("data-risk", "insufficient");
     expect(container.querySelector('.risk-badge[data-risk="insufficient"]')).toBeTruthy();
+  });
+
+  it("states that served M0 uses one production feature, not the shared six-field order", async () => {
+    server.use(modelsHandler(), predictionsHandler());
+    renderPage();
+
+    expect(
+      await screen.findByText(
+        "1 variable de producción: abstención del mismo tipo (t-6)",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/6 variables temporales/)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/En producción, M0 no utiliza variables sociodemográficas/),
+    ).toBeVisible();
+  });
+
+  it("shows loading instead of zero for the unstable count while predictions load", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      modelsHandler(),
+      http.get("*/api/v1/predictions", async () => {
+        await gate;
+        return HttpResponse.json(page(forecastCohort()));
+      }),
+    );
+    renderPage();
+
+    const unstable = await screen.findByTestId("unstable-kpi");
+    expect(unstable).toHaveTextContent("Cargando…");
+    expect(unstable).not.toHaveTextContent("0 de 85");
+    expect(screen.getByTestId("exclusion-note")).toHaveTextContent(/cargando/i);
+    expect(screen.getByTestId("exclusion-note")).not.toHaveTextContent(
+      /0 municipios no elegibles/,
+    );
+
+    release();
+    await waitFor(() => expect(unstable).toHaveTextContent("70 de 85"));
+  });
+
+  it("shows unavailable instead of zero for unstable/exclusions when predictions fail", async () => {
+    server.use(
+      modelsHandler(),
+      http.get("*/api/v1/predictions", () =>
+        HttpResponse.json(
+          {
+            type: "urn:participa-geo:error:unavailable",
+            title: "Servicio no disponible",
+            status: 503,
+            detail: "No fue posible cargar las predicciones.",
+            code: "unavailable",
+          },
+          { status: 503 },
+        ),
+      ),
+    );
+    renderPage();
+
+    const unstable = await screen.findByTestId("unstable-kpi");
+    await waitFor(() => expect(unstable).toHaveTextContent("No disponible"));
+    expect(unstable).not.toHaveTextContent("0 de 85");
+    expect(screen.getByTestId("exclusion-note")).toHaveTextContent(
+      /no disponibles/i,
+    );
+    expect(screen.getByTestId("exclusion-note")).not.toHaveTextContent(
+      /0 municipios no elegibles/,
+    );
+  });
+
+  it("refuses to label data as 2027 when the response targets another year", async () => {
+    server.use(
+      modelsHandler(),
+      predictionsHandler(
+        forecastCohort().map((item) => ({ ...item, target_year: 2024 })),
+      ),
+    );
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Respuesta de predicción incompatible",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/no corresponde al horizonte fijo 2027/),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Cobertura y exclusiones 2027"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps validation 2021 and test 2024 metrics in separate columns", async () => {

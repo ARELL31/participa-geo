@@ -3,6 +3,7 @@ import { Database, ShieldCheck } from "lucide-react";
 import { DataTable } from "../../components/DataTable";
 import type { ModelDTO } from "../../lib/api";
 import {
+  featureLabel,
   formatPp,
   formatSignedPp,
   parseModelMetrics,
@@ -25,6 +26,24 @@ function familyLabel(family: string): string {
     return "M1 · candidato sociodemográfico";
   }
   return family;
+}
+
+/**
+ * The served M0 family is one feature, not the shared six-field feature order.
+ * Only the family that actually serves may claim its production inputs.
+ */
+function productionFeaturesCopy(
+  selectedFamily: string,
+  features: string[],
+): string {
+  if (selectedFamily === "M0") {
+    return "1 variable de producción: abstención del mismo tipo (t-6)";
+  }
+  if (selectedFamily === "M1") {
+    const labels = features.map(featureLabel);
+    return `${features.length} variables de producción: ${labels.join(", ")}`;
+  }
+  return "La ejecución publicada no declara sus variables de producción.";
 }
 
 function selectionExplanation(
@@ -129,7 +148,12 @@ export function ModelComparison({
           </div>
           <div>
             <dt>Variables en producción</dt>
-            <dd>{selectedModel.features?.length ?? 0} variables temporales</dd>
+            <dd>
+              {productionFeaturesCopy(
+                selectedFamily,
+                selectedModel.features ?? [],
+              )}
+            </dd>
           </div>
         </dl>
       </div>
@@ -143,10 +167,27 @@ export function ModelComparison({
         {selectionExplanation(selectedModel, metrics)}
       </p>
       <p className="model-evidence__note">
-        En producción, M0 no utiliza variables sociodemográficas; su estimación
-        es la abstención observada del mismo municipio y tipo de elección en
-        2021. La validación 2021 se usó para elegir la familia. La prueba 2024
-        es evidencia posterior y no garantiza el desempeño futuro.
+        {selectedFamily === "M0" ? (
+          <>
+            En producción, M0 no utiliza variables sociodemográficas; su
+            estimación es la abstención observada del mismo municipio y tipo de
+            elección en 2021. La validación 2021 se usó para elegir la familia.
+            La prueba 2024 es evidencia posterior y no garantiza el desempeño
+            futuro.
+          </>
+        ) : selectedFamily === "M1" ? (
+          <>
+            M1 usa las seis variables candidatas, incluidas las proporciones
+            sociodemográficas. La validación 2021 se usó para elegir la familia;
+            la prueba 2024 es evidencia posterior y no garantiza el desempeño
+            futuro.
+          </>
+        ) : (
+          <>
+            La ejecución no declara qué variables usa en producción. No se
+            infieren a partir del orden compartido de variables.
+          </>
+        )}
       </p>
 
       <DataTable

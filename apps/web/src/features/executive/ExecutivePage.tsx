@@ -75,20 +75,20 @@ export function ExecutivePage() {
     staleTime: 60_000,
   });
 
-  if (modelsQuery.isPending || predictionsQuery.isPending) {
+  if (modelsQuery.isPending) {
     return (
       <div className="page executive-page">
         <ExecutiveHeading />
         <PageState
           variant="loading"
           title="Cargando resumen ejecutivo"
-          message="Agregando cobertura, señales de riesgo y evidencia del modelo desde la API."
+          message="Consultando la ejecución publicada y sus métricas persistidas."
         />
       </div>
     );
   }
 
-  if (modelsQuery.isError || predictionsQuery.isError) {
+  if (modelsQuery.isError) {
     return (
       <div className="page executive-page">
         <ExecutiveHeading />
@@ -99,18 +99,68 @@ export function ExecutivePage() {
           message={
             modelsQuery.error instanceof Error
               ? modelsQuery.error.message
-              : predictionsQuery.error instanceof Error
-                ? predictionsQuery.error.message
-                : "La consulta agregada no está disponible."
+              : "La consulta de modelos no está disponible."
           }
           action={
             <button
               type="button"
               className="button button--primary"
-              onClick={() => {
-                void modelsQuery.refetch();
-                void predictionsQuery.refetch();
-              }}
+              onClick={() => void modelsQuery.refetch()}
+            >
+              <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
+              Reintentar consulta
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!model) {
+    return (
+      <div className="page executive-page">
+        <ExecutiveHeading />
+        <PageState
+          variant="empty"
+          headingLevel={1}
+          title="Sin indicadores publicados"
+          message="No hay una ejecución de modelo publicada. El panel no muestra cifras de ejemplo."
+        />
+      </div>
+    );
+  }
+
+  if (predictionsQuery.isPending) {
+    return (
+      <div className="page executive-page">
+        <ExecutiveHeading />
+        <PageState
+          variant="loading"
+          title="Cargando resumen ejecutivo"
+          message="Agregando cobertura, señales de riesgo y evidencia desde la API."
+        />
+      </div>
+    );
+  }
+
+  if (predictionsQuery.isError) {
+    return (
+      <div className="page executive-page">
+        <ExecutiveHeading />
+        <PageState
+          variant="error"
+          headingLevel={1}
+          title="No se pudo cargar el panel ejecutivo"
+          message={
+            predictionsQuery.error instanceof Error
+              ? predictionsQuery.error.message
+              : "La consulta de predicciones no está disponible."
+          }
+          action={
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => void predictionsQuery.refetch()}
             >
               <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
               Reintentar consulta
@@ -122,7 +172,7 @@ export function ExecutivePage() {
   }
 
   const predictions = predictionsQuery.data?.items ?? [];
-  if (!model || predictions.length === 0) {
+  if (predictions.length === 0) {
     return (
       <div className="page executive-page">
         <ExecutiveHeading />
@@ -130,7 +180,7 @@ export function ExecutivePage() {
           variant="empty"
           headingLevel={1}
           title="Sin indicadores publicados"
-          message="No hay una predicción 2027 persistida. El panel no muestra cifras de ejemplo."
+          message="La ejecución publicada no contiene predicciones para 2027. El panel no muestra cifras de ejemplo."
         />
       </div>
     );
@@ -285,7 +335,10 @@ export function ExecutivePage() {
           <div className="card-heading">
             <div>
               <h2 id="distribution-heading">Distribución de riesgo 2027</h2>
-              <p>Conteo por categoría publicada, con etiqueta e icono.</p>
+              <p>
+                Conteo por categoría publicada y porcentaje del total de 125
+                municipios, con etiqueta e icono.
+              </p>
             </div>
           </div>
           <DataTable
@@ -307,7 +360,7 @@ export function ExecutivePage() {
               },
               {
                 key: "share",
-                header: "Participación",
+                header: "Porcentaje del total",
                 align: "right",
                 render: (row) => row.share,
               },

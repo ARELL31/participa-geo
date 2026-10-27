@@ -193,20 +193,20 @@ export function ScenarioPage() {
     .map((id) => predictions.find((item) => item.territory_id === id))
     .filter((item): item is PredictionDTO => Boolean(item));
 
-  if (modelsQuery.isPending || predictionsQuery.isPending) {
+  if (modelsQuery.isPending) {
     return (
       <div className="page scenario-page">
         <ScenarioHeading />
         <PageState
           variant="loading"
           title="Preparando el simulador municipal"
-          message="Cargando el modelo publicado y los municipios elegibles para 2027."
+          message="Consultando la ejecución de modelo publicada."
         />
       </div>
     );
   }
 
-  if (modelsQuery.isError || predictionsQuery.isError) {
+  if (modelsQuery.isError) {
     return (
       <div className="page scenario-page">
         <ScenarioHeading />
@@ -217,18 +217,13 @@ export function ScenarioPage() {
           message={
             modelsQuery.error instanceof Error
               ? modelsQuery.error.message
-              : predictionsQuery.error instanceof Error
-                ? predictionsQuery.error.message
-                : "La consulta de modelo o predicciones no está disponible."
+              : "La consulta de modelos no está disponible."
           }
           action={
             <button
               type="button"
               className="button button--primary"
-              onClick={() => {
-                void modelsQuery.refetch();
-                void predictionsQuery.refetch();
-              }}
+              onClick={() => void modelsQuery.refetch()}
             >
               <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
               Reintentar consulta
@@ -239,7 +234,62 @@ export function ScenarioPage() {
     );
   }
 
-  if (!model || eligible.length === 0) {
+  if (!model) {
+    return (
+      <div className="page scenario-page">
+        <ScenarioHeading />
+        <PageState
+          variant="empty"
+          headingLevel={1}
+          title="Sin modelo publicado"
+          message="No hay una ejecución de modelo publicada para 2027. No se inventan escenarios ni cifras de ejemplo."
+        />
+      </div>
+    );
+  }
+
+  if (predictionsQuery.isPending) {
+    return (
+      <div className="page scenario-page">
+        <ScenarioHeading />
+        <PageState
+          variant="loading"
+          title="Preparando el simulador municipal"
+          message="Cargando los municipios elegibles para 2027."
+        />
+      </div>
+    );
+  }
+
+  if (predictionsQuery.isError) {
+    return (
+      <div className="page scenario-page">
+        <ScenarioHeading />
+        <PageState
+          variant="error"
+          headingLevel={1}
+          title="No se pudo preparar el simulador"
+          message={
+            predictionsQuery.error instanceof Error
+              ? predictionsQuery.error.message
+              : "La consulta de predicciones no está disponible."
+          }
+          action={
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => void predictionsQuery.refetch()}
+            >
+              <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
+              Reintentar consulta
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (eligible.length === 0) {
     return (
       <div className="page scenario-page">
         <ScenarioHeading />

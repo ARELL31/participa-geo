@@ -46,7 +46,15 @@ test("prediction page exposes the real M0 evidence, coverage and insufficient ro
   const insufficient = predictions.items.find((item) => !item.eligible);
   expect(insufficient).toBeTruthy();
 
+  const predictionResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/predictions") &&
+      response.request().method() === "GET",
+  );
   await page.goto("/prediction");
+  const response = await predictionResponse;
+  expect(response.status()).toBe(200);
+  expect(new URL(response.url()).searchParams.get("target_year")).toBe("2027");
   await expect(
     page.getByRole("heading", { level: 1, name: "Predicción 2027" }),
   ).toBeVisible();
