@@ -219,6 +219,29 @@ export function modelRun(overrides: Partial<ModelDTO> = {}): ModelDTO {
           -3.3618270133221575,
         ],
       },
+      explanations: [
+        {
+          municipality_code: "002",
+          intercept: 0,
+          contributions: { same_type_abstention_pct: 45.11343804537522 },
+          pre_clip_sum: 45.11343804537522,
+        },
+      ],
+      candidate_m1_explanations: [
+        {
+          municipality_code: "002",
+          intercept: 36.33175773517596,
+          contributions: {
+            same_type_abstention_pct: 5.68,
+            previous_abstention_pct: 1.8,
+            previous_young_share: -1.14,
+            previous_senior_share: -2.81,
+            previous_rural_share: -0.82,
+            is_midterm: -3.36,
+          },
+          pre_clip_sum: 35.68,
+        },
+      ],
     },
     cut_dates: {
       validation_year: 2021,
@@ -265,6 +288,13 @@ export function modelRun(overrides: Partial<ModelDTO> = {}): ModelDTO {
         amplitude_pp: 8.561771770259021,
         n_errors_2021: 91,
         label: "historical error reference (rango de error histórico de referencia)",
+        empirical_coverage_2024: {
+          n: 75,
+          within: 71,
+          share: 71 / 75,
+          amplitude_pp: 8.561771770259021,
+          minimum_n: 30,
+        },
       },
       cohorts: {
         "2024": { eligible_count: 75, excluded_count: 50, total_count: 125 },
@@ -274,6 +304,7 @@ export function modelRun(overrides: Partial<ModelDTO> = {}): ModelDTO {
           total_count: 125,
           eligible_ln: 6054287,
           total_ln: 6619379,
+          ln_coverage_base_year: 2024,
         },
       },
     },

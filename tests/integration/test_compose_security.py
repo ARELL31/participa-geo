@@ -108,6 +108,12 @@ def test_env_example_has_placeholders_not_secrets():
         assert forbidden not in text
 
 
+def test_web_can_start_before_data_model_and_gis_are_ready():
+    """Item 12: staged startup must not be blocked by API readiness."""
+    depends = SERVICES["web"]["depends_on"]
+    assert depends["api"]["condition"] == "service_started"
+
+
 def test_services_rotate_logs_and_web_is_healthchecked():
     for name in ("api", "web", "db", "geoserver"):
         logging = SERVICES[name]["logging"]

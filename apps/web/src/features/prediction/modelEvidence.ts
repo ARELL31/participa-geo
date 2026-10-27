@@ -15,10 +15,18 @@ export type ModelMetrics = {
   m1: { validation: MetricSummary; test: MetricSummary };
   bandAmplitudePp: number | null;
   bandErrors: number | null;
+  empiricalCoverage2024: {
+    n: number;
+    within: number;
+    share: number;
+  } | null;
   cohort2027: {
     eligible: number | null;
     excluded: number | null;
     total: number | null;
+    eligibleLn: number | null;
+    totalLn: number | null;
+    lnCoverageBaseYear: number | null;
   };
 };
 
@@ -83,12 +91,94 @@ export function parseModelMetrics(metrics: unknown): ModelMetrics | null {
     },
     bandAmplitudePp: numberAt(metrics, ["band", "amplitude_pp"]),
     bandErrors: numberAt(metrics, ["band", "n_errors_2021"]),
+    empiricalCoverage2024: (() => {
+      const n = numberAt(metrics, ["band", "empirical_coverage_2024", "n"]);
+      const within = numberAt(metrics, [
+        "band",
+        "empirical_coverage_2024",
+        "within",
+      ]);
+      const share = numberAt(metrics, [
+        "band",
+        "empirical_coverage_2024",
+        "share",
+      ]);
+      return n === null || within === null || share === null
+        ? null
+        : { n, within, share };
+    })(),
     cohort2027: {
       eligible: numberAt(metrics, ["cohorts", "2027", "eligible_count"]),
       excluded: numberAt(metrics, ["cohorts", "2027", "excluded_count"]),
       total: numberAt(metrics, ["cohorts", "2027", "total_count"]),
+      eligibleLn: numberAt(metrics, ["cohorts", "2027", "eligible_ln"]),
+      totalLn: numberAt(metrics, ["cohorts", "2027", "total_ln"]),
+      lnCoverageBaseYear: numberAt(metrics, [
+        "cohorts",
+        "2027",
+        "ln_coverage_base_year",
+      ]),
     },
   };
+}
+
+export type MunicipalityContribution = {
+  municipalityCode: string;
+  intercept: number;
+  preClipSum: number | null;
+  contributions: Array<{ feature: string; value: number }>;
+};
+
+function parseContributionList(
+  model: ModelDTO | undefined,
+  key: "explanations" | "candidate_m1_explanations",
+  municipalityCode: string,
+): MunicipalityContribution | null {
+  if (!model) return null;
+  const parameters = asRecord(model.parameters);
+  const raw = parameters?.[key];
+  if (!Array.isArray(raw)) return null;
+  const match = raw.find(
+    (item) => asRecord(item)?.municipality_code === municipalityCode,
+  );
+  const record = asRecord(match);
+  if (!record) return null;
+  const contributions: Array<{ feature: string; value: number }> = [];
+  const rawContributions = asRecord(record.contributions);
+  if (!rawContributions) return null;
+  for (const [feature, value] of Object.entries(rawContributions)) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      contributions.push({ feature, value });
+    }
+  }
+  const intercept = numberAt(record, ["intercept"]);
+  if (intercept === null || contributions.length === 0) return null;
+  return {
+    municipalityCode,
+    intercept,
+    preClipSum: numberAt(record, ["pre_clip_sum"]),
+    contributions,
+  };
+}
+
+export function parseSelectedContribution(
+  model: ModelDTO | undefined,
+  municipalityCode: string | null,
+): MunicipalityContribution | null {
+  if (!municipalityCode) return null;
+  return parseContributionList(model, "explanations", municipalityCode);
+}
+
+export function parseCandidateContribution(
+  model: ModelDTO | undefined,
+  municipalityCode: string | null,
+): MunicipalityContribution | null {
+  if (!municipalityCode) return null;
+  return parseContributionList(
+    model,
+    "candidate_m1_explanations",
+    municipalityCode,
+  );
 }
 
 export function parseCandidateM1(

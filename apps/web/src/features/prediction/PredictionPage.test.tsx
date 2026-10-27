@@ -14,14 +14,14 @@ import {
 } from "../../test/fixtures";
 import { server } from "../../test/server";
 
-function renderPage() {
+function renderPage(territoryId: string | null = null) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
   return render(
     <QueryClientProvider client={client}>
       <GlobalFiltersContext.Provider
-        value={{ territoryId: null, historicalYear: 2024, setFilters: () => {} }}
+        value={{ territoryId, historicalYear: 2024, setFilters: () => {} }}
       >
         <PredictionPage />
       </GlobalFiltersContext.Provider>
@@ -288,6 +288,44 @@ describe("PredictionPage", () => {
     expect(
       screen.getByText(/M1 no está en producción ni se usa para las predicciones publicadas/),
     ).toBeVisible();
+  });
+
+  it("shows 2024 empirical coverage and the 2024 LN base year", async () => {
+    server.use(modelsHandler(), predictionsHandler());
+    renderPage();
+
+    expect(await screen.findByTestId("empirical-coverage")).toHaveTextContent(
+      "71 de 75",
+    );
+    expect(screen.getByTestId("empirical-coverage")).toHaveTextContent("95 %");
+    expect(screen.getByTestId("ln-coverage")).toHaveTextContent(
+      "6,054,287 de 6,619,379",
+    );
+    expect(screen.getByTestId("ln-coverage")).toHaveTextContent(
+      "LN 2024, último antecedente observado",
+    );
+  });
+
+  it("surfaces persisted M0 and candidate M1 contributions for the selected municipality", async () => {
+    server.use(modelsHandler(), predictionsHandler());
+    renderPage("00000000-0000-4000-8000-000000000002");
+
+    const section = await screen.findByTestId("municipality-contribution");
+    expect(section).toHaveTextContent("Contribución municipal · 002");
+    const table = within(section).getByRole("table", {
+      name: /Contribuciones aditivas del municipio 002/,
+    });
+    expect(within(table).getByRole("row", { name: /M0/ })).toHaveTextContent(
+      "Abstención del mismo tipo",
+    );
+    expect(
+      within(table)
+        .getAllByRole("row", { name: /M1 candidato/ })
+        .some((row) => row.textContent?.includes("+5.68")),
+    ).toBe(true);
+    expect(screen.getAllByText(/no es un efecto causal/i).length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("shows a recoverable error when model evidence fails", async () => {

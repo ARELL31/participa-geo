@@ -27,6 +27,8 @@ import { ExportActions } from "./ExportActions";
 const KIND_LABELS: Record<ReportKind, string> = {
   history_csv: "Historial municipal · CSV",
   history_xlsx: "Historial municipal · XLSX",
+  model_evidence_csv: "Evidencia del modelo · CSV",
+  model_evidence_xlsx: "Evidencia del modelo · XLSX",
   scenario_csv: "Escenario A/B · CSV",
   scenario_geojson: "Escenario A/B · GeoJSON",
   scenario_pdf: "Escenario A/B · PDF",
@@ -53,6 +55,8 @@ function kindIcon(kind: ReportKind): LucideIcon {
 const KIND_ICONS: Record<ReportKind, LucideIcon> = {
   history_csv: kindIcon("history_csv"),
   history_xlsx: kindIcon("history_xlsx"),
+  model_evidence_csv: kindIcon("model_evidence_csv"),
+  model_evidence_xlsx: kindIcon("model_evidence_xlsx"),
   scenario_csv: kindIcon("scenario_csv"),
   scenario_geojson: kindIcon("scenario_geojson"),
   scenario_pdf: kindIcon("scenario_pdf"),
@@ -210,6 +214,40 @@ export function ReportsPage() {
               label: "Descargar historial XLSX",
               description:
                 "Libro con hojas de datos, metadatos y diccionario.",
+            },
+          ]}
+          onGenerated={() =>
+            void queryClient.invalidateQueries({ queryKey: queryKeys.reports() })
+          }
+        />
+      </section>
+
+      <section className="summary-card" aria-labelledby="model-evidence-heading">
+        <div className="card-heading">
+          <div>
+            <h2 id="model-evidence-heading">Evidencia del modelo</h2>
+            <p>
+              Exporta las variables usadas en 2027, las exclusiones por corte con
+              sus motivos y las contribuciones aditivas del modelo seleccionado y
+              del candidato M1. Son asociaciones, no causas.
+            </p>
+          </div>
+        </div>
+        <ExportActions
+          caption="Evidencia municipal del modelo publicado"
+          request={{}}
+          actions={[
+            {
+              kind: "model_evidence_csv",
+              label: "Descargar evidencia CSV",
+              description:
+                "Formato largo con features, exclusiones por corte y contribuciones.",
+            },
+            {
+              kind: "model_evidence_xlsx",
+              label: "Descargar evidencia XLSX",
+              description:
+                "Libro con hoja de evidencia, metadatos y diccionario.",
             },
           ]}
           onGenerated={() =>

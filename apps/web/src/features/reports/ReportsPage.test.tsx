@@ -93,6 +93,30 @@ describe("ReportsPage", () => {
     clickSpy.mockRestore();
   });
 
+  it("offers user-facing model evidence CSV/XLSX exports", async () => {
+    server.use(reportsHandler([]), ...downloadHandlers());
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderPage();
+
+    const csv = await screen.findByRole("button", {
+      name: "Descargar evidencia CSV",
+    });
+    expect(csv).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Descargar evidencia XLSX" }),
+    ).toBeEnabled();
+
+    await user.click(csv);
+    await waitFor(() =>
+      expect(lastCreatedReport()?.kind).toBe("model_evidence_csv"),
+    );
+    await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+    clickSpy.mockRestore();
+  });
+
   it("shows the problem detail and blocks duplicate clicks while exporting", async () => {
     let calls = 0;
     server.use(

@@ -457,7 +457,19 @@ export function ScenarioPage() {
                 <dt>Reducción solicitada</dt>
                 <dd>{scenario.requested_reduction_pp.toFixed(1)} pp</dd>
                 <dd className="kpi__note">
-                  Sólo en municipios seleccionados.
+                  Sólo en municipios seleccionados. Efectiva:{" "}
+                  {(() => {
+                    const values = scenario.results
+                      .filter((row) => row.selected)
+                      .map((row) => row.effective_reduction_pp);
+                    if (values.length === 0) return "sin selección";
+                    const low = Math.min(...values);
+                    const high = Math.max(...values);
+                    return low === high
+                      ? `${high.toFixed(1)} pp`
+                      : `${low.toFixed(1)}–${high.toFixed(1)} pp`;
+                  })()}{" "}
+                  (rango; puede ser menor si B se recorta a cero).
                 </dd>
               </div>
               <div className="kpi">

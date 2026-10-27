@@ -584,7 +584,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "history_csv" | "history_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
             /**
              * Format
              * @enum {string}
@@ -634,7 +634,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "history_csv" | "history_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
             /** Scenario Id */
             scenario_id?: string | null;
             /** Territory Id */

@@ -255,6 +255,23 @@ export function PredictionPage() {
           </div>
         </dl>
 
+        {metrics?.empiricalCoverage2024 ? (
+          <p className="source-note" data-testid="empirical-coverage">
+            Cobertura empírica 2024: {metrics.empiricalCoverage2024.within} de{" "}
+            {metrics.empiricalCoverage2024.n} errores absolutos dentro del rango
+            congelado ({Math.round(metrics.empiricalCoverage2024.share * 100)} %).
+            Es una comprobación descriptiva; 2024 no ajusta la banda.
+          </p>
+        ) : null}
+        {metrics?.cohort2027.lnCoverageBaseYear ? (
+          <p className="source-note" data-testid="ln-coverage">
+            Cobertura de lista nominal:{" "}
+            {metrics.cohort2027.eligibleLn?.toLocaleString("es-MX") ?? "—"} de{" "}
+            {metrics.cohort2027.totalLn?.toLocaleString("es-MX") ?? "—"} personas.
+            La base es la LN {metrics.cohort2027.lnCoverageBaseYear}, último
+            antecedente observado; no es una proyección de la LN 2027.
+          </p>
+        ) : null}
         <p className="source-note" data-testid="exclusion-note">
           {predictionsQuery.isPending ? (
             <>
@@ -279,7 +296,11 @@ export function PredictionPage() {
         </p>
       </section>
 
-      <PredictionExplanation model={selectedModel} />
+      <PredictionExplanation
+        model={selectedModel}
+        territoryId={territoryId}
+        predictions={predictions}
+      />
 
       <section className="summary-card" aria-labelledby="prediction-table-heading">
         <div className="card-heading">

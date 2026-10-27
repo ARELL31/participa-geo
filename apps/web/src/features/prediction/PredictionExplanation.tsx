@@ -1,13 +1,15 @@
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 
 import { DataTable } from "../../components/DataTable";
-import type { ModelDTO } from "../../lib/api";
+import type { ModelDTO, PredictionDTO } from "../../lib/api";
 import {
   coefficientDirection,
   coefficientUnit,
   featureLabel,
   formatSignedCoefficient,
+  parseCandidateContribution,
   parseCandidateM1,
+  parseSelectedContribution,
 } from "./modelEvidence";
 
 type CandidateRow = {
@@ -30,6 +32,15 @@ function DirectionIcon({ direction }: { direction: string }) {
 
 type PredictionExplanationProps = {
   model: ModelDTO;
+  territoryId?: string | null;
+  predictions?: PredictionDTO[];
+};
+
+type ContributionRow = {
+  model: string;
+  feature: string;
+  label: string;
+  value: number;
 };
 
 /**
@@ -37,8 +48,41 @@ type PredictionExplanationProps = {
  * This table explains the rejected M1 candidate honestly: additive
  * contributions in the transformed scale are associations, never causes.
  */
-export function PredictionExplanation({ model }: PredictionExplanationProps) {
+export function PredictionExplanation({
+  model,
+  territoryId = null,
+  predictions = [],
+}: PredictionExplanationProps) {
   const candidate = parseCandidateM1(model);
+  const municipalityCode =
+    predictions.find((item) => item.territory_id === territoryId)
+      ?.municipality_code ?? null;
+  const selectedContribution = parseSelectedContribution(
+    model,
+    municipalityCode,
+  );
+  const candidateContribution = parseCandidateContribution(
+    model,
+    municipalityCode,
+  );
+  const contributionRows: ContributionRow[] = [
+    ...(selectedContribution
+      ? selectedContribution.contributions.map((item) => ({
+          model: "M0",
+          feature: item.feature,
+          label: featureLabel(item.feature),
+          value: item.value,
+        }))
+      : []),
+    ...(candidateContribution
+      ? candidateContribution.contributions.map((item) => ({
+          model: "M1 candidato",
+          feature: item.feature,
+          label: featureLabel(item.feature),
+          value: item.value,
+        }))
+      : []),
+  ];
   const rows: CandidateRow[] = candidate
     ? candidate.coefficients.map((coefficient, index) => {
         const feature = candidate.features[index] ?? `feature_${index}`;
@@ -121,6 +165,52 @@ export function PredictionExplanation({ model }: PredictionExplanationProps) {
         <p className="inline-alert inline-alert--warning" role="status">
           El modelo seleccionado no publica coeficientes aditivos. No se
           reconstruyen contribuciones sin datos persistidos.
+        </p>
+      )}
+
+      {municipalityCode ? (
+        <div data-testid="municipality-contribution">
+          <h3>Contribución municipal · {municipalityCode}</h3>
+          {contributionRows.length > 0 ? (
+            <DataTable
+              caption={`Contribuciones aditivas del municipio ${municipalityCode}`}
+              rows={contributionRows}
+              rowKey={(row) => `${row.model}-${row.feature}`}
+              emptyMessage="El municipio seleccionado no tiene contribuciones persistidas."
+              columns={[
+                {
+                  key: "model",
+                  header: "Modelo",
+                  render: (row) => row.model,
+                },
+                {
+                  key: "label",
+                  header: "Variable",
+                  render: (row) => row.label,
+                },
+                {
+                  key: "value",
+                  header: "Contribución (pp)",
+                  align: "right",
+                  render: (row) => formatSignedCoefficient(row.value),
+                },
+              ]}
+            />
+          ) : (
+            <p className="inline-alert inline-alert--warning" role="status">
+              El municipio seleccionado no tiene contribuciones aditivas
+              persistidas; no se reconstruyen sin datos.
+            </p>
+          )}
+          <p className="explanation-caveat">
+            Contribución en la escala transformada, sumada al intercepto. No es
+            un efecto causal ni una estimación de personas.
+          </p>
+        </div>
+      ) : (
+        <p className="source-note">
+          Seleccione un municipio en los filtros globales para ver su
+          contribución aditiva persistida.
         </p>
       )}
 

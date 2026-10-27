@@ -86,7 +86,10 @@ services:
       - "127.0.0.1:${WEB_PORT:-8080}:80"
     depends_on:
       api:
-        condition: service_healthy
+        # Staged startup: the web shell may start before data/model/GIS exist.
+        # Pages render explicit loading/empty/not-ready states until the API
+        # readiness probe succeeds; use `depends_on` for the process only.
+        condition: service_started
     networks:
       - internal
     healthcheck:

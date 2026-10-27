@@ -34,14 +34,39 @@ cp .env.example .env
 # 2. Construir las imágenes (API Python y web Node/nginx).
 docker compose build api web
 
-# 3. Levantar el stack. Sólo la web publica un puerto de host.
-docker compose up -d db geoserver api web
+# 3. Arranque escalonado: primero base de datos y GeoServer.
+docker compose up -d db geoserver
 
-# 4. Comprobar a través del proxy del mismo origen.
+# 4. Migrar, ingerir, cargar el modelo y publicar GIS. `api` puede ejecutar
+#    estos comandos antes de que la web exista.
+docker compose up -d api
+docker compose run --rm api python -m participa_geo.cli db migrate
+docker compose run --rm api python -m participa_geo.cli ingest \
+  --source-dir data/raw/ccpc --output-dir data/processed
+docker compose run --rm api python -m participa_geo.cli db load \
+  --processed-dir data/processed
+docker compose run --rm api python -m participa_geo.cli gis import \
+  --archive data/raw/gis/ine-jalisco-2025-12-15.zip
+docker compose run --rm api python -m participa_geo.cli train \
+  --processed-dir data/processed --output-dir data/processed/model
+docker compose run --rm api python -m participa_geo.cli model load \
+  --bundle-dir data/processed/model
+docker compose run --rm api python -m participa_geo.cli gis publish
+
+# 5. Arrancar la web. Depende de que el proceso `api` exista
+#    (`service_started`), no de que la API ya esté lista. La interfaz muestra
+#    estados explícitos de carga/vacío/no disponible hasta el readiness.
+docker compose up -d web
+
+# 6. Comprobar a través del proxy del mismo origen.
 curl -i http://127.0.0.1:8080/api/v1/health/live
-curl -i http://127.0.0.1:8080/api/v1/health/ready
+curl -i http://127.0.0.1:8080/api/v1/health/ready   # 200 sólo tras 4-5
 # Interfaz: http://127.0.0.1:8080/territory?year=2024
 ```
+
+Si se arranca `web` antes del paso 4, la interfaz no inventa cifras: muestra
+estados de carga, vacío o error y el readiness sigue en `503` hasta que existan
+datos, migraciones, modelo y capas GIS.
 
 `WEB_PORT` (por defecto 8080) cambia sólo el puerto de loopback. Un ensayo limpio
 usa `WEB_PORT=8081` y `docker compose -p participa_geo_cleanroom` con volúmenes
