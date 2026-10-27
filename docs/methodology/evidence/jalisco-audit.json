@@ -1,0 +1,5475 @@
+[
+  {
+    "year": 2009,
+    "source": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_jal.csv",
+    "bytes": 31658665,
+    "sha256": "078df1f9982e7322d4f5e05f70a52c0aad4a898b525b66dd9bbff8756f89ae79",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 5133870,
+      "SV": 2570273,
+      "NV": 2450936,
+      "NS": 112661,
+      "rows": 472286
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "1": {
+        "name": "Acatic",
+        "LN": 15254,
+        "SV": 7864,
+        "NV": 7390,
+        "NS": 0
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 15316,
+        "SV": 9711,
+        "NV": 5605,
+        "NS": 0
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 16218,
+        "SV": 11322,
+        "NV": 4896,
+        "NS": 0
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4270,
+        "SV": 2508,
+        "NV": 1762,
+        "NS": 0
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 9938,
+        "SV": 6782,
+        "NV": 3156,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 48070,
+        "SV": 24223,
+        "NV": 22416,
+        "NS": 1431
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 7060,
+        "SV": 4372,
+        "NV": 2688,
+        "NS": 0
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 46769,
+        "SV": 27809,
+        "NV": 18382,
+        "NS": 578
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 12056,
+        "SV": 7797,
+        "NV": 4259,
+        "NS": 0
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 4114,
+        "SV": 2862,
+        "NV": 1252,
+        "NS": 0
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4423,
+        "SV": 1828,
+        "NV": 923,
+        "NS": 1672
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3578,
+        "SV": 2293,
+        "NV": 1285,
+        "NS": 0
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 42397,
+        "SV": 21129,
+        "NV": 19464,
+        "NS": 1804
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 6817,
+        "SV": 4080,
+        "NV": 2737,
+        "NS": 0
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 43777,
+        "SV": 20784,
+        "NV": 20713,
+        "NS": 2280
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 27006,
+        "SV": 15630,
+        "NV": 11376,
+        "NS": 0
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 10665,
+        "SV": 5650,
+        "NV": 4084,
+        "NS": 931
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 50346,
+        "SV": 21965,
+        "NV": 23473,
+        "NS": 4908
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 4763,
+        "SV": 3542,
+        "NV": 1221,
+        "NS": 0
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 7914,
+        "SV": 5392,
+        "NV": 2522,
+        "NS": 0
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 15759,
+        "SV": 8900,
+        "NV": 6859,
+        "NS": 0
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 24468,
+        "SV": 12854,
+        "NV": 10902,
+        "NS": 712
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 74520,
+        "SV": 38402,
+        "NV": 36118,
+        "NS": 0
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 11716,
+        "SV": 7690,
+        "NV": 4026,
+        "NS": 0
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 22173,
+        "SV": 12441,
+        "NV": 9057,
+        "NS": 675
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 14067,
+        "SV": 7554,
+        "NV": 6011,
+        "NS": 502
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 4606,
+        "SV": 2894,
+        "NV": 1712,
+        "NS": 0
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 11358,
+        "SV": 8327,
+        "NV": 3031,
+        "NS": 0
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2258,
+        "SV": 1265,
+        "NV": 993,
+        "NS": 0
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 14243,
+        "SV": 8174,
+        "NV": 5552,
+        "NS": 517
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 33109,
+        "SV": 19335,
+        "NV": 13774,
+        "NS": 0
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 2464,
+        "SV": 1655,
+        "NV": 809,
+        "NS": 0
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 3879,
+        "SV": 2382,
+        "NV": 1497,
+        "NS": 0
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 17883,
+        "SV": 8831,
+        "NV": 7749,
+        "NS": 1303
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 1959,
+        "SV": 1148,
+        "NV": 811,
+        "NS": 0
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 35473,
+        "SV": 20802,
+        "NV": 14671,
+        "NS": 0
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 13612,
+        "SV": 8759,
+        "NV": 4853,
+        "NS": 0
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 10384,
+        "SV": 6539,
+        "NV": 3845,
+        "NS": 0
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 18144,
+        "SV": 9023,
+        "NV": 8494,
+        "NS": 627
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3735,
+        "SV": 2216,
+        "NV": 1519,
+        "NS": 0
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1307551,
+        "SV": 641153,
+        "NV": 651390,
+        "NS": 15008
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 6484,
+        "SV": 4016,
+        "NV": 2468,
+        "NS": 0
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 5865,
+        "SV": 3355,
+        "NV": 2510,
+        "NS": 0
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 7291,
+        "SV": 3941,
+        "NV": 3350,
+        "NS": 0
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 17667,
+        "SV": 10630,
+        "NV": 7037,
+        "NS": 0
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 18109,
+        "SV": 10757,
+        "NV": 6661,
+        "NS": 691
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 15683,
+        "SV": 8041,
+        "NV": 7163,
+        "NS": 479
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 22679,
+        "SV": 11290,
+        "NV": 11389,
+        "NS": 0
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 17264,
+        "SV": 5772,
+        "NV": 4667,
+        "NS": 6825
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 16426,
+        "SV": 8477,
+        "NV": 7949,
+        "NS": 0
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6970,
+        "SV": 3754,
+        "NV": 3216,
+        "NS": 0
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 29070,
+        "SV": 16419,
+        "NV": 12651,
+        "NS": 0
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 9474,
+        "SV": 5166,
+        "NV": 2855,
+        "NS": 1453
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 5098,
+        "SV": 2830,
+        "NV": 1724,
+        "NS": 544
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 103380,
+        "SV": 51648,
+        "NV": 51732,
+        "NS": 0
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 5613,
+        "SV": 3229,
+        "NV": 2384,
+        "NS": 0
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 14425,
+        "SV": 8335,
+        "NV": 6090,
+        "NS": 0
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 2303,
+        "SV": 1417,
+        "NV": 886,
+        "NS": 0
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3151,
+        "SV": 2136,
+        "NV": 1015,
+        "NS": 0
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 10764,
+        "SV": 6675,
+        "NV": 4089,
+        "NS": 0
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 9406,
+        "SV": 5982,
+        "NV": 3424,
+        "NS": 0
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 5166,
+        "SV": 2970,
+        "NV": 2196,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 10724,
+        "SV": 6591,
+        "NV": 4133,
+        "NS": 0
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3156,
+        "SV": 1969,
+        "NV": 1187,
+        "NS": 0
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 67318,
+        "SV": 36116,
+        "NV": 29919,
+        "NS": 1283
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 17670,
+        "SV": 11543,
+        "NV": 6127,
+        "NS": 0
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 10645,
+        "SV": 5792,
+        "NV": 4853,
+        "NS": 0
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 30917,
+        "SV": 17494,
+        "NV": 13423,
+        "NS": 0
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 169698,
+        "SV": 77794,
+        "NV": 91690,
+        "NS": 214
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 9243,
+        "SV": 5249,
+        "NV": 3994,
+        "NS": 0
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 10169,
+        "SV": 4272,
+        "NV": 5448,
+        "NS": 449
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 80660,
+        "SV": 35450,
+        "NV": 36085,
+        "NS": 9125
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 3252,
+        "SV": 1693,
+        "NV": 1559,
+        "NS": 0
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 5016,
+        "SV": 3211,
+        "NV": 1805,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 43672,
+        "SV": 24844,
+        "NV": 18828,
+        "NS": 0
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 12346,
+        "SV": 6951,
+        "NV": 4983,
+        "NS": 412
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 2873,
+        "SV": 1981,
+        "NV": 892,
+        "NS": 0
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2748,
+        "SV": 1710,
+        "NV": 1038,
+        "NS": 0
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 23207,
+        "SV": 12945,
+        "NV": 10262,
+        "NS": 0
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 22529,
+        "SV": 11751,
+        "NV": 10778,
+        "NS": 0
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4786,
+        "SV": 3004,
+        "NV": 1782,
+        "NS": 0
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3587,
+        "SV": 1987,
+        "NV": 1600,
+        "NS": 0
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 23417,
+        "SV": 13441,
+        "NV": 9541,
+        "NS": 435
+      },
+      "84": {
+        "name": "Tala",
+        "LN": 43474,
+        "SV": 24007,
+        "NV": 18758,
+        "NS": 709
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 10375,
+        "SV": 6955,
+        "NV": 3420,
+        "NS": 0
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 34829,
+        "SV": 17886,
+        "NV": 16943,
+        "NS": 0
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 10915,
+        "SV": 7872,
+        "NV": 3043,
+        "NS": 0
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 13855,
+        "SV": 7636,
+        "NV": 6219,
+        "NS": 0
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 12941,
+        "SV": 7787,
+        "NV": 5154,
+        "NS": 0
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 2901,
+        "SV": 1919,
+        "NV": 982,
+        "NS": 0
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 6039,
+        "SV": 3617,
+        "NV": 2422,
+        "NS": 0
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 30654,
+        "SV": 14931,
+        "NV": 15723,
+        "NS": 0
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 10114,
+        "SV": 5940,
+        "NV": 4174,
+        "NS": 0
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 98956,
+        "SV": 49563,
+        "NV": 49393,
+        "NS": 0
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 26231,
+        "SV": 14954,
+        "NV": 10682,
+        "NS": 595
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 7429,
+        "SV": 5139,
+        "NV": 2290,
+        "NS": 0
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 16171,
+        "SV": 8467,
+        "NV": 7704,
+        "NS": 0
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 141163,
+        "SV": 61999,
+        "NV": 63591,
+        "NS": 15573
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 379096,
+        "SV": 162042,
+        "NV": 184736,
+        "NS": 32318
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 7128,
+        "SV": 4308,
+        "NV": 2820,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 23707,
+        "SV": 12630,
+        "NV": 10638,
+        "NS": 439
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 249201,
+        "SV": 115703,
+        "NV": 131708,
+        "NS": 1790
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5432,
+        "SV": 3322,
+        "NV": 2110,
+        "NS": 0
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 5690,
+        "SV": 3715,
+        "NV": 1975,
+        "NS": 0
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 4549,
+        "SV": 2631,
+        "NV": 1918,
+        "NS": 0
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 17372,
+        "SV": 9584,
+        "NV": 7788,
+        "NS": 0
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 3560,
+        "SV": 2279,
+        "NV": 1281,
+        "NS": 0
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 5255,
+        "SV": 3240,
+        "NV": 2015,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 26030,
+        "SV": 15017,
+        "NV": 11013,
+        "NS": 0
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 12869,
+        "SV": 7624,
+        "NV": 5245,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 11740,
+        "SV": 5485,
+        "NV": 5169,
+        "NS": 1086
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 5462,
+        "SV": 1011,
+        "NV": 750,
+        "NS": 3701
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 5118,
+        "SV": 2979,
+        "NV": 1903,
+        "NS": 236
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 14245,
+        "SV": 7611,
+        "NV": 5998,
+        "NS": 636
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 4938,
+        "SV": 3013,
+        "NV": 1925,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 12921,
+        "SV": 7423,
+        "NV": 5498,
+        "NS": 0
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 3988,
+        "SV": 2091,
+        "NV": 1897,
+        "NS": 0
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 20168,
+        "SV": 10450,
+        "NV": 9718,
+        "NS": 0
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 21505,
+        "SV": 12861,
+        "NV": 8644,
+        "NS": 0
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 816985,
+        "SV": 383167,
+        "NV": 433098,
+        "NS": 720
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 22801,
+        "SV": 12271,
+        "NV": 10530,
+        "NS": 0
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 4725,
+        "SV": 3064,
+        "NV": 1661,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 12708,
+        "SV": 7701,
+        "NV": 5007,
+        "NS": 0
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 44427,
+        "SV": 23411,
+        "NV": 21016,
+        "NS": 0
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 12170,
+        "SV": 6453,
+        "NV": 5717,
+        "NS": 0
+      }
+    },
+    "section_count": 3351,
+    "sex_values": [
+      "0",
+      "1"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 127,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 0,
+    "unknown_share": 0.0219446538381377,
+    "abstention_known": 0.48811670655413864
+  },
+  {
+    "year": 2012,
+    "source": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_jal.csv",
+    "bytes": 31819429,
+    "sha256": "7835faa1e825ed0d32607f1f9483eb52b18520ebba6e0c7a583ae9f56d5e7a85",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 5027267,
+      "SV": 3207536,
+      "NV": 1813052,
+      "NS": 6679,
+      "rows": 473537
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "1": {
+        "name": "Acatic",
+        "LN": 14879,
+        "SV": 8932,
+        "NV": 5947,
+        "NS": 0
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 16051,
+        "SV": 10761,
+        "NV": 5290,
+        "NS": 0
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 14650,
+        "SV": 10466,
+        "NV": 3750,
+        "NS": 434
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4188,
+        "SV": 2811,
+        "NV": 1376,
+        "NS": 1
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 10250,
+        "SV": 7432,
+        "NV": 2818,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 45867,
+        "SV": 27757,
+        "NV": 17812,
+        "NS": 298
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 5083,
+        "SV": 3234,
+        "NV": 1849,
+        "NS": 0
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 45515,
+        "SV": 30151,
+        "NV": 15364,
+        "NS": 0
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 12269,
+        "SV": 7234,
+        "NV": 5035,
+        "NS": 0
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 11860,
+        "SV": 8185,
+        "NV": 3675,
+        "NS": 0
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 4075,
+        "SV": 3146,
+        "NV": 929,
+        "NS": 0
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4289,
+        "SV": 3203,
+        "NV": 1086,
+        "NS": 0
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3354,
+        "SV": 2413,
+        "NV": 941,
+        "NS": 0
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 42816,
+        "SV": 27305,
+        "NV": 15511,
+        "NS": 0
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 5602,
+        "SV": 3694,
+        "NV": 1908,
+        "NS": 0
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 44743,
+        "SV": 27578,
+        "NV": 17165,
+        "NS": 0
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 26988,
+        "SV": 17346,
+        "NV": 9642,
+        "NS": 0
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 10268,
+        "SV": 6981,
+        "NV": 3287,
+        "NS": 0
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 50059,
+        "SV": 27813,
+        "NV": 22246,
+        "NS": 0
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 4311,
+        "SV": 3467,
+        "NV": 844,
+        "NS": 0
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 8002,
+        "SV": 5930,
+        "NV": 2072,
+        "NS": 0
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 15419,
+        "SV": 9992,
+        "NV": 5427,
+        "NS": 0
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 26034,
+        "SV": 16603,
+        "NV": 9430,
+        "NS": 1
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 74592,
+        "SV": 46990,
+        "NV": 27591,
+        "NS": 11
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 11284,
+        "SV": 7903,
+        "NV": 3381,
+        "NS": 0
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 21658,
+        "SV": 14431,
+        "NV": 7227,
+        "NS": 0
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 11086,
+        "SV": 7239,
+        "NV": 3847,
+        "NS": 0
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 3985,
+        "SV": 2823,
+        "NV": 1162,
+        "NS": 0
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 11923,
+        "SV": 9829,
+        "NV": 2094,
+        "NS": 0
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2087,
+        "SV": 1368,
+        "NV": 719,
+        "NS": 0
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 9214,
+        "SV": 6168,
+        "NV": 3046,
+        "NS": 0
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 33863,
+        "SV": 22501,
+        "NV": 11362,
+        "NS": 0
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 1349,
+        "SV": 996,
+        "NV": 353,
+        "NS": 0
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 3986,
+        "SV": 2759,
+        "NV": 1227,
+        "NS": 0
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 17178,
+        "SV": 10491,
+        "NV": 6687,
+        "NS": 0
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 1818,
+        "SV": 1228,
+        "NV": 590,
+        "NS": 0
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 35168,
+        "SV": 22728,
+        "NV": 12440,
+        "NS": 0
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 9812,
+        "SV": 6444,
+        "NV": 2791,
+        "NS": 577
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 10725,
+        "SV": 6892,
+        "NV": 3833,
+        "NS": 0
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 18191,
+        "SV": 11294,
+        "NV": 6897,
+        "NS": 0
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3533,
+        "SV": 2448,
+        "NV": 1085,
+        "NS": 0
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1231903,
+        "SV": 816816,
+        "NV": 413794,
+        "NS": 1293
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 5550,
+        "SV": 3832,
+        "NV": 1718,
+        "NS": 0
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 4095,
+        "SV": 2695,
+        "NV": 1400,
+        "NS": 0
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 5552,
+        "SV": 3203,
+        "NV": 1616,
+        "NS": 733
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 17214,
+        "SV": 11786,
+        "NV": 5428,
+        "NS": 0
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 22226,
+        "SV": 14234,
+        "NV": 7992,
+        "NS": 0
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 11122,
+        "SV": 6830,
+        "NV": 4292,
+        "NS": 0
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 21318,
+        "SV": 12844,
+        "NV": 8474,
+        "NS": 0
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 16887,
+        "SV": 10815,
+        "NV": 6072,
+        "NS": 0
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 15548,
+        "SV": 8987,
+        "NV": 6561,
+        "NS": 0
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6400,
+        "SV": 3971,
+        "NV": 2429,
+        "NS": 0
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 29316,
+        "SV": 18983,
+        "NV": 10333,
+        "NS": 0
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 9492,
+        "SV": 6808,
+        "NV": 2684,
+        "NS": 0
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 4797,
+        "SV": 3477,
+        "NV": 1320,
+        "NS": 0
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 106466,
+        "SV": 64228,
+        "NV": 42238,
+        "NS": 0
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 5332,
+        "SV": 3494,
+        "NV": 1838,
+        "NS": 0
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 13304,
+        "SV": 8329,
+        "NV": 4975,
+        "NS": 0
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 1788,
+        "SV": 1158,
+        "NV": 630,
+        "NS": 0
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3047,
+        "SV": 2371,
+        "NV": 676,
+        "NS": 0
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 10310,
+        "SV": 7171,
+        "NV": 3139,
+        "NS": 0
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 9645,
+        "SV": 6594,
+        "NV": 3051,
+        "NS": 0
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 4905,
+        "SV": 3089,
+        "NV": 1816,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 9829,
+        "SV": 7251,
+        "NV": 2538,
+        "NS": 40
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3049,
+        "SV": 2208,
+        "NV": 841,
+        "NS": 0
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 66525,
+        "SV": 41259,
+        "NV": 25266,
+        "NS": 0
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 18006,
+        "SV": 12577,
+        "NV": 5429,
+        "NS": 0
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 9351,
+        "SV": 6025,
+        "NV": 3326,
+        "NS": 0
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 29498,
+        "SV": 18656,
+        "NV": 10842,
+        "NS": 0
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 175896,
+        "SV": 96220,
+        "NV": 79578,
+        "NS": 98
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 9306,
+        "SV": 6165,
+        "NV": 3141,
+        "NS": 0
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 8583,
+        "SV": 4531,
+        "NV": 4052,
+        "NS": 0
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 87648,
+        "SV": 54418,
+        "NV": 33230,
+        "NS": 0
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 3039,
+        "SV": 1937,
+        "NV": 1102,
+        "NS": 0
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 4954,
+        "SV": 3521,
+        "NV": 1433,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 44712,
+        "SV": 29430,
+        "NV": 15282,
+        "NS": 0
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 12415,
+        "SV": 8267,
+        "NV": 4148,
+        "NS": 0
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 2230,
+        "SV": 1700,
+        "NV": 530,
+        "NS": 0
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2149,
+        "SV": 1543,
+        "NV": 606,
+        "NS": 0
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 21018,
+        "SV": 13422,
+        "NV": 7596,
+        "NS": 0
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 21087,
+        "SV": 13239,
+        "NV": 7848,
+        "NS": 0
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4208,
+        "SV": 3060,
+        "NV": 1147,
+        "NS": 1
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3169,
+        "SV": 2184,
+        "NV": 985,
+        "NS": 0
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 23807,
+        "SV": 15793,
+        "NV": 7753,
+        "NS": 261
+      },
+      "84": {
+        "name": "Tala",
+        "LN": 32370,
+        "SV": 18556,
+        "NV": 11341,
+        "NS": 2473
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 10014,
+        "SV": 7390,
+        "NV": 2624,
+        "NS": 0
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 33207,
+        "SV": 19789,
+        "NV": 13414,
+        "NS": 4
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 11593,
+        "SV": 9081,
+        "NV": 2512,
+        "NS": 0
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 12724,
+        "SV": 7922,
+        "NV": 4801,
+        "NS": 1
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 12617,
+        "SV": 8731,
+        "NV": 3886,
+        "NS": 0
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 2842,
+        "SV": 2124,
+        "NV": 718,
+        "NS": 0
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 5842,
+        "SV": 3990,
+        "NV": 1852,
+        "NS": 0
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 29591,
+        "SV": 17408,
+        "NV": 12183,
+        "NS": 0
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 9349,
+        "SV": 6288,
+        "NV": 3061,
+        "NS": 0
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 100130,
+        "SV": 60403,
+        "NV": 39314,
+        "NS": 413
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 23515,
+        "SV": 14623,
+        "NV": 8892,
+        "NS": 0
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 6720,
+        "SV": 5026,
+        "NV": 1694,
+        "NS": 0
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 15007,
+        "SV": 8525,
+        "NV": 6482,
+        "NS": 0
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 175123,
+        "SV": 111589,
+        "NV": 63530,
+        "NS": 4
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 392551,
+        "SV": 242058,
+        "NV": 150492,
+        "NS": 1
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 7115,
+        "SV": 4743,
+        "NV": 2372,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 22228,
+        "SV": 13925,
+        "NV": 8303,
+        "NS": 0
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 265978,
+        "SV": 157786,
+        "NV": 108180,
+        "NS": 12
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5106,
+        "SV": 3715,
+        "NV": 1391,
+        "NS": 0
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 4172,
+        "SV": 3145,
+        "NV": 1027,
+        "NS": 0
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 3894,
+        "SV": 2659,
+        "NV": 1235,
+        "NS": 0
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 16767,
+        "SV": 10653,
+        "NV": 6114,
+        "NS": 0
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 3526,
+        "SV": 2709,
+        "NV": 817,
+        "NS": 0
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 4994,
+        "SV": 3478,
+        "NV": 1516,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 24707,
+        "SV": 15978,
+        "NV": 8728,
+        "NS": 1
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 12786,
+        "SV": 8720,
+        "NV": 4066,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 11194,
+        "SV": 7067,
+        "NV": 4127,
+        "NS": 0
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 5370,
+        "SV": 3477,
+        "NV": 1893,
+        "NS": 0
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 4941,
+        "SV": 3304,
+        "NV": 1637,
+        "NS": 0
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 13103,
+        "SV": 8102,
+        "NV": 5001,
+        "NS": 0
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 3486,
+        "SV": 2524,
+        "NV": 962,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 13126,
+        "SV": 8418,
+        "NV": 4708,
+        "NS": 0
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 3655,
+        "SV": 2197,
+        "NV": 1458,
+        "NS": 0
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 18777,
+        "SV": 11950,
+        "NV": 6827,
+        "NS": 0
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 20362,
+        "SV": 12880,
+        "NV": 7482,
+        "NS": 0
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 779465,
+        "SV": 501991,
+        "NV": 277456,
+        "NS": 18
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 21796,
+        "SV": 13858,
+        "NV": 7934,
+        "NS": 4
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 4635,
+        "SV": 3300,
+        "NV": 1335,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 12788,
+        "SV": 8437,
+        "NV": 4351,
+        "NS": 0
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 45381,
+        "SV": 26930,
+        "NV": 18451,
+        "NS": 0
+      }
+    },
+    "section_count": 3452,
+    "sex_values": [
+      "0",
+      "1"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 130,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 0,
+    "unknown_share": 0.0013285548589322986,
+    "abstention_known": 0.36112343813115116
+  },
+  {
+    "year": 2015,
+    "source": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_jal.csv",
+    "bytes": 33397660,
+    "sha256": "82df85eac406a352f9d8595ee4f617a18faa646006e3fdb669a4ddc61648f665",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 5513033,
+      "SV": 2770019,
+      "NV": 2551453,
+      "NS": 191561,
+      "rows": 497372
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "1": {
+        "name": "Acatic",
+        "LN": 15478,
+        "SV": 8903,
+        "NV": 6575,
+        "NS": 0
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 16827,
+        "SV": 10681,
+        "NV": 6146,
+        "NS": 0
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 16705,
+        "SV": 11950,
+        "NV": 4755,
+        "NS": 0
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4339,
+        "SV": 2740,
+        "NV": 1599,
+        "NS": 0
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 10504,
+        "SV": 7185,
+        "NV": 3319,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 46268,
+        "SV": 23271,
+        "NV": 22405,
+        "NS": 592
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 7046,
+        "SV": 4646,
+        "NV": 2400,
+        "NS": 0
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 50595,
+        "SV": 27452,
+        "NV": 19944,
+        "NS": 3199
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 13753,
+        "SV": 7025,
+        "NV": 6037,
+        "NS": 691
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 13083,
+        "SV": 8600,
+        "NV": 4483,
+        "NS": 0
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 4370,
+        "SV": 3552,
+        "NV": 818,
+        "NS": 0
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4372,
+        "SV": 3163,
+        "NV": 1209,
+        "NS": 0
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3412,
+        "SV": 2522,
+        "NV": 890,
+        "NS": 0
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 44196,
+        "SV": 23548,
+        "NV": 19239,
+        "NS": 1409
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 6776,
+        "SV": 4509,
+        "NV": 2267,
+        "NS": 0
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 46113,
+        "SV": 23036,
+        "NV": 22763,
+        "NS": 314
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 27365,
+        "SV": 16730,
+        "NV": 10634,
+        "NS": 1
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 10267,
+        "SV": 6558,
+        "NV": 3213,
+        "NS": 496
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 51460,
+        "SV": 24193,
+        "NV": 25562,
+        "NS": 1705
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 5322,
+        "SV": 4450,
+        "NV": 872,
+        "NS": 0
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 8569,
+        "SV": 6310,
+        "NV": 2259,
+        "NS": 0
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 15542,
+        "SV": 8747,
+        "NV": 6795,
+        "NS": 0
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 25908,
+        "SV": 15439,
+        "NV": 10469,
+        "NS": 0
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 78910,
+        "SV": 42615,
+        "NV": 35723,
+        "NS": 572
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 11262,
+        "SV": 7693,
+        "NV": 3569,
+        "NS": 0
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 21992,
+        "SV": 13162,
+        "NV": 8830,
+        "NS": 0
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 13767,
+        "SV": 9066,
+        "NV": 4701,
+        "NS": 0
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 4656,
+        "SV": 3343,
+        "NV": 1313,
+        "NS": 0
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 12635,
+        "SV": 9342,
+        "NV": 2054,
+        "NS": 1239
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2067,
+        "SV": 1070,
+        "NV": 459,
+        "NS": 538
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 13449,
+        "SV": 9511,
+        "NV": 3938,
+        "NS": 0
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 34701,
+        "SV": 20127,
+        "NV": 13953,
+        "NS": 621
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 2499,
+        "SV": 2003,
+        "NV": 496,
+        "NS": 0
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 4117,
+        "SV": 3072,
+        "NV": 1045,
+        "NS": 0
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 17453,
+        "SV": 9836,
+        "NV": 7617,
+        "NS": 0
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 1892,
+        "SV": 1229,
+        "NV": 663,
+        "NS": 0
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 35338,
+        "SV": 21931,
+        "NV": 12905,
+        "NS": 502
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 14108,
+        "SV": 9383,
+        "NV": 4491,
+        "NS": 234
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 11132,
+        "SV": 7428,
+        "NV": 3704,
+        "NS": 0
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 18892,
+        "SV": 9167,
+        "NV": 9725,
+        "NS": 0
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3467,
+        "SV": 2506,
+        "NV": 961,
+        "NS": 0
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1229104,
+        "SV": 631044,
+        "NV": 550950,
+        "NS": 47110
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 6498,
+        "SV": 4284,
+        "NV": 1790,
+        "NS": 424
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 5037,
+        "SV": 3505,
+        "NV": 1532,
+        "NS": 0
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 6757,
+        "SV": 4488,
+        "NV": 1976,
+        "NS": 293
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 17675,
+        "SV": 11332,
+        "NV": 5698,
+        "NS": 645
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 27827,
+        "SV": 14197,
+        "NV": 12345,
+        "NS": 1285
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 14437,
+        "SV": 8588,
+        "NV": 5849,
+        "NS": 0
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 22187,
+        "SV": 11499,
+        "NV": 10028,
+        "NS": 660
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 17599,
+        "SV": 10216,
+        "NV": 6745,
+        "NS": 638
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 15455,
+        "SV": 8247,
+        "NV": 6676,
+        "NS": 532
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6259,
+        "SV": 4558,
+        "NV": 1701,
+        "NS": 0
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 30866,
+        "SV": 18677,
+        "NV": 12189,
+        "NS": 0
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 10402,
+        "SV": 6539,
+        "NV": 3194,
+        "NS": 669
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 4873,
+        "SV": 3003,
+        "NV": 1326,
+        "NS": 544
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 110715,
+        "SV": 56290,
+        "NV": 54425,
+        "NS": 0
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 5379,
+        "SV": 3295,
+        "NV": 2084,
+        "NS": 0
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 14653,
+        "SV": 8678,
+        "NV": 5975,
+        "NS": 0
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 1956,
+        "SV": 1346,
+        "NV": 610,
+        "NS": 0
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3108,
+        "SV": 2430,
+        "NV": 678,
+        "NS": 0
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 10522,
+        "SV": 7088,
+        "NV": 3434,
+        "NS": 0
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 10013,
+        "SV": 6643,
+        "NV": 2972,
+        "NS": 398
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 4712,
+        "SV": 2898,
+        "NV": 1814,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 12510,
+        "SV": 9413,
+        "NV": 3097,
+        "NS": 0
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3081,
+        "SV": 2085,
+        "NV": 714,
+        "NS": 282
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 71065,
+        "SV": 34409,
+        "NV": 33756,
+        "NS": 2900
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 18985,
+        "SV": 12692,
+        "NV": 6293,
+        "NS": 0
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 9167,
+        "SV": 5976,
+        "NV": 2950,
+        "NS": 241
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 33197,
+        "SV": 18889,
+        "NV": 13766,
+        "NS": 542
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 196535,
+        "SV": 85582,
+        "NV": 103064,
+        "NS": 7889
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 9653,
+        "SV": 6333,
+        "NV": 3320,
+        "NS": 0
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 8239,
+        "SV": 4811,
+        "NV": 3428,
+        "NS": 0
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 103061,
+        "SV": 44216,
+        "NV": 51876,
+        "NS": 6969
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 2907,
+        "SV": 1922,
+        "NV": 985,
+        "NS": 0
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 4979,
+        "SV": 3487,
+        "NV": 1492,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 47502,
+        "SV": 25774,
+        "NV": 21050,
+        "NS": 678
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 12445,
+        "SV": 7675,
+        "NV": 4770,
+        "NS": 0
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 2918,
+        "SV": 2268,
+        "NV": 650,
+        "NS": 0
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2513,
+        "SV": 1824,
+        "NV": 689,
+        "NS": 0
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 22991,
+        "SV": 13765,
+        "NV": 9226,
+        "NS": 0
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 22387,
+        "SV": 12287,
+        "NV": 9604,
+        "NS": 496
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4453,
+        "SV": 3384,
+        "NV": 1069,
+        "NS": 0
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3115,
+        "SV": 2217,
+        "NV": 898,
+        "NS": 0
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 25228,
+        "SV": 14019,
+        "NV": 11050,
+        "NS": 159
+      },
+      "84": {
+        "name": "Tala",
+        "LN": 48153,
+        "SV": 26681,
+        "NV": 21472,
+        "NS": 0
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 10673,
+        "SV": 8064,
+        "NV": 2609,
+        "NS": 0
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 33447,
+        "SV": 18749,
+        "NV": 14170,
+        "NS": 528
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 12711,
+        "SV": 10040,
+        "NV": 2671,
+        "NS": 0
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 12542,
+        "SV": 8162,
+        "NV": 4380,
+        "NS": 0
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 12973,
+        "SV": 9051,
+        "NV": 3922,
+        "NS": 0
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 2924,
+        "SV": 2057,
+        "NV": 867,
+        "NS": 0
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 6002,
+        "SV": 4138,
+        "NV": 1864,
+        "NS": 0
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 29378,
+        "SV": 15023,
+        "NV": 13697,
+        "NS": 658
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 9219,
+        "SV": 6113,
+        "NV": 2685,
+        "NS": 421
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 105739,
+        "SV": 48309,
+        "NV": 48786,
+        "NS": 8644
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 28928,
+        "SV": 16950,
+        "NV": 11978,
+        "NS": 0
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 7558,
+        "SV": 5486,
+        "NV": 2072,
+        "NS": 0
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 15851,
+        "SV": 9458,
+        "NV": 6393,
+        "NS": 0
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 263985,
+        "SV": 115174,
+        "NV": 134531,
+        "NS": 14280
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 434785,
+        "SV": 176994,
+        "NV": 236038,
+        "NS": 21753
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 7306,
+        "SV": 5070,
+        "NV": 2236,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 24091,
+        "SV": 14746,
+        "NV": 8742,
+        "NS": 603
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 302027,
+        "SV": 115863,
+        "NV": 176550,
+        "NS": 9614
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5139,
+        "SV": 3637,
+        "NV": 1502,
+        "NS": 0
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 5571,
+        "SV": 4131,
+        "NV": 1440,
+        "NS": 0
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 3902,
+        "SV": 2714,
+        "NV": 1188,
+        "NS": 0
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 17056,
+        "SV": 10160,
+        "NV": 6371,
+        "NS": 525
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 3649,
+        "SV": 2813,
+        "NV": 836,
+        "NS": 0
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 5073,
+        "SV": 3633,
+        "NV": 1440,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 26104,
+        "SV": 15685,
+        "NV": 10419,
+        "NS": 0
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 12922,
+        "SV": 9289,
+        "NV": 3633,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 11237,
+        "SV": 6317,
+        "NV": 4548,
+        "NS": 372
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 5560,
+        "SV": 3496,
+        "NV": 2064,
+        "NS": 0
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 4962,
+        "SV": 3543,
+        "NV": 1419,
+        "NS": 0
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 14009,
+        "SV": 7556,
+        "NV": 5252,
+        "NS": 1201
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 4411,
+        "SV": 3177,
+        "NV": 1234,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 13739,
+        "SV": 7870,
+        "NV": 5869,
+        "NS": 0
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 3600,
+        "SV": 2278,
+        "NV": 1322,
+        "NS": 0
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 18891,
+        "SV": 12446,
+        "NV": 6445,
+        "NS": 0
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 22031,
+        "SV": 12555,
+        "NV": 8232,
+        "NS": 1244
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 934051,
+        "SV": 413714,
+        "NV": 475135,
+        "NS": 45202
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 23121,
+        "SV": 13358,
+        "NV": 9763,
+        "NS": 0
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 4777,
+        "SV": 3416,
+        "NV": 1361,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 13435,
+        "SV": 7814,
+        "NV": 4967,
+        "NS": 654
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 47929,
+        "SV": 24722,
+        "NV": 22812,
+        "NS": 395
+      }
+    },
+    "section_count": 3570,
+    "sex_values": [
+      "0",
+      "1"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 114,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 0,
+    "unknown_share": 0.034746935126272596,
+    "abstention_known": 0.4794637649131669
+  },
+  {
+    "year": 2018,
+    "source": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_jal.csv",
+    "bytes": 33814778,
+    "sha256": "52423f5ff786845b6c04afe4a7e5b194b08f6befcb0c78eae512747c453e3758",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 5904226,
+      "SV": 3209827,
+      "NV": 2308286,
+      "NS": 386113,
+      "rows": 503247
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "1": {
+        "name": "Acatic",
+        "LN": 16097,
+        "SV": 8845,
+        "NV": 7252,
+        "NS": 0
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 17461,
+        "SV": 11237,
+        "NV": 6224,
+        "NS": 0
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 17434,
+        "SV": 12543,
+        "NV": 4891,
+        "NS": 0
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4482,
+        "SV": 2922,
+        "NV": 1560,
+        "NS": 0
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 11199,
+        "SV": 7567,
+        "NV": 3632,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 47954,
+        "SV": 27031,
+        "NV": 20923,
+        "NS": 0
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 7367,
+        "SV": 4840,
+        "NV": 2527,
+        "NS": 0
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 55804,
+        "SV": 28837,
+        "NV": 20227,
+        "NS": 6740
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 14383,
+        "SV": 6416,
+        "NV": 5668,
+        "NS": 2299
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 14212,
+        "SV": 9288,
+        "NV": 4924,
+        "NS": 0
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 4783,
+        "SV": 3838,
+        "NV": 945,
+        "NS": 0
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4436,
+        "SV": 3340,
+        "NV": 1096,
+        "NS": 0
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3511,
+        "SV": 1898,
+        "NV": 928,
+        "NS": 685
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 47034,
+        "SV": 26554,
+        "NV": 20480,
+        "NS": 0
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 6899,
+        "SV": 4530,
+        "NV": 2369,
+        "NS": 0
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 48176,
+        "SV": 26664,
+        "NV": 20839,
+        "NS": 673
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 28865,
+        "SV": 17870,
+        "NV": 10995,
+        "NS": 0
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 10353,
+        "SV": 6798,
+        "NV": 3555,
+        "NS": 0
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 54172,
+        "SV": 26483,
+        "NV": 24261,
+        "NS": 3428
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 5783,
+        "SV": 1694,
+        "NV": 481,
+        "NS": 3608
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 8988,
+        "SV": 5757,
+        "NV": 2509,
+        "NS": 722
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 15927,
+        "SV": 9071,
+        "NV": 6856,
+        "NS": 0
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 26508,
+        "SV": 15819,
+        "NV": 10689,
+        "NS": 0
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 83914,
+        "SV": 48651,
+        "NV": 32489,
+        "NS": 2774
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 11889,
+        "SV": 7161,
+        "NV": 3457,
+        "NS": 1271
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 22660,
+        "SV": 13277,
+        "NV": 8681,
+        "NS": 702
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 14675,
+        "SV": 8969,
+        "NV": 5706,
+        "NS": 0
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 4930,
+        "SV": 3526,
+        "NV": 1404,
+        "NS": 0
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 13040,
+        "SV": 10512,
+        "NV": 2528,
+        "NS": 0
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2165,
+        "SV": 1488,
+        "NV": 677,
+        "NS": 0
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 14046,
+        "SV": 9443,
+        "NV": 4603,
+        "NS": 0
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 37257,
+        "SV": 23626,
+        "NV": 13631,
+        "NS": 0
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 2769,
+        "SV": 2285,
+        "NV": 484,
+        "NS": 0
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 4332,
+        "SV": 2987,
+        "NV": 1345,
+        "NS": 0
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 18278,
+        "SV": 9153,
+        "NV": 8409,
+        "NS": 716
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 1913,
+        "SV": 1287,
+        "NV": 626,
+        "NS": 0
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 37535,
+        "SV": 21741,
+        "NV": 15794,
+        "NS": 0
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 14672,
+        "SV": 9531,
+        "NV": 4613,
+        "NS": 528
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 11865,
+        "SV": 6989,
+        "NV": 4178,
+        "NS": 698
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 19466,
+        "SV": 10089,
+        "NV": 9377,
+        "NS": 0
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3596,
+        "SV": 2030,
+        "NV": 913,
+        "NS": 653
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1258770,
+        "SV": 742146,
+        "NV": 469438,
+        "NS": 47186
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 6635,
+        "SV": 4097,
+        "NV": 2135,
+        "NS": 403
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 5225,
+        "SV": 3603,
+        "NV": 1622,
+        "NS": 0
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 7127,
+        "SV": 4519,
+        "NV": 2608,
+        "NS": 0
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 18103,
+        "SV": 11931,
+        "NV": 6172,
+        "NS": 0
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 33303,
+        "SV": 17929,
+        "NV": 15374,
+        "NS": 0
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 15140,
+        "SV": 9528,
+        "NV": 5612,
+        "NS": 0
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 24100,
+        "SV": 13207,
+        "NV": 9942,
+        "NS": 951
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 18650,
+        "SV": 11379,
+        "NV": 7271,
+        "NS": 0
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 16286,
+        "SV": 7665,
+        "NV": 6006,
+        "NS": 2615
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6446,
+        "SV": 3868,
+        "NV": 1665,
+        "NS": 913
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 33078,
+        "SV": 18340,
+        "NV": 14136,
+        "NS": 602
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 12825,
+        "SV": 8236,
+        "NV": 4295,
+        "NS": 294
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 5016,
+        "SV": 3363,
+        "NV": 1653,
+        "NS": 0
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 117951,
+        "SV": 66324,
+        "NV": 51138,
+        "NS": 489
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 5426,
+        "SV": 3003,
+        "NV": 2170,
+        "NS": 253
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 15180,
+        "SV": 9112,
+        "NV": 6068,
+        "NS": 0
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 1996,
+        "SV": 840,
+        "NV": 385,
+        "NS": 771
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3254,
+        "SV": 2463,
+        "NV": 791,
+        "NS": 0
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 10999,
+        "SV": 6120,
+        "NV": 3071,
+        "NS": 1808
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 10490,
+        "SV": 7567,
+        "NV": 2923,
+        "NS": 0
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 4855,
+        "SV": 2725,
+        "NV": 2130,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 13570,
+        "SV": 7023,
+        "NV": 2903,
+        "NS": 3644
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3128,
+        "SV": 2353,
+        "NV": 775,
+        "NS": 0
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 76008,
+        "SV": 42465,
+        "NV": 32879,
+        "NS": 664
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 20406,
+        "SV": 13298,
+        "NV": 7108,
+        "NS": 0
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 8975,
+        "SV": 6032,
+        "NV": 2943,
+        "NS": 0
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 36422,
+        "SV": 18935,
+        "NV": 14472,
+        "NS": 3015
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 211251,
+        "SV": 85558,
+        "NV": 84176,
+        "NS": 41517
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 9952,
+        "SV": 6326,
+        "NV": 3626,
+        "NS": 0
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 8421,
+        "SV": 4474,
+        "NV": 3478,
+        "NS": 469
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 115960,
+        "SV": 58295,
+        "NV": 50710,
+        "NS": 6955
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 2899,
+        "SV": 1851,
+        "NV": 802,
+        "NS": 246
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 5201,
+        "SV": 3524,
+        "NV": 1677,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 51313,
+        "SV": 28145,
+        "NV": 23168,
+        "NS": 0
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 12689,
+        "SV": 8239,
+        "NV": 4450,
+        "NS": 0
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 2967,
+        "SV": 2272,
+        "NV": 695,
+        "NS": 0
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2582,
+        "SV": 1799,
+        "NV": 783,
+        "NS": 0
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 23890,
+        "SV": 13560,
+        "NV": 9190,
+        "NS": 1140
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 24153,
+        "SV": 14021,
+        "NV": 9550,
+        "NS": 582
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4615,
+        "SV": 1418,
+        "NV": 490,
+        "NS": 2707
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3262,
+        "SV": 2264,
+        "NV": 998,
+        "NS": 0
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 26342,
+        "SV": 15651,
+        "NV": 10109,
+        "NS": 582
+      },
+      "84": {
+        "name": "Tala",
+        "LN": 52767,
+        "SV": 29183,
+        "NV": 22131,
+        "NS": 1453
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 11195,
+        "SV": 6585,
+        "NV": 2915,
+        "NS": 1695
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 33919,
+        "SV": 18333,
+        "NV": 14467,
+        "NS": 1119
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 13883,
+        "SV": 10111,
+        "NV": 3238,
+        "NS": 534
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 12853,
+        "SV": 7096,
+        "NV": 3856,
+        "NS": 1901
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 13402,
+        "SV": 9107,
+        "NV": 4295,
+        "NS": 0
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 3100,
+        "SV": 2261,
+        "NV": 839,
+        "NS": 0
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 6222,
+        "SV": 4140,
+        "NV": 2082,
+        "NS": 0
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 30358,
+        "SV": 14853,
+        "NV": 13479,
+        "NS": 2026
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 9381,
+        "SV": 6112,
+        "NV": 3269,
+        "NS": 0
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 115374,
+        "SV": 57324,
+        "NV": 48925,
+        "NS": 9125
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 30739,
+        "SV": 16629,
+        "NV": 13440,
+        "NS": 670
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 7829,
+        "SV": 5556,
+        "NV": 2273,
+        "NS": 0
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 16643,
+        "SV": 9046,
+        "NV": 7597,
+        "NS": 0
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 331698,
+        "SV": 128058,
+        "NV": 120278,
+        "NS": 83362
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 467589,
+        "SV": 244949,
+        "NV": 204290,
+        "NS": 18350
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 7645,
+        "SV": 5436,
+        "NV": 2209,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 25433,
+        "SV": 14078,
+        "NV": 9662,
+        "NS": 1693
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 333320,
+        "SV": 163599,
+        "NV": 152091,
+        "NS": 17630
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5184,
+        "SV": 3622,
+        "NV": 1562,
+        "NS": 0
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 5746,
+        "SV": 4429,
+        "NV": 1317,
+        "NS": 0
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 3903,
+        "SV": 2695,
+        "NV": 1208,
+        "NS": 0
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 17931,
+        "SV": 10846,
+        "NV": 7085,
+        "NS": 0
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 3844,
+        "SV": 2787,
+        "NV": 1057,
+        "NS": 0
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 5303,
+        "SV": 3628,
+        "NV": 1675,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 27137,
+        "SV": 15643,
+        "NV": 10152,
+        "NS": 1342
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 13743,
+        "SV": 9451,
+        "NV": 4292,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 11520,
+        "SV": 7005,
+        "NV": 4515,
+        "NS": 0
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 5935,
+        "SV": 3595,
+        "NV": 2340,
+        "NS": 0
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 5409,
+        "SV": 3717,
+        "NV": 1692,
+        "NS": 0
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 14768,
+        "SV": 8339,
+        "NV": 6429,
+        "NS": 0
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 4496,
+        "SV": 3262,
+        "NV": 1234,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 14578,
+        "SV": 7195,
+        "NV": 5972,
+        "NS": 1411
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 3742,
+        "SV": 2012,
+        "NV": 1338,
+        "NS": 392
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 19427,
+        "SV": 11892,
+        "NV": 7535,
+        "NS": 0
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 22956,
+        "SV": 14094,
+        "NV": 8862,
+        "NS": 0
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 1014209,
+        "SV": 532016,
+        "NV": 383951,
+        "NS": 98242
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 24180,
+        "SV": 14841,
+        "NV": 8766,
+        "NS": 573
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 4967,
+        "SV": 3555,
+        "NV": 1412,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 14242,
+        "SV": 8684,
+        "NV": 5558,
+        "NS": 0
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 51965,
+        "SV": 26008,
+        "NV": 24665,
+        "NS": 1292
+      }
+    },
+    "section_count": 3570,
+    "sex_values": [
+      "0",
+      "1"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 134,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 0,
+    "unknown_share": 0.06539604005673225,
+    "abstention_known": 0.41831075224447195
+  },
+  {
+    "year": 2021,
+    "source": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_jal.csv",
+    "bytes": 34535885,
+    "sha256": "a9063ac201d15bd62b5f9c92c135515e707cdf839f5d9ccad26590c070d0fdfe",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 6214764,
+      "SV": 2844834,
+      "NV": 3160033,
+      "NS": 209897,
+      "rows": 513309
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "1": {
+        "name": "Acatic",
+        "LN": 17012,
+        "SV": 8810,
+        "NV": 8202,
+        "NS": 0
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 17917,
+        "SV": 9435,
+        "NV": 7755,
+        "NS": 727
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 17828,
+        "SV": 11737,
+        "NV": 5808,
+        "NS": 283
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4621,
+        "SV": 3143,
+        "NV": 1478,
+        "NS": 0
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 11787,
+        "SV": 7589,
+        "NV": 4198,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 49903,
+        "SV": 24908,
+        "NV": 24995,
+        "NS": 0
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 7494,
+        "SV": 4600,
+        "NV": 2894,
+        "NS": 0
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 59510,
+        "SV": 29515,
+        "NV": 28548,
+        "NS": 1447
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 15287,
+        "SV": 6853,
+        "NV": 7939,
+        "NS": 495
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 15090,
+        "SV": 9374,
+        "NV": 5716,
+        "NS": 0
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 5018,
+        "SV": 3840,
+        "NV": 1178,
+        "NS": 0
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4573,
+        "SV": 1348,
+        "NV": 522,
+        "NS": 2703
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3521,
+        "SV": 2296,
+        "NV": 1225,
+        "NS": 0
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 49705,
+        "SV": 23371,
+        "NV": 25638,
+        "NS": 696
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 7106,
+        "SV": 4450,
+        "NV": 2656,
+        "NS": 0
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 50872,
+        "SV": 14725,
+        "NV": 13750,
+        "NS": 22397
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 30601,
+        "SV": 15471,
+        "NV": 13193,
+        "NS": 1937
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 10512,
+        "SV": 4113,
+        "NV": 2722,
+        "NS": 3677
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 57008,
+        "SV": 24694,
+        "NV": 31736,
+        "NS": 578
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 5898,
+        "SV": 1815,
+        "NV": 464,
+        "NS": 3619
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 9131,
+        "SV": 6163,
+        "NV": 2968,
+        "NS": 0
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 16078,
+        "SV": 5459,
+        "NV": 5572,
+        "NS": 5047
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 27129,
+        "SV": 9716,
+        "NV": 8453,
+        "NS": 8960
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 88721,
+        "SV": 41715,
+        "NV": 44446,
+        "NS": 2560
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 12664,
+        "SV": 8476,
+        "NV": 4188,
+        "NS": 0
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 23453,
+        "SV": 12937,
+        "NV": 10516,
+        "NS": 0
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 15299,
+        "SV": 9031,
+        "NV": 6268,
+        "NS": 0
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 5137,
+        "SV": 3627,
+        "NV": 1510,
+        "NS": 0
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 13667,
+        "SV": 6570,
+        "NV": 1532,
+        "NS": 5565
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2247,
+        "SV": 792,
+        "NV": 370,
+        "NS": 1085
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 14540,
+        "SV": 9908,
+        "NV": 4166,
+        "NS": 466
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 39593,
+        "SV": 24293,
+        "NV": 15300,
+        "NS": 0
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 2695,
+        "SV": 2147,
+        "NV": 548,
+        "NS": 0
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 4653,
+        "SV": 2654,
+        "NV": 1287,
+        "NS": 712
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 18891,
+        "SV": 9470,
+        "NV": 9421,
+        "NS": 0
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 2027,
+        "SV": 1034,
+        "NV": 634,
+        "NS": 359
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 38891,
+        "SV": 20593,
+        "NV": 18298,
+        "NS": 0
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 15065,
+        "SV": 9442,
+        "NV": 5623,
+        "NS": 0
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 12512,
+        "SV": 7309,
+        "NV": 5203,
+        "NS": 0
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 20187,
+        "SV": 8889,
+        "NV": 11298,
+        "NS": 0
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3670,
+        "SV": 2221,
+        "NV": 1053,
+        "NS": 396
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1263591,
+        "SV": 590714,
+        "NV": 637386,
+        "NS": 35491
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 6745,
+        "SV": 4405,
+        "NV": 2340,
+        "NS": 0
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 5366,
+        "SV": 3264,
+        "NV": 2102,
+        "NS": 0
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 7106,
+        "SV": 4508,
+        "NV": 2598,
+        "NS": 0
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 18702,
+        "SV": 9892,
+        "NV": 6767,
+        "NS": 2043
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 38572,
+        "SV": 18249,
+        "NV": 19713,
+        "NS": 610
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 15713,
+        "SV": 8928,
+        "NV": 6117,
+        "NS": 668
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 26336,
+        "SV": 12657,
+        "NV": 12847,
+        "NS": 832
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 19411,
+        "SV": 10417,
+        "NV": 8994,
+        "NS": 0
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 16469,
+        "SV": 7320,
+        "NV": 8040,
+        "NS": 1109
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6550,
+        "SV": 1459,
+        "NV": 2709,
+        "NS": 2382
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 35316,
+        "SV": 18320,
+        "NV": 15118,
+        "NS": 1878
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 15561,
+        "SV": 8041,
+        "NV": 6877,
+        "NS": 643
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 5139,
+        "SV": 2694,
+        "NV": 1694,
+        "NS": 751
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 123616,
+        "SV": 59221,
+        "NV": 63693,
+        "NS": 702
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 5665,
+        "SV": 3091,
+        "NV": 2574,
+        "NS": 0
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 15531,
+        "SV": 8627,
+        "NV": 6904,
+        "NS": 0
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 2006,
+        "SV": 1454,
+        "NV": 552,
+        "NS": 0
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3428,
+        "SV": 2222,
+        "NV": 805,
+        "NS": 401
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 11304,
+        "SV": 6910,
+        "NV": 4394,
+        "NS": 0
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 11599,
+        "SV": 7504,
+        "NV": 3640,
+        "NS": 455
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 4925,
+        "SV": 2728,
+        "NV": 2197,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 14624,
+        "SV": 7502,
+        "NV": 3192,
+        "NS": 3930
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3205,
+        "SV": 2247,
+        "NV": 958,
+        "NS": 0
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 78537,
+        "SV": 35204,
+        "NV": 40501,
+        "NS": 2832
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 21495,
+        "SV": 12762,
+        "NV": 7557,
+        "NS": 1176
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 8953,
+        "SV": 5406,
+        "NV": 3547,
+        "NS": 0
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 39090,
+        "SV": 18641,
+        "NV": 19815,
+        "NS": 634
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 227368,
+        "SV": 90882,
+        "NV": 131029,
+        "NS": 5457
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 9975,
+        "SV": 4710,
+        "NV": 3285,
+        "NS": 1980
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 8465,
+        "SV": 4924,
+        "NV": 3541,
+        "NS": 0
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 127560,
+        "SV": 52667,
+        "NV": 70825,
+        "NS": 4068
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 3043,
+        "SV": 1978,
+        "NV": 1065,
+        "NS": 0
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 5460,
+        "SV": 3477,
+        "NV": 1983,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 55084,
+        "SV": 28284,
+        "NV": 26060,
+        "NS": 740
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 13153,
+        "SV": 7959,
+        "NV": 5194,
+        "NS": 0
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 3056,
+        "SV": 2441,
+        "NV": 615,
+        "NS": 0
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2466,
+        "SV": 1708,
+        "NV": 758,
+        "NS": 0
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 24612,
+        "SV": 12535,
+        "NV": 10399,
+        "NS": 1678
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 25326,
+        "SV": 13884,
+        "NV": 11442,
+        "NS": 0
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4706,
+        "SV": 3193,
+        "NV": 1002,
+        "NS": 511
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3339,
+        "SV": 2303,
+        "NV": 1036,
+        "NS": 0
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 28093,
+        "SV": 13949,
+        "NV": 13526,
+        "NS": 618
+      },
+      "84": {
+        "name": "Tala",
+        "LN": 57046,
+        "SV": 27883,
+        "NV": 27168,
+        "NS": 1995
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 11620,
+        "SV": 7994,
+        "NV": 3626,
+        "NS": 0
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 35228,
+        "SV": 16685,
+        "NV": 17793,
+        "NS": 750
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 14742,
+        "SV": 10605,
+        "NV": 3518,
+        "NS": 619
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 13420,
+        "SV": 6428,
+        "NV": 6273,
+        "NS": 719
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 14103,
+        "SV": 7254,
+        "NV": 3494,
+        "NS": 3355
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 3177,
+        "SV": 2101,
+        "NV": 1076,
+        "NS": 0
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 6434,
+        "SV": 4046,
+        "NV": 2388,
+        "NS": 0
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 31415,
+        "SV": 14064,
+        "NV": 17351,
+        "NS": 0
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 9546,
+        "SV": 6275,
+        "NV": 3271,
+        "NS": 0
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 123566,
+        "SV": 55236,
+        "NV": 66770,
+        "NS": 1560
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 32365,
+        "SV": 16367,
+        "NV": 15998,
+        "NS": 0
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 7897,
+        "SV": 5291,
+        "NV": 2606,
+        "NS": 0
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 17006,
+        "SV": 8976,
+        "NV": 7652,
+        "NS": 378
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 386495,
+        "SV": 138182,
+        "NV": 241874,
+        "NS": 6439
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 489999,
+        "SV": 192154,
+        "NV": 292450,
+        "NS": 5395
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 7839,
+        "SV": 5202,
+        "NV": 2637,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 26446,
+        "SV": 14572,
+        "NV": 11874,
+        "NS": 0
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 360587,
+        "SV": 126945,
+        "NV": 220267,
+        "NS": 13375
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5441,
+        "SV": 3583,
+        "NV": 1858,
+        "NS": 0
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 5831,
+        "SV": 4038,
+        "NV": 1389,
+        "NS": 404
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 3981,
+        "SV": 1941,
+        "NV": 952,
+        "NS": 1088
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 18406,
+        "SV": 9890,
+        "NV": 8516,
+        "NS": 0
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 4269,
+        "SV": 2744,
+        "NV": 1028,
+        "NS": 497
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 5694,
+        "SV": 3835,
+        "NV": 1859,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 28649,
+        "SV": 15254,
+        "NV": 12194,
+        "NS": 1201
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 14192,
+        "SV": 8831,
+        "NV": 5361,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 11775,
+        "SV": 5016,
+        "NV": 3817,
+        "NS": 2942
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 6263,
+        "SV": 3439,
+        "NV": 2824,
+        "NS": 0
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 5785,
+        "SV": 3959,
+        "NV": 1826,
+        "NS": 0
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 14958,
+        "SV": 7121,
+        "NV": 7837,
+        "NS": 0
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 4641,
+        "SV": 3224,
+        "NV": 1417,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 15067,
+        "SV": 6468,
+        "NV": 7968,
+        "NS": 631
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 3843,
+        "SV": 2204,
+        "NV": 1639,
+        "NS": 0
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 20458,
+        "SV": 11488,
+        "NV": 8970,
+        "NS": 0
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 24028,
+        "SV": 12703,
+        "NV": 9427,
+        "NS": 1898
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 1076792,
+        "SV": 489534,
+        "NV": 559051,
+        "NS": 28207
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 25792,
+        "SV": 13781,
+        "NV": 11432,
+        "NS": 579
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 5122,
+        "SV": 3537,
+        "NV": 1585,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 14853,
+        "SV": 8239,
+        "NV": 6031,
+        "NS": 583
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 56219,
+        "SV": 23931,
+        "NV": 30304,
+        "NS": 1984
+      }
+    },
+    "section_count": 3613,
+    "sex_values": [
+      "0",
+      "1"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 137,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 0,
+    "unknown_share": 0.03377392930769375,
+    "abstention_known": 0.5262452940256629
+  },
+  {
+    "year": 2024,
+    "source": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip",
+    "member": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_jal.csv",
+    "bytes": 37965120,
+    "sha256": "20796c13455ad5853b11da54a3dde01689e8adbf27fda354dae7b026c16aeca7",
+    "crc_verified": true,
+    "encoding": "utf-8-sig",
+    "totals": {
+      "LN": 6619379,
+      "SV": 3555352,
+      "NV": 2675653,
+      "NS": 388374,
+      "rows": 539890
+    },
+    "municipality_count": 125,
+    "municipalities": {
+      "84": {
+        "name": "Tala",
+        "LN": 63323,
+        "SV": 34715,
+        "NV": 27247,
+        "NS": 1361
+      },
+      "95": {
+        "name": "Tequila",
+        "LN": 34920,
+        "SV": 18379,
+        "NV": 12971,
+        "NS": 3570
+      },
+      "37": {
+        "name": "Etzatlán",
+        "LN": 16145,
+        "SV": 10924,
+        "NV": 5221,
+        "NS": 0
+      },
+      "105": {
+        "name": "Totatiche",
+        "LN": 4279,
+        "SV": 2598,
+        "NV": 1681,
+        "NS": 0
+      },
+      "3": {
+        "name": "Ahualulco de Mercado",
+        "LN": 19129,
+        "SV": 13353,
+        "NV": 5047,
+        "NS": 729
+      },
+      "82": {
+        "name": "Santa María de los Ángeles",
+        "LN": 3632,
+        "SV": 2128,
+        "NV": 1504,
+        "NS": 0
+      },
+      "26": {
+        "name": "Colotlán",
+        "LN": 16275,
+        "SV": 9355,
+        "NV": 6920,
+        "NS": 0
+      },
+      "115": {
+        "name": "Villa Guerrero",
+        "LN": 4886,
+        "SV": 3334,
+        "NV": 1552,
+        "NS": 0
+      },
+      "63": {
+        "name": "Mezquitic",
+        "LN": 16085,
+        "SV": 9530,
+        "NV": 4172,
+        "NS": 2383
+      },
+      "78": {
+        "name": "San Martín de Bolaños",
+        "LN": 2341,
+        "SV": 1555,
+        "NV": 786,
+        "NS": 0
+      },
+      "77": {
+        "name": "San Marcos",
+        "LN": 3298,
+        "SV": 1964,
+        "NV": 746,
+        "NS": 588
+      },
+      "19": {
+        "name": "Bolaños",
+        "LN": 6630,
+        "SV": 4533,
+        "NV": 1457,
+        "NS": 640
+      },
+      "43": {
+        "name": "Huejúcar",
+        "LN": 5914,
+        "SV": 3469,
+        "NV": 2445,
+        "NS": 0
+      },
+      "6": {
+        "name": "Ameca",
+        "LN": 53513,
+        "SV": 24123,
+        "NV": 19093,
+        "NS": 10297
+      },
+      "44": {
+        "name": "Huejuquilla el Alto",
+        "LN": 7615,
+        "SV": 4720,
+        "NV": 2895,
+        "NS": 0
+      },
+      "73": {
+        "name": "San Cristóbal de la Barranca",
+        "LN": 3063,
+        "SV": 1673,
+        "NV": 1030,
+        "NS": 360
+      },
+      "36": {
+        "name": "Encarnación de Díaz",
+        "LN": 39573,
+        "SV": 22743,
+        "NV": 15632,
+        "NS": 1198
+      },
+      "92": {
+        "name": "Teocaltiche",
+        "LN": 32747,
+        "SV": 16231,
+        "NV": 16516,
+        "NS": 0
+      },
+      "75": {
+        "name": "San Juan de los Lagos",
+        "LN": 58892,
+        "SV": 31584,
+        "NV": 25705,
+        "NS": 1603
+      },
+      "55": {
+        "name": "Lagos de Moreno",
+        "LN": 130582,
+        "SV": 68571,
+        "NV": 55910,
+        "NS": 6101
+      },
+      "66": {
+        "name": "Ojuelos de Jalisco",
+        "LN": 22622,
+        "SV": 14020,
+        "NV": 6745,
+        "NS": 1857
+      },
+      "110": {
+        "name": "Unión de San Antonio",
+        "LN": 15242,
+        "SV": 10243,
+        "NV": 4999,
+        "NS": 0
+      },
+      "116": {
+        "name": "Villa Hidalgo",
+        "LN": 16287,
+        "SV": 8005,
+        "NV": 7565,
+        "NS": 717
+      },
+      "53": {
+        "name": "Juanacatlán",
+        "LN": 19043,
+        "SV": 11106,
+        "NV": 7937,
+        "NS": 0
+      },
+      "117": {
+        "name": "Cañadas de Obregón",
+        "LN": 4106,
+        "SV": 2132,
+        "NV": 1974,
+        "NS": 0
+      },
+      "1": {
+        "name": "Acatic",
+        "LN": 18449,
+        "SV": 8791,
+        "NV": 7707,
+        "NS": 1951
+      },
+      "30": {
+        "name": "Cuquío",
+        "LN": 15306,
+        "SV": 10304,
+        "NV": 5002,
+        "NS": 0
+      },
+      "118": {
+        "name": "Yahualica de González Gallo",
+        "LN": 21559,
+        "SV": 11780,
+        "NV": 8897,
+        "NS": 882
+      },
+      "94": {
+        "name": "Tepatitlán de Morelos",
+        "LN": 133884,
+        "SV": 70089,
+        "NV": 56791,
+        "NS": 7004
+      },
+      "47": {
+        "name": "Ixtlahuacán del Río",
+        "LN": 16988,
+        "SV": 10562,
+        "NV": 6426,
+        "NS": 0
+      },
+      "124": {
+        "name": "Zapotlanejo",
+        "LN": 61811,
+        "SV": 29754,
+        "NV": 30970,
+        "NS": 1087
+      },
+      "112": {
+        "name": "Valle de Guadalupe",
+        "LN": 6974,
+        "SV": 3629,
+        "NV": 3345,
+        "NS": 0
+      },
+      "123": {
+        "name": "Zapotlán del Rey",
+        "LN": 15564,
+        "SV": 8392,
+        "NV": 6565,
+        "NS": 607
+      },
+      "125": {
+        "name": "San Ignacio Cerro Gordo",
+        "LN": 15877,
+        "SV": 8113,
+        "NV": 6575,
+        "NS": 1189
+      },
+      "62": {
+        "name": "Mexticacán",
+        "LN": 5164,
+        "SV": 2814,
+        "NV": 2350,
+        "NS": 0
+      },
+      "106": {
+        "name": "Tototlán",
+        "LN": 19662,
+        "SV": 10125,
+        "NV": 8218,
+        "NS": 1319
+      },
+      "69": {
+        "name": "Puerto Vallarta",
+        "LN": 246189,
+        "SV": 128340,
+        "NV": 112556,
+        "NS": 5293
+      },
+      "20": {
+        "name": "Cabo Corrientes",
+        "LN": 9570,
+        "SV": 5851,
+        "NV": 3719,
+        "NS": 0
+      },
+      "81": {
+        "name": "San Sebastián del Oeste",
+        "LN": 4874,
+        "SV": 2913,
+        "NV": 1338,
+        "NS": 623
+      },
+      "11": {
+        "name": "Atengo",
+        "LN": 4881,
+        "SV": 3537,
+        "NV": 1344,
+        "NS": 0
+      },
+      "12": {
+        "name": "Atenguillo",
+        "LN": 3921,
+        "SV": 2614,
+        "NV": 1307,
+        "NS": 0
+      },
+      "60": {
+        "name": "Mascota",
+        "LN": 12294,
+        "SV": 7232,
+        "NV": 4498,
+        "NS": 564
+      },
+      "40": {
+        "name": "Guachinango",
+        "LN": 3932,
+        "SV": 2676,
+        "NV": 1256,
+        "NS": 0
+      },
+      "29": {
+        "name": "Cuautla",
+        "LN": 2458,
+        "SV": 1630,
+        "NV": 828,
+        "NS": 0
+      },
+      "101": {
+        "name": "Tomatlán",
+        "LN": 26962,
+        "SV": 13635,
+        "NV": 11929,
+        "NS": 1398
+      },
+      "85": {
+        "name": "Talpa de Allende",
+        "LN": 12107,
+        "SV": 8109,
+        "NV": 3998,
+        "NS": 0
+      },
+      "7": {
+        "name": "San Juanito de Escobedo",
+        "LN": 7957,
+        "SV": 4527,
+        "NV": 2813,
+        "NS": 617
+      },
+      "9": {
+        "name": "El Arenal",
+        "LN": 16861,
+        "SV": 10877,
+        "NV": 5252,
+        "NS": 732
+      },
+      "5": {
+        "name": "Amatitán",
+        "LN": 12992,
+        "SV": 8440,
+        "NV": 3879,
+        "NS": 673
+      },
+      "57": {
+        "name": "Magdalena",
+        "LN": 16736,
+        "SV": 9688,
+        "NV": 7048,
+        "NS": 0
+      },
+      "32": {
+        "name": "Chimaltitán",
+        "LN": 2725,
+        "SV": 2093,
+        "NV": 632,
+        "NS": 0
+      },
+      "64": {
+        "name": "Mixtlán",
+        "LN": 3550,
+        "SV": 2208,
+        "NV": 1342,
+        "NS": 0
+      },
+      "120": {
+        "name": "Zapopan",
+        "LN": 1148245,
+        "SV": 629941,
+        "NV": 430614,
+        "NS": 87690
+      },
+      "102": {
+        "name": "Tonalá",
+        "LN": 393280,
+        "SV": 183589,
+        "NV": 183107,
+        "NS": 26584
+      },
+      "98": {
+        "name": "Tlajomulco de Zúñiga",
+        "LN": 451745,
+        "SV": 210590,
+        "NV": 208396,
+        "NS": 32759
+      },
+      "99": {
+        "name": "San Pedro Tlaquepaque",
+        "LN": 521978,
+        "SV": 266352,
+        "NV": 225560,
+        "NS": 30066
+      },
+      "16": {
+        "name": "Ayotlán",
+        "LN": 32412,
+        "SV": 15676,
+        "NV": 13440,
+        "NS": 3296
+      },
+      "50": {
+        "name": "Jesús María",
+        "LN": 17613,
+        "SV": 8175,
+        "NV": 7637,
+        "NS": 1801
+      },
+      "8": {
+        "name": "Arandas",
+        "LN": 64734,
+        "SV": 34799,
+        "NV": 25479,
+        "NS": 4456
+      },
+      "48": {
+        "name": "Jalostotitlán",
+        "LN": 28437,
+        "SV": 14158,
+        "NV": 12948,
+        "NS": 1331
+      },
+      "13": {
+        "name": "Atotonilco el Alto",
+        "LN": 53031,
+        "SV": 26275,
+        "NV": 23409,
+        "NS": 3347
+      },
+      "49": {
+        "name": "Jamay",
+        "LN": 20723,
+        "SV": 11834,
+        "NV": 7176,
+        "NS": 1713
+      },
+      "34": {
+        "name": "Degollado",
+        "LN": 19686,
+        "SV": 9215,
+        "NV": 8421,
+        "NS": 2050
+      },
+      "74": {
+        "name": "San Diego de Alejandría",
+        "LN": 5882,
+        "SV": 3665,
+        "NV": 2217,
+        "NS": 0
+      },
+      "18": {
+        "name": "La Barca",
+        "LN": 60090,
+        "SV": 28790,
+        "NV": 29282,
+        "NS": 2018
+      },
+      "80": {
+        "name": "San Miguel el Alto",
+        "LN": 26789,
+        "SV": 14824,
+        "NV": 11370,
+        "NS": 595
+      },
+      "76": {
+        "name": "San Julián",
+        "LN": 13965,
+        "SV": 8731,
+        "NV": 5234,
+        "NS": 0
+      },
+      "46": {
+        "name": "Ixtlahuacán de los Membrillos",
+        "LN": 43391,
+        "SV": 21927,
+        "NV": 19662,
+        "NS": 1802
+      },
+      "68": {
+        "name": "Poncitlán",
+        "LN": 41568,
+        "SV": 21670,
+        "NV": 16743,
+        "NS": 3155
+      },
+      "52": {
+        "name": "Jocotepec",
+        "LN": 38736,
+        "SV": 21465,
+        "NV": 15472,
+        "NS": 1799
+      },
+      "119": {
+        "name": "Zacoalco de Torres",
+        "LN": 25413,
+        "SV": 13607,
+        "NV": 9829,
+        "NS": 1977
+      },
+      "90": {
+        "name": "Techaluta de Montenegro",
+        "LN": 3438,
+        "SV": 1989,
+        "NV": 962,
+        "NS": 487
+      },
+      "2": {
+        "name": "Acatlán de Juárez",
+        "LN": 18963,
+        "SV": 11431,
+        "NV": 7532,
+        "NS": 0
+      },
+      "65": {
+        "name": "Ocotlán",
+        "LN": 82479,
+        "SV": 42621,
+        "NV": 34748,
+        "NS": 5110
+      },
+      "31": {
+        "name": "Chapala",
+        "LN": 42863,
+        "SV": 25816,
+        "NV": 15010,
+        "NS": 2037
+      },
+      "114": {
+        "name": "Villa Corona",
+        "LN": 15969,
+        "SV": 8114,
+        "NV": 7153,
+        "NS": 702
+      },
+      "100": {
+        "name": "Tolimán",
+        "LN": 8551,
+        "SV": 5461,
+        "NV": 2861,
+        "NS": 229
+      },
+      "15": {
+        "name": "Autlán de Navarro",
+        "LN": 54841,
+        "SV": 28092,
+        "NV": 23566,
+        "NS": 3183
+      },
+      "45": {
+        "name": "La Huerta",
+        "LN": 19521,
+        "SV": 9922,
+        "NV": 6656,
+        "NS": 2943
+      },
+      "87": {
+        "name": "Tapalpa",
+        "LN": 16564,
+        "SV": 10599,
+        "NV": 4161,
+        "NS": 1804
+      },
+      "70": {
+        "name": "Villa Purificación",
+        "LN": 10256,
+        "SV": 5085,
+        "NV": 4744,
+        "NS": 427
+      },
+      "54": {
+        "name": "Juchitlán",
+        "LN": 5689,
+        "SV": 3458,
+        "NV": 2231,
+        "NS": 0
+      },
+      "56": {
+        "name": "El Limón",
+        "LN": 6223,
+        "SV": 3527,
+        "NV": 2696,
+        "NS": 0
+      },
+      "17": {
+        "name": "Ayutla",
+        "LN": 11221,
+        "SV": 6395,
+        "NV": 4169,
+        "NS": 657
+      },
+      "21": {
+        "name": "Casimiro Castillo",
+        "LN": 16751,
+        "SV": 5963,
+        "NV": 6487,
+        "NS": 4301
+      },
+      "103": {
+        "name": "Tonaya",
+        "LN": 5831,
+        "SV": 2809,
+        "NV": 2378,
+        "NS": 644
+      },
+      "79": {
+        "name": "San Martín Hidalgo",
+        "LN": 26622,
+        "SV": 14574,
+        "NV": 11064,
+        "NS": 984
+      },
+      "91": {
+        "name": "Tenamaxtlán",
+        "LN": 7248,
+        "SV": 4219,
+        "NV": 3029,
+        "NS": 0
+      },
+      "89": {
+        "name": "Tecolotlán",
+        "LN": 15256,
+        "SV": 9523,
+        "NV": 5733,
+        "NS": 0
+      },
+      "111": {
+        "name": "Unión de Tula",
+        "LN": 12797,
+        "SV": 6576,
+        "NV": 5635,
+        "NS": 586
+      },
+      "24": {
+        "name": "San Gabriel",
+        "LN": 13708,
+        "SV": 8927,
+        "NV": 4781,
+        "NS": 0
+      },
+      "39": {
+        "name": "El Grullo",
+        "LN": 21611,
+        "SV": 8127,
+        "NV": 9074,
+        "NS": 4410
+      },
+      "4": {
+        "name": "Amacueca",
+        "LN": 4954,
+        "SV": 2722,
+        "NV": 1755,
+        "NS": 477
+      },
+      "10": {
+        "name": "Atemajac de Brizuela",
+        "LN": 5631,
+        "SV": 4192,
+        "NV": 1439,
+        "NS": 0
+      },
+      "35": {
+        "name": "Ejutla",
+        "LN": 2225,
+        "SV": 1302,
+        "NV": 923,
+        "NS": 0
+      },
+      "22": {
+        "name": "Cihuatlán",
+        "LN": 28630,
+        "SV": 14063,
+        "NV": 9545,
+        "NS": 5022
+      },
+      "93": {
+        "name": "Teocuitatlán de Corona",
+        "LN": 10439,
+        "SV": 6134,
+        "NV": 3560,
+        "NS": 745
+      },
+      "86": {
+        "name": "Tamazula de Gordiano",
+        "LN": 36740,
+        "SV": 17937,
+        "NV": 16903,
+        "NS": 1900
+      },
+      "104": {
+        "name": "Tonila",
+        "LN": 6368,
+        "SV": 4327,
+        "NV": 1505,
+        "NS": 536
+      },
+      "61": {
+        "name": "Mazamitla",
+        "LN": 12507,
+        "SV": 6986,
+        "NV": 5249,
+        "NS": 272
+      },
+      "108": {
+        "name": "Tuxcueca",
+        "LN": 6369,
+        "SV": 4052,
+        "NV": 2317,
+        "NS": 0
+      },
+      "23": {
+        "name": "Zapotlán el Grande",
+        "LN": 94265,
+        "SV": 51418,
+        "NV": 37647,
+        "NS": 5200
+      },
+      "97": {
+        "name": "Tizapán el Alto",
+        "LN": 18712,
+        "SV": 8129,
+        "NV": 6534,
+        "NS": 4049
+      },
+      "121": {
+        "name": "Zapotiltic",
+        "LN": 28158,
+        "SV": 15380,
+        "NV": 11196,
+        "NS": 1582
+      },
+      "27": {
+        "name": "Concepción de Buenos Aires",
+        "LN": 5609,
+        "SV": 3363,
+        "NV": 1505,
+        "NS": 741
+      },
+      "88": {
+        "name": "Tecalitlán",
+        "LN": 14386,
+        "SV": 7188,
+        "NV": 4848,
+        "NS": 2350
+      },
+      "58": {
+        "name": "Santa María del Oro",
+        "LN": 2069,
+        "SV": 1330,
+        "NV": 739,
+        "NS": 0
+      },
+      "109": {
+        "name": "Tuxpan",
+        "LN": 29830,
+        "SV": 16161,
+        "NV": 11908,
+        "NS": 1761
+      },
+      "38": {
+        "name": "Gómez Farías",
+        "LN": 13678,
+        "SV": 8263,
+        "NV": 4771,
+        "NS": 644
+      },
+      "83": {
+        "name": "Sayula",
+        "LN": 29862,
+        "SV": 15796,
+        "NV": 12285,
+        "NS": 1781
+      },
+      "113": {
+        "name": "Valle de Juárez",
+        "LN": 6307,
+        "SV": 3444,
+        "NV": 2147,
+        "NS": 716
+      },
+      "72": {
+        "name": "El Salto",
+        "LN": 143957,
+        "SV": 69357,
+        "NV": 66437,
+        "NS": 8163
+      },
+      "42": {
+        "name": "Hostotipaquillo",
+        "LN": 7007,
+        "SV": 4268,
+        "NV": 2191,
+        "NS": 548
+      },
+      "41": {
+        "name": "Guadalajara",
+        "LN": 1268083,
+        "SV": 743737,
+        "NV": 471829,
+        "NS": 52517
+      },
+      "33": {
+        "name": "Chiquilistlán",
+        "LN": 5047,
+        "SV": 3325,
+        "NV": 1722,
+        "NS": 0
+      },
+      "107": {
+        "name": "Tuxcacuesco",
+        "LN": 4627,
+        "SV": 3046,
+        "NV": 1479,
+        "NS": 102
+      },
+      "28": {
+        "name": "Cuautitlán de García Barragán",
+        "LN": 14207,
+        "SV": 9576,
+        "NV": 3355,
+        "NS": 1276
+      },
+      "25": {
+        "name": "Cocula",
+        "LN": 25514,
+        "SV": 13182,
+        "NV": 8433,
+        "NS": 3899
+      },
+      "71": {
+        "name": "Quitupan",
+        "LN": 8986,
+        "SV": 4921,
+        "NV": 4065,
+        "NS": 0
+      },
+      "14": {
+        "name": "Atoyac",
+        "LN": 7707,
+        "SV": 4583,
+        "NV": 2670,
+        "NS": 454
+      },
+      "51": {
+        "name": "Jilotlán de los Dolores",
+        "LN": 6348,
+        "SV": 2778,
+        "NV": 2637,
+        "NS": 933
+      },
+      "122": {
+        "name": "Zapotitlán de Vadillo",
+        "LN": 5560,
+        "SV": 3810,
+        "NV": 1750,
+        "NS": 0
+      },
+      "67": {
+        "name": "Pihuamo",
+        "LN": 9855,
+        "SV": 4673,
+        "NV": 3469,
+        "NS": 1713
+      },
+      "96": {
+        "name": "Teuchitlán",
+        "LN": 8477,
+        "SV": 5062,
+        "NV": 2708,
+        "NS": 707
+      },
+      "59": {
+        "name": "La Manzanilla de la Paz",
+        "LN": 3756,
+        "SV": 2625,
+        "NV": 1131,
+        "NS": 0
+      }
+    },
+    "section_count": 3787,
+    "sex_values": [
+      "0",
+      "1",
+      "2"
+    ],
+    "section_types": [
+      "M",
+      "R",
+      "U"
+    ],
+    "age_min": 18,
+    "age_max": 116,
+    "duplicate_key_rows": 0,
+    "negative_count_rows": 0,
+    "accounting_mismatch_rows": 0,
+    "rows_with_blank_values": 2953,
+    "unknown_share": 0.05867227122060846,
+    "abstention_known": 0.42940954147846133
+  }
+]

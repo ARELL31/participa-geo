@@ -1,0 +1,1874 @@
+[
+  {
+    "year": 2009,
+    "url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/01_descripcioncampos_conteoscensales2009.txt",
+        "size": 2557,
+        "compressed": 1199
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_ags.csv",
+        "size": 5552712,
+        "compressed": 362834
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_bc.csv",
+        "size": 13522857,
+        "compressed": 951823
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_bcs.csv",
+        "size": 3405505,
+        "compressed": 222863
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_camp.csv",
+        "size": 3885548,
+        "compressed": 287790
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_cdmx.csv",
+        "size": 60120753,
+        "compressed": 3723923
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_chih.csv",
+        "size": 23341673,
+        "compressed": 1613784
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_chis.csv",
+        "size": 17457216,
+        "compressed": 1279784
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_coah.csv",
+        "size": 12723149,
+        "compressed": 928515
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_col.csv",
+        "size": 2727737,
+        "compressed": 212583
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_dgo.csv",
+        "size": 10910185,
+        "compressed": 759527
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_gro.csv",
+        "size": 24962049,
+        "compressed": 1563416
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_gto.csv",
+        "size": 28434184,
+        "compressed": 1950658
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_hgo.csv",
+        "size": 15237001,
+        "compressed": 1039995
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_jal.csv",
+        "size": 31658665,
+        "compressed": 2259627
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mex.csv",
+        "size": 57763411,
+        "compressed": 4095764
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mich.csv",
+        "size": 24563802,
+        "compressed": 1731463
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mor.csv",
+        "size": 7900341,
+        "compressed": 592448
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_nay.csv",
+        "size": 7195553,
+        "compressed": 503244
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_nl.csv",
+        "size": 19881277,
+        "compressed": 1360504
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_oax.csv",
+        "size": 24988980,
+        "compressed": 1557650
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_pue.csv",
+        "size": 23482782,
+        "compressed": 1720562
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_qro.csv",
+        "size": 6933201,
+        "compressed": 500332
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_qroo.csv",
+        "size": 5913683,
+        "compressed": 390687
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_sin.csv",
+        "size": 26897255,
+        "compressed": 1813535
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_slp.csv",
+        "size": 17525628,
+        "compressed": 1070393
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_son.csv",
+        "size": 11234323,
+        "compressed": 838316
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tab.csv",
+        "size": 9379003,
+        "compressed": 713354
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tamps.csv",
+        "size": 16268337,
+        "compressed": 1149635
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tlax.csv",
+        "size": 5514562,
+        "compressed": 386090
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_ver.csv",
+        "size": 43897367,
+        "compressed": 2981502
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_yuc.csv",
+        "size": 8898302,
+        "compressed": 671622
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_zac.csv",
+        "size": 14850572,
+        "compressed": 958225
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/01_descripcioncampos_conteoscensales2009.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018 y 2021)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (Urbana, Mixta, Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2021\nDEL\tDistrito Electoral Local en el marco cartográfico de la DERFE 2021\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a un cuadernillo solicitado por autoridad jurisdiccional.\n\t- Registro correspondiente a una página no disponible en el cuadernillo\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tamps.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  },
+  {
+    "year": 2012,
+    "url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/01_descripcioncampos_conteoscensales2012.txt",
+        "size": 2557,
+        "compressed": 1199
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_ags.csv",
+        "size": 5533362,
+        "compressed": 364352
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_bc.csv",
+        "size": 14959132,
+        "compressed": 1032903
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_bcs.csv",
+        "size": 3542315,
+        "compressed": 232633
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_camp.csv",
+        "size": 3790656,
+        "compressed": 280424
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_cdmx.csv",
+        "size": 58378861,
+        "compressed": 3576401
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_chih.csv",
+        "size": 22075356,
+        "compressed": 1520103
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_chis.csv",
+        "size": 17693368,
+        "compressed": 1289101
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_coah.csv",
+        "size": 12812395,
+        "compressed": 925821
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_col.csv",
+        "size": 2798815,
+        "compressed": 212970
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_dgo.csv",
+        "size": 10600855,
+        "compressed": 739620
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_gro.csv",
+        "size": 23825833,
+        "compressed": 1499980
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_gto.csv",
+        "size": 27810449,
+        "compressed": 1886877
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_hgo.csv",
+        "size": 14780796,
+        "compressed": 1004723
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_jal.csv",
+        "size": 31819429,
+        "compressed": 2230828
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mex.csv",
+        "size": 58243334,
+        "compressed": 4075397
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mich.csv",
+        "size": 23242397,
+        "compressed": 1633018
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mor.csv",
+        "size": 7826003,
+        "compressed": 585716
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_nay.csv",
+        "size": 7226884,
+        "compressed": 500378
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_nl.csv",
+        "size": 21146117,
+        "compressed": 1441940
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_oax.csv",
+        "size": 24615948,
+        "compressed": 1538399
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_pue.csv",
+        "size": 23220049,
+        "compressed": 1708879
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_qro.csv",
+        "size": 7249014,
+        "compressed": 519948
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_qroo.csv",
+        "size": 6745282,
+        "compressed": 446703
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_sin.csv",
+        "size": 24850324,
+        "compressed": 1680510
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_slp.csv",
+        "size": 17075704,
+        "compressed": 1040170
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_son.csv",
+        "size": 10824363,
+        "compressed": 801827
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tab.csv",
+        "size": 9175188,
+        "compressed": 682657
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tamps.csv",
+        "size": 15970255,
+        "compressed": 1118269
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tlax.csv",
+        "size": 5524362,
+        "compressed": 390386
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_ver.csv",
+        "size": 43561162,
+        "compressed": 2955123
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_yuc.csv",
+        "size": 8763247,
+        "compressed": 655767
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_zac.csv",
+        "size": 14433441,
+        "compressed": 932948
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/01_descripcioncampos_conteoscensales2012.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018 y 2021)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (Urbana, Mixta, Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2021\nDEL\tDistrito Electoral Local en el marco cartográfico de la DERFE 2021\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a un cuadernillo solicitado por autoridad jurisdiccional.\n\t- Registro correspondiente a una página no disponible en el cuadernillo\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tamps.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  },
+  {
+    "year": 2015,
+    "url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/01_descripcioncampos_conteoscensales2015.txt",
+        "size": 2557,
+        "compressed": 1199
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_ags.csv",
+        "size": 5782338,
+        "compressed": 383399
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_bc.csv",
+        "size": 16568141,
+        "compressed": 1137970
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_bcs.csv",
+        "size": 4116283,
+        "compressed": 278097
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_camp.csv",
+        "size": 4153327,
+        "compressed": 321552
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_cdmx.csv",
+        "size": 59121908,
+        "compressed": 3718697
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_chih.csv",
+        "size": 24799573,
+        "compressed": 1706982
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_chis.csv",
+        "size": 18502088,
+        "compressed": 1404927
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_coah.csv",
+        "size": 13558885,
+        "compressed": 996160
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_col.csv",
+        "size": 2996838,
+        "compressed": 235095
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_dgo.csv",
+        "size": 11041628,
+        "compressed": 773233
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_gro.csv",
+        "size": 25130335,
+        "compressed": 1613950
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_gto.csv",
+        "size": 29630013,
+        "compressed": 2054136
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_hgo.csv",
+        "size": 15849613,
+        "compressed": 1093880
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_jal.csv",
+        "size": 33397660,
+        "compressed": 2395676
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mex.csv",
+        "size": 60570306,
+        "compressed": 4399548
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mich.csv",
+        "size": 24449930,
+        "compressed": 1745840
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mor.csv",
+        "size": 7975480,
+        "compressed": 610319
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_nay.csv",
+        "size": 7723884,
+        "compressed": 541496
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_nl.csv",
+        "size": 23575951,
+        "compressed": 1635273
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_oax.csv",
+        "size": 25110927,
+        "compressed": 1577361
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_pue.csv",
+        "size": 24375630,
+        "compressed": 1816303
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_qro.csv",
+        "size": 7820600,
+        "compressed": 580295
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_qroo.csv",
+        "size": 7718329,
+        "compressed": 520353
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_sin.csv",
+        "size": 27338518,
+        "compressed": 1850395
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_slp.csv",
+        "size": 17927476,
+        "compressed": 1107661
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_son.csv",
+        "size": 12330295,
+        "compressed": 950068
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tab.csv",
+        "size": 9504011,
+        "compressed": 755911
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tamps.csv",
+        "size": 17562091,
+        "compressed": 1237037
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tlax.csv",
+        "size": 5618306,
+        "compressed": 400192
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_ver.csv",
+        "size": 44914418,
+        "compressed": 3077814
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_yuc.csv",
+        "size": 9240512,
+        "compressed": 705925
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_zac.csv",
+        "size": 14815266,
+        "compressed": 957466
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/01_descripcioncampos_conteoscensales2015.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018 y 2021)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (Urbana, Mixta, Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2021\nDEL\tDistrito Electoral Local en el marco cartográfico de la DERFE 2021\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a un cuadernillo solicitado por autoridad jurisdiccional.\n\t- Registro correspondiente a una página no disponible en el cuadernillo\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tamps.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  },
+  {
+    "year": 2018,
+    "url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/01_descripcioncampos_conteoscensales2018.txt",
+        "size": 2557,
+        "compressed": 1199
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_ags.csv",
+        "size": 5891067,
+        "compressed": 392257
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_bc.csv",
+        "size": 17071740,
+        "compressed": 1185886
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_bcs.csv",
+        "size": 4240393,
+        "compressed": 284007
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_camp.csv",
+        "size": 4222192,
+        "compressed": 324058
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_cdmx.csv",
+        "size": 59706449,
+        "compressed": 3708276
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_chih.csv",
+        "size": 25385054,
+        "compressed": 1774952
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_chis.csv",
+        "size": 18857168,
+        "compressed": 1448257
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_coah.csv",
+        "size": 13809327,
+        "compressed": 1016921
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_col.csv",
+        "size": 3040596,
+        "compressed": 234408
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_dgo.csv",
+        "size": 11267678,
+        "compressed": 797548
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_gro.csv",
+        "size": 25529015,
+        "compressed": 1622763
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_gto.csv",
+        "size": 29838917,
+        "compressed": 2083858
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_hgo.csv",
+        "size": 16103446,
+        "compressed": 1109007
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_jal.csv",
+        "size": 33814778,
+        "compressed": 2441204
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mex.csv",
+        "size": 61626427,
+        "compressed": 4457433
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mich.csv",
+        "size": 24749266,
+        "compressed": 1768196
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mor.csv",
+        "size": 8064265,
+        "compressed": 615034
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_nay.csv",
+        "size": 7848473,
+        "compressed": 551880
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_nl.csv",
+        "size": 24229057,
+        "compressed": 1707557
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_oax.csv",
+        "size": 25490278,
+        "compressed": 1622524
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_pue.csv",
+        "size": 24853542,
+        "compressed": 1878993
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_qro.csv",
+        "size": 7972360,
+        "compressed": 589718
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_qroo.csv",
+        "size": 7977788,
+        "compressed": 538799
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_sin.csv",
+        "size": 27799396,
+        "compressed": 1879851
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_slp.csv",
+        "size": 18207670,
+        "compressed": 1124870
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_son.csv",
+        "size": 12588534,
+        "compressed": 965845
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tab.csv",
+        "size": 9602443,
+        "compressed": 757580
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tamps.csv",
+        "size": 17956570,
+        "compressed": 1275594
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tlax.csv",
+        "size": 5714172,
+        "compressed": 411319
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_ver.csv",
+        "size": 45416526,
+        "compressed": 3121588
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_yuc.csv",
+        "size": 9333974,
+        "compressed": 717023
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_zac.csv",
+        "size": 15059303,
+        "compressed": 971334
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/01_descripcioncampos_conteoscensales2018.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018 y 2021)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (Urbana, Mixta, Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2021\nDEL\tDistrito Electoral Local en el marco cartográfico de la DERFE 2021\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a un cuadernillo solicitado por autoridad jurisdiccional.\n\t- Registro correspondiente a una página no disponible en el cuadernillo\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tamps.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  },
+  {
+    "year": 2021,
+    "url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/01_descripcioncampos_conteoscensales2021.txt",
+        "size": 2557,
+        "compressed": 1199
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_ags.csv",
+        "size": 6141176,
+        "compressed": 417067
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_bc.csv",
+        "size": 17942152,
+        "compressed": 1267103
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_bcs.csv",
+        "size": 4315920,
+        "compressed": 289440
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_camp.csv",
+        "size": 4311047,
+        "compressed": 332874
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_cdmx.csv",
+        "size": 60047509,
+        "compressed": 3754754
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_chih.csv",
+        "size": 25889625,
+        "compressed": 1821007
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_chis.csv",
+        "size": 19449413,
+        "compressed": 1477213
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_coah.csv",
+        "size": 14092891,
+        "compressed": 1042130
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_col.csv",
+        "size": 3069130,
+        "compressed": 237924
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_dgo.csv",
+        "size": 11206621,
+        "compressed": 794111
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_gro.csv",
+        "size": 25248823,
+        "compressed": 1606031
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_gto.csv",
+        "size": 30196421,
+        "compressed": 2096104
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_hgo.csv",
+        "size": 16209187,
+        "compressed": 1128540
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_jal.csv",
+        "size": 34535885,
+        "compressed": 2482296
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mex.csv",
+        "size": 62980968,
+        "compressed": 4554338
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mich.csv",
+        "size": 25147879,
+        "compressed": 1798458
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mor.csv",
+        "size": 8204297,
+        "compressed": 631426
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_nay.csv",
+        "size": 8036274,
+        "compressed": 569503
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_nl.csv",
+        "size": 25860975,
+        "compressed": 1828075
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_oax.csv",
+        "size": 26001336,
+        "compressed": 1649612
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_pue.csv",
+        "size": 25363589,
+        "compressed": 1906100
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_qro.csv",
+        "size": 8355483,
+        "compressed": 625268
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_qroo.csv",
+        "size": 8848146,
+        "compressed": 603844
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_sin.csv",
+        "size": 28257746,
+        "compressed": 1931337
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_slp.csv",
+        "size": 18315276,
+        "compressed": 1135822
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_son.csv",
+        "size": 12768871,
+        "compressed": 976138
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tab.csv",
+        "size": 9804013,
+        "compressed": 757182
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tamps.csv",
+        "size": 18284819,
+        "compressed": 1303893
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tlax.csv",
+        "size": 5769747,
+        "compressed": 419676
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_ver.csv",
+        "size": 46423403,
+        "compressed": 3199311
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_yuc.csv",
+        "size": 9523298,
+        "compressed": 739998
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_zac.csv",
+        "size": 14881181,
+        "compressed": 969626
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/01_descripcioncampos_conteoscensales2021.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018 y 2021)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (Urbana, Mixta, Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2021\nDEL\tDistrito Electoral Local en el marco cartográfico de la DERFE 2021\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a un cuadernillo solicitado por autoridad jurisdiccional.\n\t- Registro correspondiente a una página no disponible en el cuadernillo\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tamps.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "url": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip",
+    "members": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/",
+        "size": 0,
+        "compressed": 0
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/01_descripcioncampos_conteoscensales2024.txt",
+        "size": 2502,
+        "compressed": 1203
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_ags.csv",
+        "size": 6892228,
+        "compressed": 715710
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_bc.csv",
+        "size": 19970589,
+        "compressed": 2159072
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_bcs.csv",
+        "size": 4943002,
+        "compressed": 501281
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_camp.csv",
+        "size": 4690759,
+        "compressed": 575092
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_cdmx.csv",
+        "size": 63091165,
+        "compressed": 5948337
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_chih.csv",
+        "size": 27844434,
+        "compressed": 3267694
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_chis.csv",
+        "size": 21909602,
+        "compressed": 3092746
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_coah.csv",
+        "size": 15648663,
+        "compressed": 1913056
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_col.csv",
+        "size": 3436311,
+        "compressed": 412360
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_dgo.csv",
+        "size": 11985347,
+        "compressed": 1409547
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_gro.csv",
+        "size": 26936056,
+        "compressed": 3129807
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_gto.csv",
+        "size": 32490308,
+        "compressed": 3814486
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_hgo.csv",
+        "size": 17727112,
+        "compressed": 2234915
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_jal.csv",
+        "size": 37965120,
+        "compressed": 4769831
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mex.csv",
+        "size": 68310064,
+        "compressed": 8073401
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mich.csv",
+        "size": 26854055,
+        "compressed": 3482747
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mor.csv",
+        "size": 8870475,
+        "compressed": 1128568
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_nay.csv",
+        "size": 8773939,
+        "compressed": 1017539
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_nl.csv",
+        "size": 28002087,
+        "compressed": 3196169
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_oax.csv",
+        "size": 27906407,
+        "compressed": 4143365
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_pue.csv",
+        "size": 27861640,
+        "compressed": 3896947
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_qro.csv",
+        "size": 9415936,
+        "compressed": 1094355
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_qroo.csv",
+        "size": 9874344,
+        "compressed": 1049274
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_sin.csv",
+        "size": 30456190,
+        "compressed": 3400968
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_slp.csv",
+        "size": 19725525,
+        "compressed": 2173114
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_son.csv",
+        "size": 13951509,
+        "compressed": 1819092
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tab.csv",
+        "size": 10692727,
+        "compressed": 1344775
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tam.csv",
+        "size": 20039821,
+        "compressed": 2353136
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tlax.csv",
+        "size": 6257886,
+        "compressed": 758266
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_ver.csv",
+        "size": 49243799,
+        "compressed": 6245183
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_yuc.csv",
+        "size": 10366709,
+        "compressed": 1403647
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_zac.csv",
+        "size": 15909921,
+        "compressed": 1883028
+      }
+    ],
+    "small_texts": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/01_descripcioncampos_conteoscensales2024.txt",
+        "text": "Descripción archivo\nAELEC\tAño de elección (2009,2012,2015, 2018, 2021 y 2024)\nFELECCION\tFecha de la jornada electoral (formato corto)\nEDOCVE\tClave INE de entidad federativa\nEDONOM\tNombre de la entidad federativa\nMPIOCVE\tClave INE de Municipio\nMPIONOM\tNombre del municipio\nSECCION\tSección electoral en el año correspondiente\nTIPOSEC\tTipo de sección en el año correspondiente (U Urbana; M Mixta; R Rural)\nDEF\tDistrito Electoral Federal en el marco cartográfico de la DERFE 2023\nDEL     Distrito Electoral Local en el marco cartográfico de la DERFE 2023\nSEXO\tSexo de las personas (0 Hombres; 1 Mujeres; 2 No binario)\nEDAD\tAños de edad cumplidos al día de la elección de las personas\nLN\tLista nominal de los cuadernillos para todas las casillas catalogadas\nSV\tRegistros con marca de voto.\nNV\tRegistros sin marca de voto.\nNS\tRegistros no especificados en participación, pues corresponden a:\n\t- Registro correspondiente a un cuadernillo sin marcas de votación.\n\t- Registro correspondiente a un cuadernillo no disponible para su captura.\n\t- Registro correspondiente a una página no disponible en el cuadernillo.\n\nEn todos los casos, la fuente de información de la participación ciudadana son los cuadernillos de la lista nominal de las casillas electorales aprobadas por los consejos distritales, por lo que no contempla la participación de las personas que votaron en casillas especiales; tampoco se contempla la participación de las mexicanas y los mexicanos residentes en el extranjero.\nLa referencia de la sección de las personas corresponde al lugar de residencia consignado en la credencial electoral. De esta manera, los datos pueden diferir de los datos de otras fuentes de información, como son los cómputos distritales por ser otra la fuente de información corresponde a las actas de escrutinio y cómputo que se levantan en cada casilla electoral que haya sido instalada durante la jornada electoral.\n\nCada Conteo Censal de Participación está desglosado de acuerdo a la clave INE de entidad federativa:\n\n01\tAGUASCALIENTES\n02\tBAJA CALIFORNIA\n03\tBAJA CALIFORNIA SUR\n04\tCAMPECHE\n05\tCOAHUILA\n06\tCOLIMA\n07\tCHIAPAS\n08\tCHIHUAHUA\n09\tCIUDAD DE MÉXICO (DISTRITO FEDERAL antes de 2015)\n10\tDURANGO\n11\tGUANAJUATO\n12\tGUERRERO\n13\tHIDALGO\n14\tJALISCO\n15\tESTADO DE MÉXICO\n16\tMICHOACÁN\n17\tMORELOS\n18\tNAYARIT\n19\tNUEVO LEON\n20\tOAXACA\n21\tPUEBLA\n22\tQUERETARO\n23\tQUINTANA ROO\n24\tSAN LUIS POTOSI\n25\tSINALOA\n26\tSONORA\n27\tTABASCO\n28\tTAMAULIPAS\n29\tTLAXCALA\n30\tVERACRUZ\n31\tYUCATAN\n32\tZACATECAS\n\n***\n"
+      }
+    ],
+    "data_headers": [
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_ags.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_bc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_bcs.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_camp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_cdmx.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_chih.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_chis.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_coah.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_col.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_dgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_gro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_gto.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_hgo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_jal.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mex.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mich.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_mor.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_nay.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_nl.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_oax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_pue.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_qro.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_qroo.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_sin.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_slp.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_son.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tab.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tam.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_tlax.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_ver.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_yuc.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      },
+      {
+        "name": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_zac.csv",
+        "header": "AELEC,FELECCION,EDOCVE,EDONOM,MPIOCVE,MPIONOM,SECCION,TIPOSEC,DEF,DEL,SEXO,EDAD,LN,SV,NV,NS"
+      }
+    ]
+  }
+]
