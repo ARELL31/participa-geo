@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
@@ -11,7 +11,11 @@ from participa_geo.api.deps import SessionDep
 from participa_geo.api.errors import ProblemException, problem
 from participa_geo.api.metadata import build_meta
 from participa_geo.api.schemas.common import Page
-from participa_geo.api.schemas.models import PredictionDTO, PredictionQuality
+from participa_geo.api.schemas.models import (
+    PredictionDTO,
+    PredictionQuality,
+    TargetYearQuery,
+)
 from participa_geo.db.models import PredictionRecord
 from participa_geo.db.repository import Repository
 
@@ -45,7 +49,7 @@ def to_prediction_dto(record: PredictionRecord) -> PredictionDTO:
 def list_predictions(
     request: Request,
     model_run_id: UUID | None = None,
-    target_year: Literal[2027] = 2027,
+    target_year: TargetYearQuery = 2027,
     territory_id: UUID | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=125)] = 25,

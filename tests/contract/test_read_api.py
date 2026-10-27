@@ -142,6 +142,25 @@ def test_predictions_default_to_published_model(db_api_client, loaded_model_run_
     assert body["meta"]["model_run_id"] == str(loaded_model_run_id)
 
 
+def test_predictions_target_year_2027_accepted(db_api_client):
+    # Regression: the query-string `target_year` must coerce to int and pass the
+    # Literal check (Pydantic 2.14 rejected `"2027"` with `literal_error`).
+    response = db_api_client.get(
+        "/api/v1/predictions", params={"target_year": 2027, "page_size": 1}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 125
+    assert body["items"][0]["target_year"] == 2027
+
+
+def test_predictions_target_year_2026_rejected(db_api_client):
+    response = db_api_client.get("/api/v1/predictions", params={"target_year": 2026})
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "validation_error"
+
+
 def _query_params(openapi: dict, path: str) -> dict[str, dict]:
     return {
         p["name"]: p
