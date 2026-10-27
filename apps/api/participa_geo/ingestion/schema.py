@@ -82,11 +82,23 @@ def territory_id(state_code: str, municipality_code: str) -> UUID:
     )
 
 
-def observation_id(state_code: str, municipality_code: str, year: int) -> UUID:
-    """Origin identity for a municipality/year observation."""
+def observation_id(
+    state_code: str,
+    municipality_code: str,
+    year: int,
+    source_version_id: UUID,
+) -> UUID:
+    """Origin identity for one dataset-version-scoped municipality/year row.
+
+    Loading a second dataset version for the same municipality/year must create a
+    distinct observation (and origin territory), not silently overwrite the first
+    version's provenance. The ``source_version_id`` is therefore part of the
+    deterministic ``uuid5`` identity.
+    """
     return uuid5(
         NAMESPACE_URL,
-        f"ccpc:{state_code}:municipality:{municipality_code}:{year}",
+        f"ccpc:{state_code}:municipality:{municipality_code}:{year}"
+        f":dataset:{source_version_id}",
     )
 
 

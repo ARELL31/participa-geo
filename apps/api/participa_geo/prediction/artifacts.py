@@ -175,6 +175,13 @@ def write_artifacts(bundle: ModelBundle, output_dir: Path) -> None:
     exclusions_bytes = _exclusions_csv_bytes(bundle.exclusions)
     _atomic_write_bytes(output_dir / "exclusions.csv", exclusions_bytes)
 
+    exclusions_by_cut_bytes = _exclusions_by_cut_csv_bytes(
+        bundle.evaluation_payload.get("exclusions", {})
+    )
+    _atomic_write_bytes(
+        output_dir / "exclusions-by-cut.csv", exclusions_by_cut_bytes
+    )
+
     manifest_payload = dict(bundle.manifest_payload)
     manifest_payload["artifacts"] = {
         "model.json": {
@@ -192,6 +199,10 @@ def write_artifacts(bundle: ModelBundle, output_dir: Path) -> None:
         "exclusions.csv": {
             "sha256": _sha256_bytes(exclusions_bytes),
             "bytes": len(exclusions_bytes),
+        },
+        "exclusions-by-cut.csv": {
+            "sha256": _sha256_bytes(exclusions_by_cut_bytes),
+            "bytes": len(exclusions_by_cut_bytes),
         },
     }
     manifest_payload["generated_at"] = _now_utc_iso()
@@ -225,6 +236,26 @@ def _exclusions_csv_bytes(exclusions) -> bytes:
                 ";".join(exclusion.reasons),
             ]
         )
+    return buffer.getvalue().encode("utf-8")
+
+
+def _exclusions_by_cut_csv_bytes(exclusions_by_year: dict) -> bytes:
+    """Per-cut exclusion list (Spec §7), derived from ``evaluation.json``."""
+    import csv
+    import io
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(["year", "municipality_code", "reasons"])
+    for year in sorted(exclusions_by_year, key=lambda item: int(item)):
+        for exclusion in exclusions_by_year[year]:
+            writer.writerow(
+                [
+                    year,
+                    exclusion.get("municipality_code", ""),
+                    ";".join(exclusion.get("reasons", [])),
+                ]
+            )
     return buffer.getvalue().encode("utf-8")
 
 

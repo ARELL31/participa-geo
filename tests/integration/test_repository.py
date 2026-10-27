@@ -113,6 +113,31 @@ def test_get_history_year_filter(postgis_session):
     assert stotal == 1 and state[0].year == 2024
 
 
+def test_get_history_state_honours_pagination(postgis_session):
+    repo = _repo(postgis_session)
+    page1, total = repo.get_history(
+        territory_id=None, year=None, page=1, page_size=1
+    )
+    assert total == 6
+    assert [row.year for row in page1] == [2009]
+
+    page2, total2 = repo.get_history(
+        territory_id=None, year=None, page=2, page_size=1
+    )
+    assert total2 == 6
+    assert [row.year for row in page2] == [2012]
+
+    page6, _ = repo.get_history(
+        territory_id=None, year=None, page=6, page_size=1
+    )
+    assert [row.year for row in page6] == [2024]
+
+    page7, _ = repo.get_history(
+        territory_id=None, year=None, page=7, page_size=1
+    )
+    assert page7 == []
+
+
 def test_get_history_state_sums_counts_before_rates(postgis_session):
     repo = _repo(postgis_session)
     records, total = repo.get_history(territory_id=None, year=None, page=1, page_size=10)

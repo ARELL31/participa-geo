@@ -43,6 +43,7 @@ from participa_geo.prediction.features import (
 )
 from participa_geo.prediction.risk import (
     classify_risk,
+    empirical_coverage,
     error_band_amplitude,
     is_risk_unstable,
     risk_band,
@@ -217,6 +218,120 @@ def _explanations(fitted: FittedRidge, dataset: FeatureDataset) -> list[dict]:
     return out
 
 
+def _m0_explanations(dataset: FeatureDataset) -> list[dict]:
+    """Additive explanation for M0: its single historical antecedent."""
+    out: list[dict] = []
+    for row in dataset.rows:
+        contribution = row.features["same_type_abstention_pct"]
+        out.append(
+            {
+                "municipality_code": row.municipality_code,
+                "intercept": 0.0,
+                "contributions": {"same_type_abstention_pct": contribution},
+                "pre_clip_sum": contribution,
+                "family": "M0",
+            }
+        )
+    return out
+
+
+def _fitted_identity(fitted: FittedRidge | None) -> dict | None:
+    if fitted is None:
+        return None
+    return {
+        "intercept": fitted.intercept,
+        "coefficients": list(fitted.coefficients),
+        "scaler_mean": list(fitted.scaler_mean),
+        "scaler_scale": list(fitted.scaler_scale),
+    }
+
+
+def _metrics_identity(metrics: ModelMetrics) -> dict:
+    return {
+        "n": metrics.n,
+        "mae": metrics.mae,
+        "rmse": metrics.rmse,
+        "bias": metrics.bias,
+        "weighted_mae": metrics.weighted_mae,
+        "clipped_count": metrics.clipped_count,
+        "clipped_total": metrics.clipped_total,
+    }
+
+
+def _status_value(value: object) -> str | None:
+    inner = getattr(value, "value", value)
+    return str(inner) if inner is not None else None
+
+
+def build_model_identity(
+    *,
+    family: str,
+    data_hash: str,
+    identity_statuses: Mapping[str, object],
+    datasets: Mapping[int, FeatureDataset],
+    selection: EvaluationBundle,
+    m0_2024: ModelMetrics,
+    m1_2024: ModelMetrics,
+    amplitude: float | None,
+    fitted_final: FittedRidge | None,
+) -> dict:
+    """Canonical content that determines ``model_run_id``.
+
+    Besides the data hash and features, this hashes the identity-status map, the
+    eligible cohort and exclusions for every cut, the candidate M1 parameters and
+    both evaluations, and the final fitted parameters. Editing any of them minted
+    a new model id instead of reusing an id with different outputs.
+    """
+    identity_rows = []
+    for code in sorted(identity_statuses):
+        ident = identity_statuses[code]
+        identity_rows.append(
+            {
+                "municipality_code": code,
+                "identity_status": _status_value(getattr(ident, "identity_status", None)),
+                "footprint_status": _status_value(getattr(ident, "footprint_status", None)),
+            }
+        )
+
+    cohorts: dict[str, dict] = {}
+    for year in sorted(datasets):
+        dataset = datasets[year]
+        cohorts[str(year)] = {
+            "eligible_codes": [row.municipality_code for row in dataset.rows],
+            "exclusions": [
+                {
+                    "municipality_code": exclusion.municipality_code,
+                    "reasons": list(exclusion.reasons),
+                }
+                for exclusion in dataset.exclusions
+            ],
+        }
+
+    return {
+        "schema": "participa-geo:model-identity:2",
+        "family": family,
+        "target_year": TARGET_YEAR,
+        "data_sha256": data_hash,
+        "feature_order": list(FEATURE_ORDER),
+        "alpha": ALPHA,
+        "validation_year": VALIDATION_YEAR,
+        "test_year": TEST_YEAR,
+        "identity_statuses": identity_rows,
+        "cohorts": cohorts,
+        "selection": {
+            "m0_mae_2021": selection.m0.mae,
+            "m1_mae_2021": selection.m1.mae,
+        },
+        "metrics": {
+            "m0": {"2021": _metrics_identity(selection.m0), "2024": _metrics_identity(m0_2024)},
+            "m1": {"2021": _metrics_identity(selection.m1), "2024": _metrics_identity(m1_2024)},
+        },
+        "band_amplitude_pp": amplitude,
+        "final_model": _fitted_identity(fitted_final),
+        "candidate_m1": _fitted_identity(selection.fitted_m1),
+    }
+
+
 def train_release(
     observations: Sequence[MunicipalObservation],
     output_dir: Path,
@@ -270,19 +385,26 @@ def train_release(
     # 4) Uncertainty band: P90 absolute error of the selected family on 2021.
     errors_2021 = selection.m1_errors if family == "M1" else selection.m0_errors
     amplitude = error_band_amplitude(errors_2021)
+    # Out-of-time empirical coverage: 2024 errors compared with the frozen 2021
+    # band. This never changes the amplitude used for 2027.
+    errors_2024 = (
+        pred_2024 - y_2024
+        if family == "M1"
+        else predict_m0(datasets[2024]) - y_2024
+    )
 
     # 5) Prediction records for every municipality (125), incl. insufficient.
-    model_identity = {
-        "family": family,
-        "data_sha256": data_hash,
-        "feature_order": list(FEATURE_ORDER),
-        "alpha": ALPHA,
-    }
-    if fitted_final is not None:
-        model_identity["intercept"] = fitted_final.intercept
-        model_identity["coefficients"] = list(fitted_final.coefficients)
-        model_identity["scaler_mean"] = list(fitted_final.scaler_mean)
-        model_identity["scaler_scale"] = list(fitted_final.scaler_scale)
+    model_identity = build_model_identity(
+        family=family,
+        data_hash=data_hash,
+        identity_statuses=identity_statuses,
+        datasets=datasets,
+        selection=selection,
+        m0_2024=m0_2024,
+        m1_2024=m1_2024,
+        amplitude=amplitude,
+        fitted_final=fitted_final,
+    )
     model_run_id = compute_model_run_id(model_identity)
 
     eligible_by_code = {r.municipality_code: i for i, r in enumerate(datasets[2027].rows)}
@@ -358,14 +480,26 @@ def train_release(
         model_run_id=model_run_id,
         fitted=fitted_final,
         candidate_m1=selection.fitted_m1,
+        candidate_m1_evaluation={
+            "mae_2021": selection.m1.mae,
+            "n_2021": selection.m1.n,
+            "mae_2024": m1_2024.mae,
+            "n_2024": m1_2024.n,
+        },
         raw_final=raw_final,
         pred_final=pred_final,
         datasets=datasets,
-        explanations=_explanations(fitted_final, datasets[2027])
-        if fitted_final is not None
-        else None,
+        explanations=(
+            _explanations(fitted_final, datasets[2027])
+            if fitted_final is not None
+            else _m0_explanations(datasets[2027])
+        ),
+        candidate_m1_explanations=_explanations(
+            selection.fitted_m1, datasets[2027]
+        ),
     )
     evaluation_payload = _evaluation_payload(
+        family=family,
         selection=selection,
         m0_2024=m0_2024,
         m1_2024=m1_2024,
@@ -373,14 +507,13 @@ def train_release(
         datasets=datasets,
         observations=observations,
         data_hash=data_hash,
+        errors_2024=errors_2024,
     )
     manifest_payload = _manifest_payload(
         family=family,
         model_run_id=model_run_id,
         data_hash=data_hash,
-        fitted=fitted_final,
-        candidate_codes=[r.municipality_code for r in datasets[2027].rows],
-        exclusion_codes=[e.municipality_code for e in datasets[2027].exclusions],
+        identity=model_identity,
     )
 
     bundle = ModelBundle(
@@ -408,10 +541,12 @@ def _model_payload(
     model_run_id: UUID,
     fitted: FittedRidge | None,
     candidate_m1: FittedRidge | None,
+    candidate_m1_evaluation: dict,
     raw_final: np.ndarray,
     pred_final: np.ndarray,
     datasets: dict[int, FeatureDataset],
     explanations: list[dict] | None,
+    candidate_m1_explanations: list[dict],
 ) -> dict:
     payload: dict = {
         "family": family,
@@ -430,7 +565,17 @@ def _model_payload(
             for i, row in enumerate(datasets[2027].rows)
         ],
         "clipped_count_2027": int(np.count_nonzero(raw_final != pred_final)),
+        "features_2027": [
+            {
+                "municipality_code": row.municipality_code,
+                "municipality_name": row.municipality_name,
+                "features": dict(row.features),
+                "origins": dict(row.origins),
+            }
+            for row in datasets[2027].rows
+        ],
         "explanations": explanations,
+        "candidate_m1_explanations": candidate_m1_explanations,
         "limitations": [
             "Reference cartography 2025-12-15; identity_status=verified_catalogue "
             "is a prerequisite and footprint_status=not_verified (no historical "
@@ -450,24 +595,27 @@ def _model_payload(
         payload["description"] = (
             "M0 reference: same-municipality same-type abstention at t-6 (2021)."
         )
-        if candidate_m1 is not None:
-            payload["candidate_m1"] = {
-                "note": (
-                    "Candidate with sociodemographics (not selected); fitted on "
-                    "2015/2018 for the 2021 selection."
-                ),
-                "intercept": candidate_m1.intercept,
-                "coefficients": list(candidate_m1.coefficients),
-                "scaler": {
-                    "mean": list(candidate_m1.scaler_mean),
-                    "scale": list(candidate_m1.scaler_scale),
-                },
-            }
+    if candidate_m1 is not None:
+        payload["candidate_m1"] = {
+            "note": (
+                "Candidate with sociodemographics (not selected unless the "
+                "evaluation selected M1); fitted on 2015/2018 for the 2021 "
+                "selection. Contributions are associations, never causes."
+            ),
+            "intercept": candidate_m1.intercept,
+            "coefficients": list(candidate_m1.coefficients),
+            "scaler": {
+                "mean": list(candidate_m1.scaler_mean),
+                "scale": list(candidate_m1.scaler_scale),
+            },
+            "evaluation": dict(candidate_m1_evaluation),
+        }
     return payload
 
 
 def _evaluation_payload(
     *,
+    family: str,
     selection: EvaluationBundle,
     m0_2024: ModelMetrics,
     m1_2024: ModelMetrics,
@@ -475,6 +623,7 @@ def _evaluation_payload(
     datasets: dict[int, FeatureDataset],
     observations: list[MunicipalObservation],
     data_hash: str,
+    errors_2024: Sequence[float],
 ) -> dict:
     def metrics(m: ModelMetrics) -> dict:
         return {
@@ -540,6 +689,27 @@ def _evaluation_payload(
             "amplitude_pp": amplitude,
             "n_errors_2021": len(selection.m0_errors),
             "label": "historical error reference (rango de error histórico de referencia)",
+            "empirical_coverage_2024": empirical_coverage(errors_2024, amplitude),
+            "errors_2021": [
+                {
+                    "municipality_code": dataset.municipality_code,
+                    "error_pp": float(error),
+                }
+                for dataset, error in zip(
+                    datasets[2021].rows,
+                    selection.m1_errors if family == "M1" else selection.m0_errors,
+                    strict=True,
+                )
+            ],
+            "errors_2024": [
+                {
+                    "municipality_code": dataset.municipality_code,
+                    "error_pp": float(error),
+                }
+                for dataset, error in zip(
+                    datasets[2024].rows, errors_2024, strict=True
+                )
+            ],
         },
         "cohorts": cohorts,
         "exclusions": exclusions,
@@ -556,9 +726,7 @@ def _manifest_payload(
     family: str,
     model_run_id: UUID,
     data_hash: str,
-    fitted: FittedRidge | None,
-    candidate_codes: list[str],
-    exclusion_codes: list[str],
+    identity: dict,
 ) -> dict:
     import platform
 
@@ -567,21 +735,9 @@ def _manifest_payload(
     import pyarrow as _pa
     import sklearn as _sk
 
-    logical = {
-        "family": family,
-        "data_sha256": data_hash,
-        "feature_order": list(FEATURE_ORDER),
-        "alpha": ALPHA,
-        "candidate_codes": candidate_codes,
-        "exclusion_codes": exclusion_codes,
-    }
-    if fitted is not None:
-        logical["intercept"] = fitted.intercept
-        logical["coefficients"] = list(fitted.coefficients)
-        logical["scaler_mean"] = list(fitted.scaler_mean)
-        logical["scaler_scale"] = list(fitted.scaler_scale)
+    # The logical hash covers the same canonical identity as ``model_run_id``.
     logical_hash = hashlib.sha256(
-        json.dumps(logical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
 
     return {

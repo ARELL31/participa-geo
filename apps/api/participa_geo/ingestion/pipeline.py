@@ -179,6 +179,7 @@ def run_ingest(
         observations = aggregate_municipal(tracked(read_ccpc(csv_path, manifest.year)))
         for obs in observations:
             obs.source_version_id = manifest.version_id
+            assert obs.source_version_id is not None  # assigned from the manifest
             indicators = calculate_indicators(obs.ln, obs.sv, obs.nv, obs.ns)
             quality = assess_quality(obs)
             record = {
@@ -201,7 +202,12 @@ def run_ingest(
                 "eligible": quality.eligible,
                 "source_version_id": str(obs.source_version_id),
                 "observation_id": str(
-                    observation_id(obs.key.state_code, obs.key.municipality_code, obs.year)
+                    observation_id(
+                        obs.key.state_code,
+                        obs.key.municipality_code,
+                        obs.year,
+                        obs.source_version_id,
+                    )
                 ),
                 "territory_id": str(
                     territory_id(obs.key.state_code, obs.key.municipality_code)

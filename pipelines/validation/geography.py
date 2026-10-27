@@ -26,7 +26,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from uuid import NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 import geopandas as gpd
 from shapely import is_empty, is_valid, to_wkb
@@ -197,6 +197,32 @@ def _load_origin_catalogue(session: Session) -> dict[str, str]:
     return {code: next(iter(names_by_code[code])) for code in names_by_code}
 
 
+def _load_observation_dataset_versions(
+    session: Session,
+) -> list[tuple[int, UUID]]:
+    """Return the ``(year, dataset_version_id)`` pairs actually loaded.
+
+    Observation identities are dataset-version scoped, so correspondences must be
+    created for every loaded CC PC version — not just one arbitrary version per
+    year. This keeps multi-version databases auditable.
+    """
+    rows = session.execute(
+        text(
+            """
+            SELECT DISTINCT dv.year, dv.id
+            FROM dataset_version dv
+            JOIN observation o ON o.dataset_version_id = dv.id
+            ORDER BY dv.year, dv.id
+            """
+        )
+    ).all()
+    if not rows:
+        raise IncompleteOriginCatalogueError(
+            "no observations are loaded; run `db load` before `gis import`"
+        )
+    return [(int(year), version_id) for year, version_id in rows]
+
+
 def import_reference(archive: Path, session: Session) -> GeographyAudit:
     """Import the verified INE 2025 reference geometry and correspondences.
 
@@ -233,6 +259,7 @@ def import_reference(archive: Path, session: Session) -> GeographyAudit:
     # Catalogue of CCPC origin identities loaded by ``db load``. Reading it
     # fails loudly if the origin set is incomplete (run-order guard).
     catalogue = _load_origin_catalogue(session)
+    dataset_versions = _load_observation_dataset_versions(session)
 
     reference_date = date.fromisoformat(REFERENCE_DATE)
     reference_count = 0
@@ -281,8 +308,8 @@ def import_reference(archive: Path, session: Session) -> GeographyAudit:
             else "ambiguous"
         )
         footprint = "not_verified"
-        for year in ELECTION_YEARS:
-            origin_id = observation_id(state_code, code, year)
+        for year, dataset_version_id in dataset_versions:
+            origin_id = observation_id(state_code, code, year, dataset_version_id)
             corr_id = uuid5(
                 NAMESPACE_URL, f"correspondence:{origin_id}:{ref_id}"
             )

@@ -123,6 +123,68 @@ def test_observation_load_is_idempotent(postgis_session):
     assert before == after == 750
 
 
+def test_second_dataset_version_gets_distinct_observation_identity(postgis_session):
+    """Item 1: the observation identity is dataset-version scoped.
+
+    Loading another version for the same municipality/year must not update the
+    first row's provenance or bypass the unique (origin, year, dataset) key.
+    """
+    from dataclasses import replace
+
+    from participa_geo.db.repository import Repository, read_processed_observations
+    from participa_geo.ingestion.schema import DatasetVersion, observation_id
+
+    datasets, observations = read_processed_observations(PROCESSED)
+    base = next(
+        obs
+        for obs in observations
+        if obs.year == 2024 and obs.key.municipality_code == "001"
+    )
+    second = DatasetVersion(
+        year=2024,
+        source_url="https://example.invalid/second-2024.csv",
+        member="second/jalisco-2024.csv",
+        sha256="f" * 64,
+        encoding="utf-8-sig",
+    )
+    second_obs = replace(base, source_version_id=second.id)
+    repo = Repository(postgis_session)
+    repo.upsert_dataset(second)
+    repo.upsert_observations([second_obs])
+    postgis_session.commit()
+
+    rows = postgis_session.execute(
+        text(
+            """
+            SELECT o.id, o.dataset_version_id
+            FROM observation o
+            JOIN territory_version t ON t.id = o.origin_territory_id
+            WHERE o.year = 2024 AND t.municipality_code = '001'
+            ORDER BY o.dataset_version_id
+            """
+        )
+    ).all()
+    assert len(rows) == 2
+    ids = {row[0] for row in rows}
+    assert len(ids) == 2
+    assert {row[1] for row in rows} == {base.source_version_id, second.id}
+    assert observation_id("14", "001", 2024, second.id) in ids
+
+    # Keep the shared session/database clean for the other tests.
+    origin_id = observation_id("14", "001", 2024, second.id)
+    postgis_session.execute(
+        text("DELETE FROM observation WHERE dataset_version_id = :id"),
+        {"id": second.id},
+    )
+    postgis_session.execute(
+        text("DELETE FROM dataset_version WHERE id = :id"), {"id": second.id}
+    )
+    postgis_session.execute(
+        text("DELETE FROM territory_version WHERE id = :id"), {"id": origin_id}
+    )
+    postgis_session.commit()
+
+
 def test_api_role_cannot_insert(postgis_session, db_config):
     engine = create_engine(
         _url(db_config, db_config["api_user"], db_config["api_password"])

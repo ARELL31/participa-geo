@@ -51,6 +51,34 @@ def error_band_amplitude(errors: Sequence[float]) -> float | None:
     return float(np.percentile(absolute, 90.0))
 
 
+def empirical_coverage(
+    errors: Sequence[float],
+    amplitude: float | None,
+    *,
+    minimum: int = MIN_ERRORS_FOR_BAND,
+) -> dict[str, float | int] | None:
+    """Empirical coverage of a band against out-of-time errors.
+
+    The amplitude is *never* adjusted with these errors (Spec §8): this is a
+    descriptive check of how many 2024 absolute errors fall inside the 2021 P90
+    band. It is not published when fewer than ``minimum`` usable errors exist.
+    """
+    if amplitude is None:
+        return None
+    absolute = np.abs(np.asarray(errors, dtype=np.float64))
+    n = int(absolute.size)
+    if n < minimum:
+        return None
+    within = int(np.count_nonzero(absolute <= amplitude))
+    return {
+        "n": n,
+        "within": within,
+        "share": within / n,
+        "amplitude_pp": float(amplitude),
+        "minimum_n": minimum,
+    }
+
+
 def risk_band(
     estimate: float | None, amplitude: float | None
 ) -> tuple[float | None, float | None]:
@@ -76,6 +104,7 @@ __all__ = [
     "MIN_ERRORS_FOR_BAND",
     "RiskLevel",
     "classify_risk",
+    "empirical_coverage",
     "error_band_amplitude",
     "is_risk_unstable",
     "risk_band",

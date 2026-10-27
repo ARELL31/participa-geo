@@ -85,6 +85,55 @@ def test_train_release_85_candidates_125_records(postgis_session, tmp_path):
         assert (tmp_path / name).exists()
 
 
+def test_identity_status_and_candidate_evidence_change_model_run_id(
+    postgis_session, tmp_path
+):
+    from participa_geo.ingestion.schema import FootprintStatus, IdentityStatus
+    from participa_geo.prediction.cohorts import TerritoryIdentity
+    from participa_geo.prediction.training import train_release
+
+    identity, observations = _load(postgis_session)
+    baseline = train_release(
+        observations, tmp_path / "base-id", identity_statuses=identity
+    )
+    eligible_code = next(
+        prediction.municipality_code
+        for prediction in baseline.predictions
+        if prediction.eligible
+    )
+    changed = dict(identity)
+    changed[eligible_code] = TerritoryIdentity(
+        IdentityStatus.known_changed, FootprintStatus.not_verified
+    )
+    altered = train_release(
+        observations, tmp_path / "altered-id", identity_statuses=changed
+    )
+    assert altered.model_run_id != baseline.model_run_id
+    assert altered.candidate_count < baseline.candidate_count
+
+
+def test_evaluation_persists_2024_errors_and_empirical_coverage(
+    postgis_session, tmp_path
+):
+    from participa_geo.prediction.training import train_release
+
+    identity, observations = _load(postgis_session)
+    bundle = train_release(
+        observations, tmp_path / "coverage", identity_statuses=identity
+    )
+    band = bundle.evaluation_payload["band"]
+    assert band["amplitude_pp"] == pytest.approx(8.561771770259021)
+    assert len(band["errors_2021"]) == 91
+    assert len(band["errors_2024"]) == 75
+    coverage = band["empirical_coverage_2024"]
+    assert coverage is not None
+    assert coverage["n"] == 75
+    assert 0 <= coverage["within"] <= coverage["n"]
+    assert coverage["share"] == pytest.approx(coverage["within"] / coverage["n"])
+    assert coverage["amplitude_pp"] == band["amplitude_pp"]
+    assert (tmp_path / "coverage" / "exclusions-by-cut.csv").is_file()
+
+
 def test_mutating_2024_target_keeps_selection(postgis_session, tmp_path):
     from participa_geo.prediction.training import train_release
 

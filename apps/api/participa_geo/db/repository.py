@@ -27,6 +27,16 @@ from participa_geo.ingestion.schema import (
 
 _REFERENCE_DATE = REFERENCE_DATE  # "2025-12-15"
 
+#: Keep the read series to one observation per year while preserving every
+#: dataset version for audit: the most recently loaded version for that year.
+_LATEST_VERSION_FOR_YEAR = (
+    "dv.id = ("
+    "SELECT dv2.id FROM dataset_version dv2 "
+    "JOIN observation o2 ON o2.dataset_version_id = dv2.id "
+    "WHERE o2.year = o.year "
+    "ORDER BY dv2.created_at DESC, dv2.id DESC LIMIT 1)"
+)
+
 
 def _escape_like(value: str) -> str:
     return value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
@@ -82,8 +92,16 @@ class Repository:
         obs_values: list[dict] = []
 
         for obs in rows:
+            if obs.source_version_id is None:
+                raise ValueError(
+                    "observation source_version_id is required to persist a "
+                    "dataset-version-scoped identity"
+                )
             origin_id = observation_id(
-                obs.key.state_code, obs.key.municipality_code, obs.year
+                obs.key.state_code,
+                obs.key.municipality_code,
+                obs.year,
+                obs.source_version_id,
             )
             indicators = calculate_indicators(obs.ln, obs.sv, obs.nv, obs.ns)
             quality = assess_quality(obs)
@@ -141,6 +159,7 @@ class Repository:
             obs_stmt = obs_stmt.on_conflict_do_update(
                 index_elements=["id"],
                 set_={
+                    "dataset_version_id": obs_stmt.excluded.dataset_version_id,
                     "ln": obs_stmt.excluded.ln,
                     "sv": obs_stmt.excluded.sv,
                     "nv": obs_stmt.excluded.nv,
@@ -233,7 +252,7 @@ class Repository:
         """
         if territory_id is not None:
             return self._get_history_territory(territory_id, year, page, page_size)
-        return self._get_history_state(year)
+        return self._get_history_state(year, page, page_size)
 
     def _get_history_territory(
         self, territory_id: UUID, year: int | None, page: int, page_size: int
@@ -244,12 +263,18 @@ class Repository:
             where += " AND o.year = :year"
             params["year"] = year
 
+        # Observation identities are dataset-version scoped. The history API is a
+        # series (one row per year), so it reads the most recently loaded version
+        # for each year while both versions remain in the database for audit.
+        latest = _LATEST_VERSION_FOR_YEAR
+
         count_sql = f"""
             SELECT count(*)
             FROM observation o
+            JOIN dataset_version dv ON dv.id = o.dataset_version_id
             JOIN territory_correspondence c ON c.origin_territory_id = o.origin_territory_id
             JOIN territory_version t_ref ON t_ref.id = c.reference_territory_id
-            WHERE {where}
+            WHERE {where} AND {latest}
         """
         total = int(self.session.scalar(text(count_sql), params))
 
@@ -260,9 +285,10 @@ class Repository:
                    o.ns_lower_pct, o.ns_upper_pct, o.eligible,
                    c.identity_status, c.footprint_status
             FROM observation o
+            JOIN dataset_version dv ON dv.id = o.dataset_version_id
             JOIN territory_correspondence c ON c.origin_territory_id = o.origin_territory_id
             JOIN territory_version t_ref ON t_ref.id = c.reference_territory_id
-            WHERE {where}
+            WHERE {where} AND {latest}
             ORDER BY o.year
             LIMIT :limit OFFSET :offset
         """
@@ -272,12 +298,22 @@ class Repository:
         records = [self._history_record(row) for row in rows]
         return records, total
 
-    def _get_history_state(self, year: int | None) -> tuple[list[models.HistoryRecord], int]:
+    def _get_history_state(
+        self, year: int | None, page: int, page_size: int
+    ) -> tuple[list[models.HistoryRecord], int]:
         where = ""
         params: dict = {}
         if year is not None:
             where = "WHERE o.year = :year"
             params["year"] = year
+        latest = _LATEST_VERSION_FOR_YEAR
+        count_sql = f"""
+            SELECT count(DISTINCT o.year)
+            FROM observation o
+            JOIN dataset_version dv ON dv.id = o.dataset_version_id
+            {where} {"AND" if where else "WHERE"} {latest}
+        """
+        total = int(self.session.scalar(text(count_sql), params))
         sql = f"""
             SELECT NULL AS territory_id, o.year, NULL AS name, NULL AS municipality_code,
                    SUM(o.ln) AS ln, SUM(o.sv) AS sv, SUM(o.nv) AS nv, SUM(o.ns) AS ns,
@@ -297,13 +333,17 @@ class Repository:
                    NULL::boolean AS eligible,
                    NULL::text AS identity_status, NULL::text AS footprint_status
             FROM observation o
-            {where}
+            JOIN dataset_version dv ON dv.id = o.dataset_version_id
+            {where} {"AND" if where else "WHERE"} {latest}
             GROUP BY o.year
             ORDER BY o.year
+            LIMIT :limit OFFSET :offset
         """
+        params["limit"] = page_size
+        params["offset"] = (page - 1) * page_size
         rows = self.session.execute(text(sql), params).mappings().all()
         records = [self._history_record(row) for row in rows]
-        return records, len(records)
+        return records, total
 
     @staticmethod
     def _history_record(row) -> models.HistoryRecord:
@@ -631,6 +671,13 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
     if model_payload.get("candidate_m1") is not None:
         parameters["candidate_m1"] = model_payload["candidate_m1"]
     for key in ("intercept", "coefficients", "scaler"):
+        if model_payload.get(key) is not None:
+            parameters[key] = model_payload[key]
+    for key in (
+        "explanations",
+        "candidate_m1_explanations",
+        "features_2027",
+    ):
         if model_payload.get(key) is not None:
             parameters[key] = model_payload[key]
 

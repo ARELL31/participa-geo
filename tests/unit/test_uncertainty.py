@@ -14,6 +14,7 @@ import pytest
 from participa_geo.prediction import risk as risk_mod
 from participa_geo.prediction.features import FEATURE_ORDER, ExampleRow, FeatureDataset
 from participa_geo.prediction.risk import (
+    empirical_coverage,
     error_band_amplitude,
     is_risk_unstable,
     risk_band,
@@ -29,6 +30,22 @@ def test_error_band_requires_30():
     assert amplitude is not None
     expected = float(np.percentile(np.abs(np.asarray(errors, dtype=np.float64)), 90.0))
     assert amplitude == pytest.approx(expected)
+
+
+def test_empirical_coverage_requires_30_and_does_not_adjust_amplitude():
+    assert empirical_coverage([1.0] * 29, 8.56) is None
+    coverage = empirical_coverage([1.0] * 30, 8.56)
+    assert coverage is not None
+    assert coverage["n"] == 30
+    assert coverage["within"] == 30
+    assert coverage["share"] == pytest.approx(1.0)
+    # The published amplitude is returned unchanged (not re-fitted on 2024).
+    assert coverage["amplitude_pp"] == pytest.approx(8.56)
+
+    mixed = empirical_coverage([1.0, 9.0, 20.0], 8.56, minimum=1)
+    assert mixed is not None
+    assert mixed["within"] == 1
+    assert mixed["share"] == pytest.approx(1 / 3)
 
 
 def test_band_label_is_historical_not_confidence():
