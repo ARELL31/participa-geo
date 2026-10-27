@@ -25,12 +25,23 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     json_max_bytes: int = 32 * 1024  # 32768 (32 KiB)
 
-    # Database — the API connects with the least-privilege ``api`` role.
+    # Database — the API web process connects with the least-privilege ``api``
+    # role. The maintenance CLI and integration tests additionally use the
+    # ``migrator`` (migrations), ``writer`` (data loads) and ``gis_reader``
+    # (GeoServer) roles; those credentials are optional here (the web API never
+    # uses them) and are read from the environment when the commands need them.
     db_host: str = "db"
     db_port: int = 5432
     db_name: str = "participa_geo"
     db_api_user: str = "api"
     db_api_password: str = Field(..., min_length=1)
+
+    db_migrator_user: str = "migrator"
+    db_migrator_password: str = ""
+    db_writer_user: str = "writer"
+    db_writer_password: str = ""
+    db_gis_reader_user: str = "gis_reader"
+    db_gis_reader_password: str = ""
 
     # GeoServer — admin credentials are obligatory (internal network only).
     gis_admin_user: str = "admin"

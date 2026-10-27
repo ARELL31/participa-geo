@@ -36,3 +36,22 @@ create_role "$DB_MIGRATOR_USER" "$DB_MIGRATOR_PASSWORD"
 create_role "$DB_WRITER_USER" "$DB_WRITER_PASSWORD"
 create_role "$DB_API_USER" "$DB_API_PASSWORD"
 create_role "$DB_GIS_READER_USER" "$DB_GIS_READER_PASSWORD"
+
+# The migrator role runs Alembic and therefore needs CREATE on the public schema
+# of the main database (PG15+ revokes it from PUBLIC). PUBLIC still has USAGE,
+# so the other roles can use the schema without further grants.
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    GRANT CREATE ON SCHEMA public TO "${DB_MIGRATOR_USER}";
+EOSQL
+
+# A dedicated test database (owned by migrator, PostGIS enabled) isolates the
+# integration tests from the demo database. It is a development-only artefact.
+if ! psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+    -tAc "SELECT 1 FROM pg_database WHERE datname = 'participa_geo_test'" | grep -q 1; then
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+        -c "CREATE DATABASE participa_geo_test OWNER \"${DB_MIGRATOR_USER}\""
+fi
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname participa_geo_test \
+    -c "CREATE EXTENSION IF NOT EXISTS postgis"
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname participa_geo_test \
+    -c "GRANT CREATE ON SCHEMA public TO \"${DB_MIGRATOR_USER}\""

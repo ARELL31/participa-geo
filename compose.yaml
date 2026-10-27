@@ -23,6 +23,14 @@ services:
       DB_NAME: ${DB_NAME:-participa_geo}
       DB_API_USER: ${DB_API_USER:-api}
       DB_API_PASSWORD: ${DB_API_PASSWORD:?DB_API_PASSWORD is required}
+      # Maintenance CLI and integration tests also use the other roles; the web
+      # process never uses them.
+      DB_MIGRATOR_USER: ${DB_MIGRATOR_USER:-migrator}
+      DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:?DB_MIGRATOR_PASSWORD is required}
+      DB_WRITER_USER: ${DB_WRITER_USER:-writer}
+      DB_WRITER_PASSWORD: ${DB_WRITER_PASSWORD:?DB_WRITER_PASSWORD is required}
+      DB_GIS_READER_USER: ${DB_GIS_READER_USER:-gis_reader}
+      DB_GIS_READER_PASSWORD: ${DB_GIS_READER_PASSWORD:?DB_GIS_READER_PASSWORD is required}
       GIS_ADMIN_USER: ${GIS_ADMIN_USER:-admin}
       GIS_ADMIN_PASSWORD: ${GIS_ADMIN_PASSWORD:?GIS_ADMIN_PASSWORD is required}
       GIS_BASE_URL: http://geoserver:8080/geoserver
@@ -32,6 +40,9 @@ services:
       - ./apps/api:/workspace/apps/api
       - ./tests:/workspace/tests
       - ./pipelines:/workspace/pipelines
+      - ./gis:/workspace/gis
+      - ./alembic.ini:/workspace/alembic.ini:ro
+      - ./alembic:/workspace/alembic:ro
       - ./compose.yaml:/workspace/compose.yaml:ro
       - ./.env.example:/workspace/.env.example:ro
       # Read/write the git-ignored data sources and processed artifacts, plus the
@@ -48,7 +59,7 @@ services:
   db:
     image: postgis/postgis:17-3.6@sha256:5d4c5c5d10b415bec52b0b9cea1ae93ace3a451ff10ab8f8974988e336274452
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-pg_admin}
+      POSTGRES_USER: ${POSTGRES_USER:-participa_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-participa_geo}
       DB_MIGRATOR_USER: ${DB_MIGRATOR_USER:-migrator}

@@ -14,7 +14,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --all-groups --no-install-project
 
 ENV PATH="/workspace/.venv/bin:$PATH" \
-    PYTHONPATH="/workspace/apps/api" \
+    PYTHONPATH="/workspace/apps/api:/workspace" \
     PYTHONDONTWRITEBYTECODE=1
 
 CMD ["uvicorn", "participa_geo.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

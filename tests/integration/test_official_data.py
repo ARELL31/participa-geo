@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+
 from participa_geo.ingestion.pipeline import run_ingest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

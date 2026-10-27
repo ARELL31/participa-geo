@@ -1,0 +1,379 @@
+"""SQLAlchemy models and record types for the PARTICIPA-GEO persistence layer.
+
+The nine Spec §10 tables are declared here with their ``CHECK`` constraints,
+uniqueness and foreign keys. The ``territory_version.geometry`` column is a real
+PostGIS ``geometry(Geometry, 4326)``; no ``.set_crs``-style labelling is ever
+used (the EPSG:32613 → 4326 transform happens in
+``pipelines/validation/geography`` before a geometry reaches this layer).
+
+``TerritoryRecord`` and ``HistoryRecord`` are plain dataclasses (no FastAPI
+dependency) that mirror the DTO fields of ``/territories`` and
+``/participation/history`` respectively.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Literal
+from uuid import UUID
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import UserDefinedType
+
+#: The six CCPC election years accepted as a historical filter.
+ElectionYear = Literal[2009, 2012, 2015, 2018, 2021, 2024]
+
+#: Identity/footprint status values (mirror ``ingestion.schema`` enums).
+IDENTITY_STATUSES = ("verified_catalogue", "ambiguous", "known_changed")
+FOOTPRINT_STATUSES = ("verified_equal", "not_verified", "known_changed")
+
+
+class Geometry(UserDefinedType):
+    """A PostGIS ``geometry`` column type (no ``geoalchemy2`` dependency).
+
+    ``get_col_spec`` renders ``geometry(GEOMETRY, 4326)`` so Alembic can create
+    the column. The type does not translate WKB here: writes use raw SQL with
+    ``ST_GeomFromWKB``/``ST_SetSRID`` in the geography import, keeping the CRS
+    handling explicit and auditable.
+    """
+
+    cache_ok = True
+
+    def __init__(self, geometry_type: str = "GEOMETRY", srid: int = 4326) -> None:
+        super().__init__()
+        self.geometry_type = geometry_type
+        self.srid = srid
+
+    def get_col_spec(self, **kw: object) -> str:
+        return f"geometry({self.geometry_type},{self.srid})"
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class DatasetVersion(Base):
+    __tablename__ = "dataset_version"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    member: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    encoding: Mapped[str] = mapped_column(String(32), nullable=False, default="utf-8-sig")
+    publication_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    license_conditions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dictionary: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("year", "sha256", name="uq_dataset_version_year_sha256"),
+        CheckConstraint("year >= 2000", name="ck_dataset_version_year"),
+    )
+
+
+class TerritoryVersion(Base):
+    __tablename__ = "territory_version"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    system: Mapped[str] = mapped_column(String(16), nullable=False, default="ine")
+    state_code: Mapped[str] = mapped_column(String(2), nullable=False)
+    municipality_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    #: Territorial cut date; only the INE 2025 reference carries ``2025-12-15``.
+    reference_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    #: Election year for CCPC origin identities (NULL for the 2025 reference).
+    origin_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Geometry in EPSG:4326; NULL for historical origin identities.
+    geometry: Mapped[object | None] = mapped_column(Geometry("GEOMETRY", 4326), nullable=True)
+    #: Declared source SRID of the imported geometry (EPSG:32613 for the reference).
+    source_srid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    provenance: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "reference_date IS NOT NULL OR origin_year IS NOT NULL",
+            name="ck_territory_version_cut",
+        ),
+        Index("ix_territory_version_reference_date", "reference_date"),
+        Index("ix_territory_version_state_code", "state_code", "municipality_code"),
+    )
+
+
+class TerritoryCorrespondence(Base):
+    __tablename__ = "territory_correspondence"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    origin_territory_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    )
+    reference_territory_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    )
+    relation_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    evidence: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    identity_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    footprint_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "origin_territory_id",
+            "reference_territory_id",
+            name="uq_territory_correspondence_pair",
+        ),
+        CheckConstraint(
+            "identity_status IN ('verified_catalogue', 'ambiguous', 'known_changed')",
+            name="ck_territory_correspondence_identity",
+        ),
+        CheckConstraint(
+            "footprint_status IN ('verified_equal', 'not_verified', 'known_changed')",
+            name="ck_territory_correspondence_footprint",
+        ),
+    )
+
+
+class Observation(Base):
+    __tablename__ = "observation"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    origin_territory_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    )
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dataset_version.id", ondelete="CASCADE"), nullable=False
+    )
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    election_type: Mapped[str] = mapped_column(String(16), nullable=False, default="federal")
+    ln: Mapped[int] = mapped_column(Integer, nullable=False)
+    sv: Mapped[int] = mapped_column(Integer, nullable=False)
+    nv: Mapped[int] = mapped_column(Integer, nullable=False)
+    ns: Mapped[int] = mapped_column(Integer, nullable=False)
+    young_share: Mapped[float | None] = mapped_column(nullable=True)
+    senior_share: Mapped[float | None] = mapped_column(nullable=True)
+    rural_share: Mapped[float | None] = mapped_column(nullable=True)
+    participation_pct: Mapped[float | None] = mapped_column(nullable=True)
+    abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
+    unknown_share: Mapped[float | None] = mapped_column(nullable=True)
+    ns_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
+    ns_upper_pct: Mapped[float | None] = mapped_column(nullable=True)
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    quality_reasons: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "origin_territory_id",
+            "year",
+            "dataset_version_id",
+            name="uq_observation_territory_year_dataset",
+        ),
+        CheckConstraint(
+            "ln >= 0 AND sv >= 0 AND nv >= 0 AND ns >= 0",
+            name="ck_observation_counts",
+        ),
+        CheckConstraint("ln = sv + nv + ns", name="ck_observation_accounting"),
+        Index("ix_observation_year", "year"),
+    )
+
+
+class ModelRun(Base):
+    __tablename__ = "model_run"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    family: Mapped[str] = mapped_column(String(32), nullable=False)
+    parameters: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    features: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    cut_dates: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    hashes: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    dependencies: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    exclusions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+
+class Prediction(Base):
+    __tablename__ = "prediction"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    model_run_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("model_run.id", ondelete="CASCADE"), nullable=False
+    )
+    reference_territory_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    )
+    target_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    estimated_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
+    historical_error_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
+    historical_error_upper_pct: Mapped[float | None] = mapped_column(nullable=True)
+    risk: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    risk_unstable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    quality: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "model_run_id",
+            "reference_territory_id",
+            "target_year",
+            name="uq_prediction_run_territory_year",
+        ),
+        CheckConstraint("target_year >= 2000", name="ck_prediction_target_year"),
+    )
+
+
+class Scenario(Base):
+    __tablename__ = "scenario"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    model_run_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("model_run.id", ondelete="CASCADE"), nullable=False
+    )
+    target_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    reduction_pp: Mapped[float] = mapped_column(nullable=False)
+    assumption_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    rationale_text: Mapped[str] = mapped_column(Text, nullable=False)
+    selection: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "reduction_pp >= 0 AND reduction_pp <= 10", name="ck_scenario_reduction_range"
+        ),
+    )
+
+
+class ScenarioResult(Base):
+    __tablename__ = "scenario_result"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    scenario_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("scenario.id", ondelete="CASCADE"), nullable=False
+    )
+    reference_territory_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    )
+    baseline_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
+    hypothetical_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
+    requested_reduction_pp: Mapped[float] = mapped_column(nullable=False)
+    effective_reduction_pp: Mapped[float] = mapped_column(nullable=False)
+    risk_a: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    risk_b: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "scenario_id",
+            "reference_territory_id",
+            name="uq_scenario_result_scenario_territory",
+        ),
+    )
+
+
+class ReportArtifact(Base):
+    __tablename__ = "report_artifact"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    format: Mapped[str] = mapped_column(String(16), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    sources: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    model_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("model_run.id", ondelete="SET NULL"), nullable=True
+    )
+    scenario_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("scenario.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+
+@dataclass(frozen=True)
+class TerritoryRecord:
+    """A reference municipality (the DTO fields of ``/territories``, no FastAPI)."""
+
+    id: UUID
+    name: str
+    state_code: str
+    municipality_code: str
+    identity_status: str | None
+    footprint_status: str | None
+    reference_date: date | None
+
+
+@dataclass(frozen=True)
+class HistoryRecord:
+    """One participation record (the DTO fields of ``/participation/history``)."""
+
+    territory_id: UUID | None
+    year: int
+    name: str | None
+    municipality_code: str | None
+    ln: int
+    sv: int
+    nv: int
+    ns: int
+    participation_pct: float | None
+    abstention_pct: float | None
+    unknown_share: float | None
+    ns_lower_pct: float | None
+    ns_upper_pct: float | None
+    eligible: bool
+    identity_status: str | None
+    footprint_status: str | None
+
+
+__all__ = [
+    "Base",
+    "DatasetVersion",
+    "ElectionYear",
+    "Geometry",
+    "HistoryRecord",
+    "ModelRun",
+    "Observation",
+    "Prediction",
+    "ReportArtifact",
+    "Scenario",
+    "ScenarioResult",
+    "TerritoryCorrespondence",
+    "TerritoryRecord",
+    "TerritoryVersion",
+]

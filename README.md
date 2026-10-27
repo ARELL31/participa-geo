@@ -56,6 +56,32 @@ Resultado registrado: `14 passed` (unit/contract/integration), `docker compose
 config --quiet` sale 0, y la API responde `200` en `/health/live`, `503
 problem+json` en `/health/ready` y `404 problem+json` en rutas desconocidas.
 
+### Comandos probados (T2/T3)
+
+```sh
+# Ingestión CCPC (T2): 750 observaciones municipales.
+docker compose run --rm --no-deps api python -m participa_geo.cli ingest \
+  --source-dir data/raw/ccpc --output-dir data/processed
+
+# PostGIS (T3): migrar, cargar observaciones e importar geometría de referencia.
+docker compose up -d db geoserver
+docker compose run --rm api python -m participa_geo.cli db migrate
+docker compose run --rm api python -m participa_geo.cli db load --processed-dir data/processed
+docker compose run --rm api python -m participa_geo.cli gis import \
+  --archive data/raw/gis/ine-jalisco-2025-12-15.zip
+
+# Publicar y verificar WMS/WFS de sólo lectura en GeoServer.
+docker compose run --rm api python -m participa_geo.cli gis publish
+docker compose run --rm api python -m participa_geo.cli gis verify
+
+# Tests de integración GIS reales.
+docker compose run --rm api pytest tests/integration/test_postgis.py \
+  tests/integration/test_geography.py tests/integration/test_geoserver.py -q
+```
+
+Los comandos `db load`, `gis import` y `gis publish` son idempotentes (los
+identificadores `uuid5` y los `ON CONFLICT` evitan duplicados).
+
 ## Estructura
 
 ```text
@@ -71,8 +97,6 @@ pyproject.toml / uv.lock
 
 ## Pendiente (tareas siguientes)
 
-- T2: ingestión y agregados municipales reales (CCPC 2009–2024).
-- T3: PostGIS, correspondencias territoriales y publicación GeoServer (WMS/WFS).
 - T4: modelo Ridge interpretable y evaluación temporal.
 - T5: rutas de lectura y gateway GIS; exportación OpenAPI.
 - T6: escenarios y recomendaciones.

@@ -10,13 +10,16 @@ reference territories reproducibly (no random UUIDs).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 JALISCO_STATE_CODE = "14"
 JALISCO_STATE_NAME = "JALISCO"
 REFERENCE_DATE = "2025-12-15"
+
+#: The six CCPC election years ingested for Jalisco (fixed, ascending).
+ELECTION_YEARS: tuple[int, ...] = (2009, 2012, 2015, 2018, 2021, 2024)
 
 #: Exact 16-column allowlist, in the source's column order.
 CCPC_COLUMNS = [
@@ -180,11 +183,49 @@ class SourceManifest:
     def version_id(self) -> UUID:
         return dataset_version_id(self.year, self.sha256)
 
+    def as_dataset_version(self) -> DatasetVersion:
+        """Project this manifest onto the persisted :class:`DatasetVersion`."""
+        return DatasetVersion(
+            year=self.year,
+            source_url=self.source_url,
+            member=self.member,
+            sha256=self.sha256,
+            encoding=self.encoding,
+            available_at=self.available_at,
+        )
+
+
+@dataclass(frozen=True)
+class DatasetVersion:
+    """The ``dataset_version`` record for one CCPC source (Spec §10).
+
+    ``id`` is deterministic: ``uuid5(NAMESPACE_URL, 'ccpc:14:dataset:{year}:{sha256}')``,
+    so re-loading the same source never creates a duplicate. Publication date,
+    licence/conditions and dictionary are nullable: they are recorded only when
+    known (redistribution terms are reviewed in T9, never invented here).
+    """
+
+    year: int
+    source_url: str
+    member: str
+    sha256: str
+    encoding: str = "utf-8-sig"
+    publication_date: date | None = None
+    available_at: datetime | None = None
+    license_conditions: str | None = None
+    dictionary: dict | None = None
+
+    @property
+    def id(self) -> UUID:
+        return dataset_version_id(self.year, self.sha256)
+
 
 __all__ = [
     "CCPC_COLUMNS",
     "CCPCRow",
     "CCPCSchemaError",
+    "DatasetVersion",
+    "ELECTION_YEARS",
     "FootprintStatus",
     "IdentityStatus",
     "JALISCO_STATE_CODE",
