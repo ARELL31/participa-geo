@@ -16,8 +16,8 @@ sesión.
 | Node / Playwright | Node 24 (imagen fijada), Playwright 1.64.1, Chromium |
 | PostgreSQL/PostGIS | `postgis/postgis:17-3.6` (digest fijado) |
 | GeoServer | 2.28.6 (digest fijado), WFS nivel BASIC |
-| Modelo | M0, `5bc387ce-6646-5b49-9c4f-ad302f4c422a` |
-| Escenario de entrega | `a0c8e872-7650-4a80-a9de-a62095d133fb` |
+| Modelo | M0, `832b21e9-775a-5a74-9b3b-66b923de4e62` (fix wave) |
+| Escenario de entrega | `e7c36d5e-b751-4586-89dc-39bca122e892` |
 | Referencia cartográfica | 2025-12-15, EPSG:4326, `footprint_status=not_verified` |
 
 `docker compose config --quiet` → **0**.
@@ -29,7 +29,7 @@ sg docker -c 'docker compose run --rm --no-deps api ruff check .'
 # All checks passed!
 
 sg docker -c 'docker compose run --rm --no-deps api pytest -q'
-# 193 passed, 1 warning in 129.34s
+# 214 passed, 1 warning in 132.62s
 ```
 
 Cobertura: unitarias, contratos y integración real con PostgreSQL/PostGIS,
@@ -45,25 +45,25 @@ sg docker -c 'docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test
 sg docker -c 'docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run typecheck'
 # tsc --noEmit: sin errores
 sg docker -c 'docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run test -- --run'
-# 8 archivos, 47 tests passed
+# 8 archivos, 50 tests passed
 sg docker -c 'docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run build'
-# vite build OK; bundle principal 398.39 kB, MapLibre 1,062.95 kB
+# vite build OK; bundle principal 402.97 kB, MapLibre 1,062.95 kB
 ```
 
 El aviso de Vite sobre chunks >500 kB es informativo (MapLibre); no falla el
 build. En la primera corrida tras instalar ESLint/axe, un test de `ScenarioPage`
 agotó sus 10 s por contención de la suite; la repetición y la corrida final
-pasaron 47/47. No se modificó ninguna aserción.
+pasaron 50/50. No se modificó ninguna aserción.
 
 ## 4. E2E de producto y aceptación
 
 ```sh
 sg docker -c 'docker compose --profile tools run --rm --no-deps web-e2e npx playwright test'
-# 17 passed (21.4s)
+# 17 passed (22.7s)
 
 sg docker -c 'docker compose --profile test run --rm e2e npx playwright test \
   --config tests/e2e/playwright.config.ts'
-# 17 passed (44.1s)
+# 17 passed (41.9s)
 ```
 
 Ambas suites usan la aplicación real (nginx → FastAPI → PostGIS/GeoServer). No
@@ -137,7 +137,7 @@ todos los checks en `true`. No se alteraron volúmenes.
 
 ```sh
 sg docker -c 'docker compose run --rm api python -m participa_geo.cli deliver \
-  --scenario-id a0c8e872-7650-4a80-a9de-a62095d133fb \
+  --scenario-id e7c36d5e-b751-4586-89dc-39bca122e892 \
   --output-dir dist/hackathon --team-slug participa-geo \
   --confirm-source-license'
 
@@ -148,9 +148,8 @@ sg docker -c 'docker compose run --rm api python -m participa_geo.cli verify-del
 | Dato | Valor |
 |---|---|
 | `source_mode` | `confirm` (decisión humana de redistribución) |
-| `technical.zip` | tamaño exacto en `dist/hackathon/DELIVERY.json` |
-| SHA-256 | registrado en `DELIVERY.json` y `CHECKSUMS.sha256`; no se incrusta el hash del propio archivo |
-| Miembros del ZIP | 227 (incluye este documento) |
+| `technical.zip` | tamaño y SHA-256 exactos en `dist/hackathon/DELIVERY.json`; no se autoincrusta el hash del propio archivo |
+| Miembros del ZIP | **229** (incluye este documento y `exclusions-by-cut.csv`) |
 | `complete` | **true** |
 | `scenario_required` | true |
 | Miembros incluidos con fuentes | seis `data/raw/ccpc/jalisco-*.csv` + `data/raw/gis/ine-jalisco-2025-12-15.zip` |
@@ -180,8 +179,8 @@ contiene esta corrección.
 
 ## 7. Ensayo limpio aislado
 
-Directorio nuevo: `/tmp/opencode/participa-geo-cleanroom-20261027T210900Z`.
-Se usó **solo** el ZIP técnico; no se leyeron
+Directorio nuevo fuera del repositorio (proyecto `participa_geo_cleanroom`,
+timestamp UTC registrado en el informe T10). Se usó **solo** el ZIP técnico; no se leyeron
 `/tmp/opencode/participa-geo-data-research` ni `/tmp/opencode/participa-geo-gis`.
 Proyecto Compose: `participa_geo_cleanroom`, puerto `127.0.0.1:8081`, volúmenes
 propios; el stack de trabajo no se borró ni se recreó.
@@ -201,10 +200,10 @@ Resultados:
 |---|---|
 | Checksums del ZIP | todos `OK` |
 | `db-init.sh` extraído | modo `0755`; PostgreSQL inicializado |
-| Ingesta desde fuentes empaquetadas | 750 observaciones, agregado `d33ccc34…a495b5` |
+| Ingesta desde fuentes empaquetadas | 750 observaciones, agregado `657245f4…3d70` |
 | `db load` | 750 observaciones, 6 versiones de dataset |
 | `gis import` | 125 territorios, EPSG:32613→4326, 750 correspondencias, 0 rechazadas |
-| Reentrenamiento | familia **M0**, `model_run_id` `5bc387ce-…`, 85 candidatos, 125 registros |
+| Reentrenamiento | familia **M0**, `model_run_id` `832b21e9-…`, 85 candidatos, 125 registros |
 | Familia / id | iguales al paquete |
 | Exclusiones (40 filas) | idénticas |
 | Predicciones (125×16) | `max_abs_diff = 0.0` en A, cotas y pre-clip; máscaras nulas iguales; riesgo/elegibilidad/calidad iguales; `atol=1e-8` |
@@ -221,6 +220,29 @@ Limpieza: `docker compose -p participa_geo_cleanroom down --volumes` eliminó
 **solo** los contenedores, red y volúmenes `participa_geo_cleanroom_*`
 (verificado). Los volúmenes `participa-geo_pgdata` y `participa-geo_geodata` del
 trabajo permanecen y el stack de trabajo sigue `ready=200`.
+
+### Correcciones de la revisión final
+
+La fix wave del 2026-10-27 añadió, entre otras, estas comprobaciones ejecutadas:
+
+- identidad de observación por versión de dataset (dos versiones mismo
+  municipio/año);
+- `model_run_id` cambia con estados de identidad, cohortes/exclusiones y
+  evidencia del candidato M1;
+- cobertura empírica 2024 de la banda congelada: **71 de 75 errores (94.7 %)**,
+  sin cambiar la amplitud 8.56 pp;
+- `/recommendations?target_year=2027` → 200 y `2026` → 422;
+- `request_id` real en el log JSON;
+- reducción efectiva de escenario como rango mín–máx;
+- cobertura LN 2027 etiquetada con base 2024;
+- GetFeatureInfo valida capa consultada, bbox, tamaño, i/j y `info_format`;
+- historia estatal paginada con total real (6);
+- motivos de exclusión derivados por corte y `exclusions-by-cut.csv`;
+- exportación CSV/XLSX de features, exclusiones y contribuciones M0/M1;
+- arranque escalonado (`web` depende de `api` con `service_started`).
+
+Resultado local: **214** pruebas backend, **50** Vitest, **17** E2E de producto y
+**17** E2E de aceptación. No se declara CI ni AA como ejecutados/certificados.
 
 ## 8. CI
 

@@ -86,16 +86,23 @@ ejecute `down -v` sobre el proyecto de trabajo.
 ```sh
 docker compose config --quiet
 docker compose build api web
-docker compose up -d db geoserver api web
+docker compose up -d db geoserver
+docker compose up -d api
+# db migrate; ingest; db load; gis import; train; model load; gis publish
+docker compose up -d web
 docker compose ps
 curl -i http://127.0.0.1:8080/api/v1/health/live
 curl -i http://127.0.0.1:8080/api/v1/health/ready
 ```
 
-Orden de dependencias: `api` espera `db` y `geoserver`; `web` espera `api`
-saludable. `api` tiene healthcheck contra `/api/v1/health/ready`; `web` contra
-`/healthz`; `db` y la imagen de GeoServer traen sus propios healthchecks.
-`docker compose up` sin datos deja `ready=503` (por diseño).
+Orden de dependencias: `api` espera `db` y `geoserver`; `web` espera `api` con
+`condition: service_started`, no con readiness. Esto permite que la web arranque
+mientras se ejecutan migraciones, ingesta, modelo y GIS; la interfaz muestra
+estados de carga/vacío/no disponible y nunca cifras ficticias. `api` tiene
+healthcheck contra `/api/v1/health/ready`; `web` contra `/healthz`; `db` y la
+imagen de GeoServer traen sus propios healthchecks. `docker compose up` sin datos
+deja `ready=503` (por diseño). La secuencia escalonada completa está en README y
+en `verification-results.md`.
 
 ### Volúmenes y respaldo
 

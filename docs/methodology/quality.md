@@ -63,8 +63,12 @@ rellena ningún territorio excluido con predicciones ficticias.
 - Escritura atómica: los tres artefactos se escriben a archivo temporal y se
   renombran (`os.replace`) al finalizar.
 - Reejecución: entrada idéntica produce agregados idénticos y el mismo hash lógico
-  `aggregate_sha256` (`d33ccc34…` para este corte); no se duplican claves
+  `aggregate_sha256` (`657245f4…` para este corte); no se duplican claves
   `(año, municipio)`.
+- Identidad por versión: `observation_id` incluye el `source_version_id`, de modo
+  que cargar otra versión del mismo municipio/año crea una fila auditable distinta
+  y no reescribe la procedencia de la primera. La API de historia lee la versión
+  más reciente por año; ambas permanecen en la base.
 
 ## Verificación de fuentes (`--fetch`)
 

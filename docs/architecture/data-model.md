@@ -202,11 +202,12 @@ artefactos T4 —`model.json`, `evaluation.json`, `manifest.json` y
 `predictions-2027.parquet`— y persiste un `model_run` y las 125 filas
 `prediction` mediante upserts deterministas (sin `pickle`/`joblib` ni
 reentrenamiento). El `model_run_id` proviene del artefacto real
-(`5bc387ce-6646-5b49-9c4f-ad302f4c422a`, familia `M0`). El mapeo de los campos del
+(`832b21e9-775a-5a74-9b3b-66b923de4e62`, familia `M0`). El mapeo de los campos del
 artefacto a columnas de `model_run` es:
 
 - `parameters` ← `model.json` (alpha, feature_order, intercept/coef/scaler si M1,
-  `description`/`candidate_m1` si M0, `limitations`).
+  `description`/`candidate_m1` si M0, `limitations`, `features_2027`,
+  `explanations` y `candidate_m1_explanations`).
 - `features` ← `model.json.feature_order`.
 - `cut_dates` ← `reference_date`/`target_year` de `model.json` y
   `validation_year`/`test_year` de `evaluation.json`.

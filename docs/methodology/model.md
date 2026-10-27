@@ -93,13 +93,21 @@ medias/escalas, coeficientes y las salidas pre-recorte de 2027.
 | Archivo | Contenido |
 |---|---|
 | `model.json` | familia, features, `alpha`, intercepto/coeficientes/escalador, salidas pre-recorte, frecuencia de recorte. |
-| `evaluation.json` | MAE/RMSE/sesgo/MAE ponderado, cohortes, exclusiones, cobertura, M0/M1 por 2021/2024, banda. |
+| `evaluation.json` | MAE/RMSE/sesgo/MAE ponderado, cohortes, exclusiones por corte, cobertura empírica 2021/2024, M0/M1 por 2021/2024, banda y errores por municipio. |
 | `predictions-2027.parquet` | 125 registros (incl. insuficientes), nunca cero sustitutivo. |
 | `exclusions.csv` | municipios excluidos de 2027 con motivos. |
+| `exclusions-by-cut.csv` | lista de exclusiones por cada corte (2015/2018/2021/2024/2027). |
 | `manifest.json` | hashes, versiones, fechas, limitaciones, hash lógico. |
 
+`model.json` también persiste `features_2027`, la explicación M0 y las
+contribuciones aditivas del candidato M1 por municipio; la API y la exportación
+`model_evidence_csv/xlsx` las exponen como asociaciones, nunca como causas.
+
 Escritura atómica (temporal + `os.replace`); `model_run_id` es `uuid5`
-determinista sobre el contenido, no un UUID aleatorio.
+determinista sobre el contenido canónico: hash de datos, features, alpha,
+estados de identidad, cohortes y exclusiones por corte, métricas 2021/2024,
+parámetros del modelo final y del candidato M1. Cambiar cualquiera de esos
+insumos produce un id nuevo.
 
 ## Limitaciones
 

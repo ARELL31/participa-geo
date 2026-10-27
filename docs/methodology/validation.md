@@ -70,6 +70,9 @@ empate; no se forzó una mejora. Los sesgos negativos de M0 (−4.72 en 2021,
   de referencia**, nunca “90 % de confianza”.
 - `risk_unstable = True` cuando la banda cruza un umbral (40 o 50). Con esta
   amplitud, **70 de 85** municipios elegibles tienen categoría inestable.
+- Cobertura empírica fuera de tiempo: al comparar la banda congelada con los
+  errores absolutos de 2024, **71 de 75 (94.7 %)** quedan dentro de la amplitud.
+  Es una comprobación descriptiva; 2024 no ajusta la banda ni la selección.
 - No se promete cobertura futura del 90 %: pocos ciclos, dependencia espacial y
   cambio de distribución limitan la interpretación (Spec §8).
 

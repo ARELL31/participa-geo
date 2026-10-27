@@ -325,12 +325,15 @@ Cuerpo cerrado (`extra="forbid"`); no admite URL, ruta, plantilla ni texto libre
 }
 ```
 
-`kind` es el enum cerrado: `history_csv`, `history_xlsx`, `scenario_csv`,
+`kind` es el enum cerrado: `history_csv`, `history_xlsx`,
+`model_evidence_csv`, `model_evidence_xlsx`, `scenario_csv`,
 `scenario_geojson`, `scenario_pdf`, `scenario_map_png`, `scenario_map_pdf`,
 `methodology_pdf`, `executive_pdf`, `technical_zip`.
 
 - `scenario_id` es obligatorio para `scenario_*`; en otros tipos se rechaza.
 - `territory_id`/`year` sólo aplican a `history_*`.
+- `model_evidence_*` exporta features 2027, exclusiones por corte y
+  contribuciones aditivas M0/M1 por municipio del modelo publicado.
 - Las exportaciones pequeñas son síncronas (sin cola, sin `pending`).
 - `201` creado; `200` caché por hash de filtros/versiones/modelo/escenario/supuestos.
 - `409 institutional_package_not_generated` si `methodology_pdf`,
