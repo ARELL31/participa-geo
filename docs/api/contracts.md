@@ -253,6 +253,10 @@ Límite: **10 creaciones de escenario por minuto por cliente** y **una solicitud
 activa por cliente**. Excederlo devuelve `429` `application/problem+json` con
 `code=rate_limited` y la extensión `retry_after_seconds`. El limitador es en
 memoria y válido sólo para el MVP de un solo worker; no es un límite distribuido.
+El mapa de clientes está acotado a **512 claves**: en cada comprobación se eliminan
+los clientes cuyo evento más reciente quedó fuera de la ventana y, si se alcanza
+el tope, se desaloja el cliente inactivo menos recientemente usado. Así se limita
+tanto la memoria como la retención de direcciones de origen.
 
 ### `GET /scenarios/{scenario_id}`
 

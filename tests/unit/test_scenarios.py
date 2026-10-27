@@ -243,3 +243,87 @@ def test_rate_limiter_rejects_eleventh_creation_and_concurrent_request():
         with pytest.raises(ScenarioRateLimitError):
             with limiter.acquire("client-c"):
                 pass
+
+
+class _FakeClock:
+    """Deterministic monotonic clock for limiter expiry tests."""
+
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def test_rate_limiter_caps_one_off_clients_to_max_clients():
+    limiter = ScenarioRateLimiter(limit=10, window_seconds=60.0, max_clients=8)
+
+    for index in range(100):
+        with limiter.acquire(f"one-off-{index}"):
+            pass
+
+    # The map never grows beyond the documented cap, even though every caller is
+    # unique; the oldest inactive keys are evicted deterministically (LRU).
+    assert limiter.tracked_clients == 8
+    assert len(limiter._events) == 8
+    assert list(limiter._events) == [f"one-off-{index}" for index in range(92, 100)]
+
+
+def test_rate_limiter_evicts_least_recently_used_client():
+    limiter = ScenarioRateLimiter(limit=1, window_seconds=60.0, max_clients=2)
+
+    with limiter.acquire("client-a"):
+        pass
+    with limiter.acquire("client-b"):
+        pass
+    assert limiter.tracked_clients == 2
+
+    # client-a is the least recently used key and is evicted to make room.
+    with limiter.acquire("client-c"):
+        pass
+    assert list(limiter._events) == ["client-b", "client-c"]
+
+    # If client-a had not been evicted, its single event would still be inside
+    # the window and this would be a 429. It is admitted as a fresh key instead.
+    with limiter.acquire("client-a"):
+        pass
+    assert list(limiter._events) == ["client-c", "client-a"]
+
+
+def test_rate_limiter_evicts_clients_after_window_expiry():
+    clock = _FakeClock()
+    limiter = ScenarioRateLimiter(
+        limit=10, window_seconds=60.0, max_clients=8, clock=clock
+    )
+
+    for index in range(6):
+        with limiter.acquire(f"stale-{index}"):
+            pass
+    assert limiter.tracked_clients == 6
+
+    # Every stale key's newest event is now older than the window: the next
+    # acquisition prunes all of them before adding the new key.
+    clock.advance(61.0)
+    with limiter.acquire("fresh"):
+        pass
+
+    assert limiter.tracked_clients == 1
+    assert list(limiter._events) == ["fresh"]
+
+
+def test_rate_limiter_keeps_ten_per_minute_budget():
+    limiter = ScenarioRateLimiter(limit=10, window_seconds=60.0, max_clients=512)
+
+    for _ in range(10):
+        with limiter.acquire("client-a"):
+            pass
+
+    with pytest.raises(ScenarioRateLimitError) as excinfo:
+        with limiter.acquire("client-a"):
+            pass
+    assert excinfo.value.retry_after_seconds >= 1
+    assert excinfo.value.active is False
+    assert limiter.tracked_clients == 1

@@ -7,6 +7,10 @@ transaction. A failure rolls the transaction back, so no partial scenario exists
 The limiter is intentionally process-local: it enforces 10 creations/minute and
 one active request per client for this single-worker MVP. It is not a distributed
 rate limit and would need a shared store before scaling the API horizontally.
+The tracking map is bounded: clients whose newest event is older than the rate
+window are pruned on every acquisition, and at most ``max_clients`` keys are
+retained using deterministic least-recently-used eviction. This bounds both
+memory and the retention of caller addresses.
 """
 
 from __future__ import annotations
@@ -16,8 +20,8 @@ import json
 import math
 import threading
 import time
-from collections import deque
-from collections.abc import Iterator
+from collections import OrderedDict, deque
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -44,25 +48,78 @@ class ScenarioRateLimitError(RuntimeError):
 
 
 class ScenarioRateLimiter:
-    """Process-local sliding-window limiter (single-worker MVP only)."""
+    """Process-local, bounded sliding-window limiter (single-worker MVP only)."""
 
-    def __init__(self, *, limit: int = 10, window_seconds: float = 60.0) -> None:
+    #: Default cap on tracked caller keys (memory/privacy bound).
+    DEFAULT_MAX_CLIENTS = 512
+
+    def __init__(
+        self,
+        *,
+        limit: int = 10,
+        window_seconds: float = 60.0,
+        max_clients: int = DEFAULT_MAX_CLIENTS,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        if limit < 1:
+            raise ValueError("limit must be at least 1")
+        if max_clients < 1:
+            raise ValueError("max_clients must be at least 1")
         self.limit = limit
         self.window_seconds = window_seconds
-        self._events: dict[str, deque[float]] = {}
+        self.max_clients = max_clients
+        self._clock = clock
+        self._events: OrderedDict[str, deque[float]] = OrderedDict()
         self._active: set[str] = set()
         self._lock = threading.Lock()
 
+    @property
+    def tracked_clients(self) -> int:
+        """Number of caller keys currently retained (bounded by ``max_clients``)."""
+        with self._lock:
+            return len(self._events)
+
+    def _prune_expired(self, now: float) -> None:
+        """Drop events outside the window and delete clients with no events left."""
+        cutoff = now - self.window_seconds
+        for client_key in list(self._events):
+            events = self._events[client_key]
+            while events and events[0] <= cutoff:
+                events.popleft()
+            if not events:
+                del self._events[client_key]
+
+    def _make_room(self) -> None:
+        """Evict least-recently-used inactive clients until a new key fits."""
+        while len(self._events) >= self.max_clients:
+            victim = next(
+                (key for key in self._events if key not in self._active), None
+            )
+            if victim is None:
+                # All retained clients are mid-request; fail closed rather than
+                # exceed the documented memory bound.
+                raise ScenarioRateLimitError(active=True)
+            del self._events[victim]
+
     @contextmanager
     def acquire(self, client_key: str) -> Iterator[None]:
-        now = time.monotonic()
+        now = self._clock()
         with self._lock:
             if client_key in self._active:
                 raise ScenarioRateLimitError(active=True)
-            events = self._events.setdefault(client_key, deque())
-            cutoff = now - self.window_seconds
-            while events and events[0] <= cutoff:
-                events.popleft()
+
+            self._prune_expired(now)
+
+            events = self._events.get(client_key)
+            if events is None:
+                self._make_room()
+                events = deque()
+                self._events[client_key] = events
+            else:
+                # Deterministic LRU order: every accepted/checked request makes
+                # the caller the most recently used key.
+                self._events.move_to_end(client_key)
+
             if len(events) >= self.limit:
                 retry_after = math.ceil(events[0] + self.window_seconds - now)
                 raise ScenarioRateLimitError(retry_after_seconds=retry_after)
