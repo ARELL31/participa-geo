@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query
 from participa_geo.api.deps import SessionDep
 from participa_geo.api.metadata import build_meta
 from participa_geo.api.schemas.common import Page
-from participa_geo.api.schemas.history import ElectionYear, HistoryDTO
+from participa_geo.api.schemas.history import ElectionYearQuery, HistoryDTO
 from participa_geo.db.repository import Repository
 
 router = APIRouter()
@@ -26,7 +26,7 @@ GEOGRAPHIC_WARNING = (
 )
 def list_history(
     territory_id: UUID | None = None,
-    year: ElectionYear | None = None,
+    year: ElectionYearQuery = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=125)] = 25,
     *,

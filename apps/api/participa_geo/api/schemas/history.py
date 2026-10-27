@@ -2,13 +2,31 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, BeforeValidator
 
 #: The six CCPC election years accepted as a historical filter.
 ElectionYear = Literal[2009, 2012, 2015, 2018, 2021, 2024]
+
+
+def _coerce_election_year(value: object) -> object:
+    """Coerce a query-string year (``"2024"``) to ``int`` before the Literal check.
+
+    Pydantic 2.14 does not coerce ``str`` → ``int`` for a ``Literal[int, ...]`` on
+    its own, so a bare ``year: ElectionYear | None`` rejects the query string
+    ``"2024"`` with ``literal_error``. This validator makes the six approved years
+    parse from query strings while leaving 2023 (and any non-integer) a 422.
+    """
+    if isinstance(value, str):
+        return int(value)
+    return value
+
+
+#: ``year`` query parameter: coerces the query string to int, then enforces the
+#: six approved election years. The OpenAPI schema still exposes the integer enum.
+ElectionYearQuery = Annotated[ElectionYear | None, BeforeValidator(_coerce_election_year)]
 
 
 class HistoryDTO(BaseModel):
@@ -36,4 +54,4 @@ class HistoryDTO(BaseModel):
     footprint_status: str | None = None
 
 
-__all__ = ["ElectionYear", "HistoryDTO"]
+__all__ = ["ElectionYear", "ElectionYearQuery", "HistoryDTO"]

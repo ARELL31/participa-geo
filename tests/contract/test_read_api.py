@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 OPENAPI_PATH = REPO_ROOT / "docs" / "api" / "openapi.json"
 
@@ -84,6 +86,28 @@ def test_invalid_year_and_page_rejected(db_api_client):
     # page_size is bounded at 125.
     response = db_api_client.get("/api/v1/territories", params={"page_size": 126})
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("year", [2009, 2012, 2015, 2018, 2021, 2024])
+def test_history_year_filter_accepts_all_years(db_api_client, year):
+    # Regression: query-string `year` values must coerce to int and pass the
+    # Literal check (Pydantic 2.14 rejected `"2024"` with `literal_error`).
+    response = db_api_client.get(
+        "/api/v1/participation/history", params={"year": year}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert body["items"][0]["year"] == year
+
+
+def test_history_year_invalid_is_422_problem_json(db_api_client):
+    response = db_api_client.get(
+        "/api/v1/participation/history", params={"year": 2023}
+    )
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "validation_error"
 
 
 def test_unknown_id_404(db_api_client):
