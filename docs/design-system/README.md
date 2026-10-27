@@ -11,13 +11,14 @@ apariencia de landing comercial, sin degradados decorativos, sin glassmorphism y
 sin emojis. La jerarquía se construye con tipografía, bordes discretos y espacio
 en blanco.
 
-- Shell persistente: sidebar de 256 px, header de 64 px, contenido máximo de
+- Shell persistente: sidebar de 264 px, header de 64 px, contenido máximo de
   1440 px con gutters de 32 px en escritorio y 16 px en móvil.
 - Sidebar colapsable: en móvil se abre con Radix Dialog, atrapa el foco y lo
   devuelve al botón que abrió el menú.
 - Rutas: `/` (Panel ejecutivo), `/territory` (Inteligencia territorial),
-  `/prediction`, `/scenarios`, `/reports`. Los módulos aún no entregados muestran
-  “Pendiente” y no exponen controles o enlaces de acción falsos.
+  `/prediction`, `/scenarios`, `/reports`. Los cinco módulos están entregados; no
+  se muestran controles o enlaces de acción falsos. Los recursos avanzados fuera
+  del alcance se documentan, no se simulan.
 - El año objetivo 2027 es fijo y aparece separado del filtro histórico.
 
 ## Paleta
@@ -126,8 +127,8 @@ no realizadas se registran en el reporte de la tarea.
   sustituye una comprobación manual del zoom del navegador.
 - Objetivos táctiles de al menos 44 px en móvil.
 - `prefers-reduced-motion` desactiva animaciones y transiciones en CSS; el único
-  movimiento es el indicador de carga. Esta regla se revisó en CSS, no con una
-  prueba automatizada de movimiento reducido.
+  movimiento es el indicador de carga. T10 añadió una prueba Playwright de
+  movimiento reducido, además de la revisión CSS.
 
 ## Verificaciones registradas (T7, 26 de octubre de 2026)
 
@@ -146,7 +147,9 @@ Ejecutadas dentro de Docker:
 - Contraste calculado con la fórmula WCAG 2.x para todas las combinaciones de la
   tabla anterior.
 
-No se ejecutó axe, no se probó con lectores de pantalla, no se automatizó
-`prefers-reduced-motion`, no se probó el zoom real del navegador ni los anchos
-768/1024 de forma automatizada. Por ello **no se declara conformidad WCAG AA
-completa**; estas comprobaciones quedan como apoyo y deuda explícita.
+T10 añadió axe (sin violaciones critical/serious en las cinco páginas y el
+diálogo móvil), teclado/foco/etiquetas, `prefers-reduced-motion` automatizado y
+reflujo 320/375/1440. No se usó un lector de pantalla real, no se probó el zoom
+nativo del navegador ni los anchos 768/1024 de forma automatizada. Por ello **no
+se declara conformidad WCAG AA completa**; estas comprobaciones quedan como
+apoyo y deuda explícita.

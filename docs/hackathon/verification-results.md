@@ -260,9 +260,10 @@ locales porque requieren los datos oficiales empaquetados y ~8 GB de memoria.
 ## 9. No ejecutado / límites de la evidencia
 
 - GitHub Actions no se ejecutó (ver §8).
-- No hubo revisión final independiente del diff completo en esta sesión; el
-  commit de T10 queda para esa revisión. Las revisiones por tarea de T1–T9 sí
-  están registradas.
+- La revisión final independiente del diff completo se ejecutó el 2026-10-27.
+  Encontró 2 hallazgos críticos y 10 importantes; la ola de corrección los cerró
+  y la re-revisión limitada confirmó **12/12 atendidos, sin Critical/Important
+  abiertos**. Las revisiones por tarea de T1–T10 también están registradas.
 - No se ejecutó un lector de pantalla real (NVDA/VoiceOver/Orca) ni una auditoría
   AA completa; sólo la inspección automatizada y de teclado descrita.
 - El zoom 200% es una aproximación (Playwright no expone zoom nativo).
@@ -292,9 +293,10 @@ final. **No se afirma conformidad AA.**
 
 ## 11. Conclusión técnica
 
-La aceptación técnica local pasa: backend 193, Vitest 47, Playwright 17+17,
+La aceptación técnica local pasa: backend 214, Vitest 50, Playwright 17+17,
 GIS/readiness/seguridad, documentos 12/9, ZIP `complete=true` con fuentes y
-checksums, y reproducción limpia con diferencia 0.0 (`atol=1e-8`). Quedan como
-condiciones humanas la confirmación de licencia/redistribución (ya ejercida con
-`--confirm-source-license` para este paquete), la revisión independiente, las
-cartas y el envío.
+checksums, y reproducción limpia con diferencia 0.0 (`atol=1e-8`). La revisión
+final independiente quedó cerrada (12/12 hallazgos atendidos). Quedan como
+condiciones humanas la revisión de redacción, las cartas y el envío; la
+redistribución de fuentes fue confirmada por el usuario para este paquete con
+`--confirm-source-license` y atribución/checksums.

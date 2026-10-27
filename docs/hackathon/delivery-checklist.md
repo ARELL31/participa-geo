@@ -53,9 +53,10 @@ docker compose run --rm api python -m participa_geo.cli verify-delivery \
 ## B. Pasos humanos (no automatizados)
 
 - [ ] Revisar la redacción metodológica completa (no sólo el número de páginas).
-- [ ] Confirmar las condiciones de uso/redistribución de INE y cartografía
-      (ver `source-licenses.md`); si no están claras, sustituir originales por
-      checksums e instrucciones antes de publicar.
+- [x] Confirmar las condiciones de uso/redistribución de INE y cartografía
+      (ver `source-licenses.md`). El usuario confirmó el 2026-10-27 incluir los
+      originales con atribución, URLs y checksums en el ZIP técnico; revisar el
+      alcance antes de una publicación abierta.
 - [ ] Firmar cartas de cesión/declaratoria y revisar el alcance de la cesión.
 - [ ] Integrar las cartas en un espacio privado, **fuera** de Git, API,
       contenedores y ZIP técnico.
