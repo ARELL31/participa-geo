@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -21,8 +21,18 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from participa_geo.api.errors import register_exception_handlers, request_id_var
 from participa_geo.api.readiness import build_readiness
-from participa_geo.api.routes import gis, health, history, models, predictions, territories
+from participa_geo.api.routes import (
+    gis,
+    health,
+    history,
+    models,
+    predictions,
+    recommendations,
+    scenarios,
+    territories,
+)
 from participa_geo.db.session import api_engine
+from participa_geo.scenarios.service import ScenarioRateLimiter
 from participa_geo.settings import Settings
 
 API_PREFIX = "/api/v1"
@@ -57,7 +67,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -163,6 +173,9 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     # engine is created lazily (no connection until a request/readiness probe).
     app.state.api_engine = api_engine(settings)
     app.state.readiness = readiness or build_readiness(settings, app.state.api_engine)
+    # Process-local scenario limiter (10/min and one active request per client);
+    # valid for the single-worker MVP only.
+    app.state.scenario_rate_limiter = ScenarioRateLimiter()
 
     logging.getLogger("participa_geo").setLevel(settings.log_level.upper())
 
@@ -177,6 +190,8 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     app.include_router(history.router, prefix=API_PREFIX)
     app.include_router(models.router, prefix=API_PREFIX)
     app.include_router(predictions.router, prefix=API_PREFIX)
+    app.include_router(scenarios.router, prefix=API_PREFIX)
+    app.include_router(recommendations.router, prefix=API_PREFIX)
     app.include_router(gis.router, prefix=API_PREFIX)
 
     return app

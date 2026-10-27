@@ -67,6 +67,7 @@ Correspondencia de estados:
 | 409 | `conflict` | Estado incompatible (p. ej. artefacto institucional no generado). |
 | 413 | `payload_too_large` | Cuerpo JSON mayor de 32 KiB. |
 | 422 | `validation_error` | Validación de entrada (Pydantic). |
+| 429 | `rate_limited` | Límite de creación de escenarios (10/minuto por cliente). |
 | 503 | `not_ready` / `unavailable` | Prerequisitos no satisfechos / dependencia no disponible. |
 
 Ejemplo de recurso ausente:
@@ -153,4 +154,154 @@ a sí mismo.
 | GET `/gis/wms`, `/gis/wfs` | Adaptador validado hacia GeoServer interno (sólo lectura). |
 
 Estas rutas se implementan en tareas posteriores; su firma queda fijada aquí para
-que el OpenAPI generado y los tipos de cliente no diverjan.
+que el OpenAPI generado y los tipos de cliente no diverjan. Las rutas de lectura y
+los escenarios/recomendaciones ya están implementados (T5/T6); reportes y
+exportaciones quedan para T9.
+
+## Escenarios
+
+### `POST /scenarios`
+
+Cuerpo exacto (sin campos libres, `extra="forbid"`, números finitos):
+
+```json
+{
+  "model_run_id": "00000000-0000-0000-0000-000000000001",
+  "target_year": 2027,
+  "territory_ids": ["00000000-0000-0000-0000-000000000002"],
+  "reduction_pp": 3.0,
+  "assumption_code": "preventive_exploration"
+}
+```
+
+Reglas vinculantes:
+
+- `model_run_id` debe ser la ejecución publicada (`get_published_model_run_id`);
+  no se acepta un ID de artefacto codificado en el cliente.
+- `target_year` es exactamente `2027`.
+- `territory_ids`: lista no vacía, sin duplicados y de máximo 125 IDs. Todos deben
+  pertenecer a las 125 predicciones publicadas y ser elegibles. Una predicción
+  insuficiente no puede seleccionarse; se responde `422` con
+  `errors[].territory_id` y `errors[].reason`.
+- `reduction_pp` es finito y está entre `0` y `10` puntos porcentuales.
+- `assumption_code` es el enum cerrado `preventive_exploration` o
+  `model_sensitivity`; su texto explicativo proviene de una plantilla revisada.
+  Enviar `rationale_text` u otro campo libre es `422`.
+
+Cálculo de la comparación:
+
+- `A` = abstención estimada 2027 publicada. `B = max(0, A - reduction_pp)` sólo
+  para los municipios seleccionados y elegibles; los no seleccionados conservan
+  `B = A`; las predicciones insuficientes permanecen `null`/`insufficient`.
+- `requested_reduction_pp` es el valor solicitado; `effective_reduction_pp` es
+  `A - B` (entre `0` y el solicitado).
+- La banda A es el rango de error histórico de referencia. La banda B se obtiene
+  trasladando la banda A por la reducción efectiva y recortando a `0–100`; se
+  etiqueta como `rango de error histórico de referencia trasladado
+  condicionalmente; no es un intervalo causal`. No cuantifica el efecto ni
+  agrega evidencia.
+- Los umbrales de riesgo son los mismos que para A (`<40`, `40–<50`, `>=50`,
+  insuficiente). `risk_unstable` indica que la banda cruza un umbral. No se
+  estiman personas ni efectos causales.
+
+Respuesta `201` (`ScenarioDTO`), con exactamente 125 resultados persistidos:
+
+```json
+{
+  "scenario_id": "00000000-0000-0000-0000-000000000010",
+  "model_run_id": "00000000-0000-0000-0000-000000000001",
+  "target_year": 2027,
+  "requested_reduction_pp": 3.0,
+  "assumption_code": "preventive_exploration",
+  "assumption_version": "1.0",
+  "rationale_text": "Supuesto de exploración preventiva: ...",
+  "rules_version": "scenario-rules-1.0.0",
+  "input_sha256": "…64 hex…",
+  "model_sha256": "…64 hex…",
+  "error_band_label": "rango de error histórico de referencia trasladado condicionalmente; no es un intervalo causal",
+  "selected_territory_ids": ["00000000-0000-0000-0000-000000000002"],
+  "created_at": "2026-10-26T12:00:00Z",
+  "results": [
+    {
+      "territory_id": "00000000-0000-0000-0000-000000000002",
+      "municipality_code": "001",
+      "municipality_name": "ACATIC",
+      "baseline_abstention_pct": 47.0,
+      "hypothetical_abstention_pct": 44.0,
+      "baseline_error_lower_pct": 45.0,
+      "baseline_error_upper_pct": 49.0,
+      "hypothetical_error_lower_pct": 42.0,
+      "hypothetical_error_upper_pct": 46.0,
+      "requested_reduction_pp": 3.0,
+      "effective_reduction_pp": 3.0,
+      "risk_a": "medium",
+      "risk_b": "medium",
+      "risk_a_unstable": false,
+      "risk_b_unstable": false,
+      "selected": true
+    }
+  ]
+}
+```
+
+La escritura del escenario y sus 125 resultados es una sola transacción: un fallo
+no deja escenario parcial. Se guardan selección, reducción solicitada/efectiva,
+código y texto controlados, versiones de supuesto/reglas, hashes de entrada y
+modelo, y fecha. No se guarda identidad de creador (el MVP no tiene autenticación).
+
+Límite: **10 creaciones de escenario por minuto por cliente** y **una solicitud
+activa por cliente**. Excederlo devuelve `429` `application/problem+json` con
+`code=rate_limited` y la extensión `retry_after_seconds`. El limitador es en
+memoria y válido sólo para el MVP de un solo worker; no es un límite distribuido.
+
+### `GET /scenarios/{scenario_id}`
+
+Devuelve `200` con el `ScenarioDTO` persistido, sin recalcular ni reentrenar, o
+`404` `not_found` si el UUID es desconocido.
+
+## Recomendaciones
+
+### `GET /recommendations`
+
+Filtros equivalentes a `/predictions`: `model_run_id?`, `target_year=2027`,
+`territory_id?`, `page>=1`, `page_size=1..125`. Devuelve
+`Page[RecommendationDTO]`:
+
+```json
+{
+  "items": [
+    {
+      "territory_id": "00000000-0000-0000-0000-000000000002",
+      "municipality_code": "001",
+      "municipality_name": "ACATIC",
+      "target_year": 2027,
+      "risk": "high",
+      "risk_unstable": true,
+      "eligible": true,
+      "model_run_id": "00000000-0000-0000-0000-000000000001",
+      "rules_version": "recommendation-rules-1.0.0",
+      "recommendations": [
+        {
+          "code": "institutional_review",
+          "version": "recommendation-rules-1.0.0",
+          "priority": "high",
+          "title": "Considerar revisión institucional",
+          "action": "Considerar información cívica y revisión institucional; no constituye una obligación ni una asignación de recursos.",
+          "reasons": ["risk_high"]
+        }
+      ]
+    }
+  ],
+  "page": 1,
+  "page_size": 25,
+  "total": 125,
+  "meta": {"reference_date": "2025-12-15", "model_run_id": "…"}
+}
+```
+
+Las reglas son legibles y versionadas: mejora de calidad de datos cuando la
+proporción de no especificados es alta o la predicción es insuficiente,
+seguimiento preventivo/institucional según riesgo, monitoreo de categoría
+inestable y advertencia de equidad/cobertura. No hay optimización de presupuesto,
+perfilado partidista, segmentación persuasiva ni inferencia individual; el texto
+proviene de plantillas fijas, nunca de entrada del usuario.

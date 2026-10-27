@@ -447,6 +447,151 @@ class Repository:
             model_run_id=row["model_run_id"],
         )
 
+    # -- scenario writes / reads ------------------------------------------
+
+    def insert_scenario(self, scenario: models.ScenarioRecord) -> None:
+        """Insert one scenario header (the caller owns the transaction)."""
+        self.session.execute(
+            pg_insert(models.Scenario.__table__).values(
+                id=scenario.scenario_id,
+                model_run_id=scenario.model_run_id,
+                target_year=scenario.target_year,
+                reduction_pp=scenario.requested_reduction_pp,
+                assumption_code=scenario.assumption_code,
+                assumption_version=scenario.assumption_version,
+                rationale_text=scenario.rationale_text,
+                rules_version=scenario.rules_version,
+                input_sha256=scenario.input_sha256,
+                model_sha256=scenario.model_sha256,
+                selection=scenario.selection,
+                created_at=scenario.created_at,
+            )
+        )
+
+    def insert_scenario_results(
+        self,
+        scenario_id: UUID,
+        results: Sequence[models.ScenarioResultRecord],
+    ) -> None:
+        """Insert the 125 municipality results in the caller's transaction."""
+        if not results:
+            return
+        from uuid import NAMESPACE_URL as _NAMESPACE_URL
+        from uuid import uuid5 as _uuid5
+
+        values = [
+            {
+                "id": _uuid5(
+                    _NAMESPACE_URL,
+                    f"participa-geo:scenario-result:{scenario_id}:{result.territory_id}",
+                ),
+                "scenario_id": scenario_id,
+                "reference_territory_id": result.territory_id,
+                "baseline_abstention_pct": result.baseline_abstention_pct,
+                "hypothetical_abstention_pct": result.hypothetical_abstention_pct,
+                "baseline_error_lower_pct": result.baseline_error_lower_pct,
+                "baseline_error_upper_pct": result.baseline_error_upper_pct,
+                "hypothetical_error_lower_pct": result.hypothetical_error_lower_pct,
+                "hypothetical_error_upper_pct": result.hypothetical_error_upper_pct,
+                "requested_reduction_pp": result.requested_reduction_pp,
+                "effective_reduction_pp": result.effective_reduction_pp,
+                "risk_a": result.risk_a,
+                "risk_b": result.risk_b,
+                "risk_a_unstable": result.risk_a_unstable,
+                "risk_b_unstable": result.risk_b_unstable,
+                "selected": result.selected,
+            }
+            for result in results
+        ]
+        self.session.execute(pg_insert(models.ScenarioResult.__table__).values(values))
+
+    def get_scenario(
+        self, scenario_id: UUID
+    ) -> tuple[models.ScenarioRecord, list[models.ScenarioResultRecord]] | None:
+        """Return a persisted scenario and its results, or ``None`` when absent.
+
+        This is a pure read: it never recomputes A/B from the current model.
+        """
+        row = self.session.execute(
+            text(
+                """
+                SELECT id AS scenario_id, model_run_id, target_year, reduction_pp,
+                       assumption_code, assumption_version, rationale_text,
+                       rules_version, input_sha256, model_sha256, selection,
+                       created_at
+                FROM scenario
+                WHERE id = :scenario_id
+                """
+            ),
+            {"scenario_id": scenario_id},
+        ).mappings().first()
+        if row is None:
+            return None
+
+        scenario = models.ScenarioRecord(
+            scenario_id=row["scenario_id"],
+            model_run_id=row["model_run_id"],
+            target_year=row["target_year"],
+            requested_reduction_pp=float(row["reduction_pp"]),
+            assumption_code=row["assumption_code"],
+            assumption_version=row["assumption_version"],
+            rationale_text=row["rationale_text"],
+            rules_version=row["rules_version"],
+            input_sha256=row["input_sha256"],
+            model_sha256=row["model_sha256"],
+            selection=[str(value) for value in (row["selection"] or [])],
+            created_at=row["created_at"],
+        )
+
+        result_rows = self.session.execute(
+            text(
+                """
+                SELECT s.scenario_id, s.reference_territory_id AS territory_id,
+                       t.municipality_code, t.name AS municipality_name,
+                       s.baseline_abstention_pct, s.hypothetical_abstention_pct,
+                       s.baseline_error_lower_pct, s.baseline_error_upper_pct,
+                       s.hypothetical_error_lower_pct,
+                       s.hypothetical_error_upper_pct,
+                       s.requested_reduction_pp, s.effective_reduction_pp,
+                       s.risk_a, s.risk_b, s.risk_a_unstable, s.risk_b_unstable,
+                       s.selected
+                FROM scenario_result s
+                JOIN territory_version t ON t.id = s.reference_territory_id
+                WHERE s.scenario_id = :scenario_id
+                ORDER BY t.municipality_code
+                """
+            ),
+            {"scenario_id": scenario_id},
+        ).mappings().all()
+
+        results = [
+            models.ScenarioResultRecord(
+                scenario_id=result["scenario_id"],
+                territory_id=result["territory_id"],
+                municipality_code=result["municipality_code"],
+                municipality_name=result["municipality_name"],
+                baseline_abstention_pct=result["baseline_abstention_pct"],
+                hypothetical_abstention_pct=result["hypothetical_abstention_pct"],
+                baseline_error_lower_pct=result["baseline_error_lower_pct"],
+                baseline_error_upper_pct=result["baseline_error_upper_pct"],
+                hypothetical_error_lower_pct=result[
+                    "hypothetical_error_lower_pct"
+                ],
+                hypothetical_error_upper_pct=result[
+                    "hypothetical_error_upper_pct"
+                ],
+                requested_reduction_pp=float(result["requested_reduction_pp"]),
+                effective_reduction_pp=float(result["effective_reduction_pp"]),
+                risk_a=result["risk_a"] or "insufficient",
+                risk_b=result["risk_b"] or "insufficient",
+                risk_a_unstable=bool(result["risk_a_unstable"]),
+                risk_b_unstable=bool(result["risk_b_unstable"]),
+                selected=bool(result["selected"]),
+            )
+            for result in result_rows
+        ]
+        return scenario, results
+
 
 def load_model_bundle(path: Path, session: Session) -> UUID:
     """Load the T4 artifact bundle into ``model_run`` + ``prediction`` rows.

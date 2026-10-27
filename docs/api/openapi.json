@@ -439,6 +439,191 @@
         }
       }
     },
+    "/api/v1/scenarios": {
+      "post": {
+        "tags": [
+          "scenarios"
+        ],
+        "summary": "Create Scenario",
+        "operationId": "create_scenario_api_v1_scenarios_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenarios/{scenario_id}": {
+      "get": {
+        "tags": [
+          "scenarios"
+        ],
+        "summary": "Get Scenario",
+        "operationId": "get_scenario_api_v1_scenarios__scenario_id__get",
+        "parameters": [
+          {
+            "name": "scenario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Scenario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioDTO"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommendations": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "List Recommendations",
+        "operationId": "list_recommendations_api_v1_recommendations_get",
+        "parameters": [
+          {
+            "name": "model_run_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Run Id"
+            }
+          },
+          {
+            "name": "target_year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": 2027,
+              "type": "integer",
+              "default": 2027,
+              "title": "Target Year"
+            }
+          },
+          {
+            "name": "territory_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Territory Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 125,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RecommendationDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/gis/wms": {
       "get": {
         "tags": [
@@ -917,6 +1102,41 @@
         ],
         "title": "Page[PredictionDTO]"
       },
+      "Page_RecommendationDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[RecommendationDTO]"
+      },
       "Page_TerritoryDTO_": {
         "properties": {
           "items": {
@@ -1094,6 +1314,404 @@
         ],
         "title": "PredictionQuality",
         "description": "The quality decision attached to one prediction (never a numeric zero)."
+      },
+      "Recommendation": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "data",
+              "high",
+              "medium",
+              "low",
+              "context"
+            ],
+            "title": "Priority"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "version",
+          "priority",
+          "title",
+          "action"
+        ],
+        "title": "Recommendation",
+        "description": "One fixed, versioned rule output (never generated from user text)."
+      },
+      "RecommendationDTO": {
+        "properties": {
+          "territory_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Territory Id"
+          },
+          "municipality_code": {
+            "type": "string",
+            "title": "Municipality Code"
+          },
+          "municipality_name": {
+            "type": "string",
+            "title": "Municipality Name"
+          },
+          "target_year": {
+            "type": "integer",
+            "title": "Target Year"
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "insufficient"
+            ],
+            "title": "Risk"
+          },
+          "risk_unstable": {
+            "type": "boolean",
+            "title": "Risk Unstable"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "model_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Run Id"
+          },
+          "rules_version": {
+            "type": "string",
+            "title": "Rules Version"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territory_id",
+          "municipality_code",
+          "municipality_name",
+          "target_year",
+          "risk",
+          "risk_unstable",
+          "eligible",
+          "model_run_id",
+          "rules_version",
+          "recommendations"
+        ],
+        "title": "RecommendationDTO",
+        "description": "One territory's recommendations under a published model run."
+      },
+      "ScenarioDTO": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Run Id"
+          },
+          "target_year": {
+            "type": "integer",
+            "title": "Target Year"
+          },
+          "requested_reduction_pp": {
+            "type": "number",
+            "title": "Requested Reduction Pp"
+          },
+          "assumption_code": {
+            "type": "string",
+            "enum": [
+              "preventive_exploration",
+              "model_sensitivity"
+            ],
+            "title": "Assumption Code"
+          },
+          "assumption_version": {
+            "type": "string",
+            "title": "Assumption Version"
+          },
+          "rationale_text": {
+            "type": "string",
+            "title": "Rationale Text"
+          },
+          "rules_version": {
+            "type": "string",
+            "title": "Rules Version"
+          },
+          "input_sha256": {
+            "type": "string",
+            "title": "Input Sha256"
+          },
+          "error_band_label": {
+            "type": "string",
+            "title": "Error Band Label",
+            "default": "rango de error histórico de referencia trasladado condicionalmente; no es un intervalo causal"
+          },
+          "selected_territory_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Selected Territory Ids"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioResultDTO"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "model_sha256": {
+            "type": "string",
+            "title": "Model Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "target_year",
+          "requested_reduction_pp",
+          "assumption_code",
+          "assumption_version",
+          "rationale_text",
+          "rules_version",
+          "input_sha256",
+          "selected_territory_ids",
+          "results",
+          "scenario_id",
+          "model_sha256",
+          "created_at"
+        ],
+        "title": "ScenarioDTO",
+        "description": "The persisted scenario plus the full 125-municipality comparison."
+      },
+      "ScenarioRequest": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Run Id"
+          },
+          "target_year": {
+            "type": "integer",
+            "const": 2027,
+            "title": "Target Year"
+          },
+          "territory_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 125,
+            "minItems": 1,
+            "title": "Territory Ids"
+          },
+          "reduction_pp": {
+            "type": "number",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Reduction Pp"
+          },
+          "assumption_code": {
+            "type": "string",
+            "enum": [
+              "preventive_exploration",
+              "model_sensitivity"
+            ],
+            "title": "Assumption Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "target_year",
+          "territory_ids",
+          "reduction_pp",
+          "assumption_code"
+        ],
+        "title": "ScenarioRequest",
+        "description": "The closed scenario input (Spec §9; no user-provided text fields)."
+      },
+      "ScenarioResultDTO": {
+        "properties": {
+          "territory_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Territory Id"
+          },
+          "municipality_code": {
+            "type": "string",
+            "title": "Municipality Code"
+          },
+          "municipality_name": {
+            "type": "string",
+            "title": "Municipality Name"
+          },
+          "baseline_abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Abstention Pct"
+          },
+          "hypothetical_abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothetical Abstention Pct"
+          },
+          "baseline_error_lower_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Error Lower Pct"
+          },
+          "baseline_error_upper_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Error Upper Pct"
+          },
+          "hypothetical_error_lower_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothetical Error Lower Pct"
+          },
+          "hypothetical_error_upper_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothetical Error Upper Pct"
+          },
+          "requested_reduction_pp": {
+            "type": "number",
+            "title": "Requested Reduction Pp"
+          },
+          "effective_reduction_pp": {
+            "type": "number",
+            "title": "Effective Reduction Pp"
+          },
+          "risk_a": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "insufficient"
+            ],
+            "title": "Risk A"
+          },
+          "risk_b": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "insufficient"
+            ],
+            "title": "Risk B"
+          },
+          "risk_a_unstable": {
+            "type": "boolean",
+            "title": "Risk A Unstable",
+            "default": false
+          },
+          "risk_b_unstable": {
+            "type": "boolean",
+            "title": "Risk B Unstable",
+            "default": false
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "territory_id",
+          "municipality_code",
+          "municipality_name",
+          "requested_reduction_pp",
+          "effective_reduction_pp",
+          "risk_a",
+          "risk_b",
+          "selected"
+        ],
+        "title": "ScenarioResultDTO",
+        "description": "One municipality's persisted A/B comparison (null when insufficient)."
       },
       "TerritoryDTO": {
         "properties": {

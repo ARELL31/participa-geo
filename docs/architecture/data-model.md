@@ -4,8 +4,9 @@ Base de datos PostgreSQL/PostGIS 17.3.6. El esquema lo crea Alembic
 (`alembic/versions/0001_initial.py`) como rol `migrator`; las definiciones de
 columna, restricciones (`CHECK` de conteos), unicidades y claves foráneas viven
 en `apps/api/participa_geo/db/models.py` (fuente única de verdad). Roles y
-permisos: `migrator` (dueño), `writer` (DML), `api` (sólo `SELECT`), `gis_reader`
-(sólo `SELECT` sobre las vistas publicadas).
+permisos: `migrator` (dueño), `writer` (DML), `api` (`SELECT` general e
+`INSERT` sólo en `scenario`/`scenario_result`), `gis_reader` (`SELECT` sobre las
+vistas publicadas).
 
 ## Tablas
 
@@ -17,8 +18,8 @@ permisos: `migrator` (dueño), `writer` (DML), `api` (sólo `SELECT`), `gis_read
 | `observation` | Conteos municipales agregados (LN/SV/NV/NS) y tasas. | `UNIQUE (origin, year, dataset)`. |
 | `model_run` | Familia, parámetros, features, cortes, hashes, métricas, exclusiones. | id = hash de contenido (T4). |
 | `prediction` | Estimación/banda/riesgo 2027 por municipio de referencia. | `UNIQUE (run, territory, target_year)`. |
-| `scenario` | Supuesto hipotético (reducción 0–10 pp, código de catálogo). | `CHECK reduction 0..10`. |
-| `scenario_result` | Resultado A/B por municipio. | `UNIQUE (scenario, territory)`. |
+| `scenario` | Supuesto hipotético (reducción 0–10 pp, código de catálogo), versiones y hashes. | `CHECK reduction 0..10`; `CHECK assumption_code`. |
+| `scenario_result` | Resultado A/B por municipio, banda traducida e inestabilidad. | `UNIQUE (scenario, territory)`. |
 | `report_artifact` | Artefacto de exportación (formato, hash, estado). | — |
 
 `model_run`, `prediction`, `scenario`, `scenario_result` y `report_artifact` se
@@ -43,7 +44,8 @@ lectura (`gis_reader`):
 - `municipalities`: territorios de referencia con geometría (125).
 - `participation_history`: observaciones unidas a su geometría de referencia.
 - `predictions`: predicciones unidas a geometría (vacía hasta T4).
-- `scenario_results`: resultados de escenario unidos a geometría (vacía hasta T6).
+- `scenario_results`: resultados de escenario unidos a geometría (A/B, banda
+  traducida; expone `risk_b` como `risk` para el estilo de riesgo).
 
 ## Diagrama (Mermaid)
 
@@ -144,7 +146,11 @@ erDiagram
         int target_year
         float reduction_pp
         text assumption_code
+        text assumption_version
         text rationale_text
+        text rules_version
+        text input_sha256
+        text model_sha256
         jsonb selection
     }
     scenario_result {
@@ -153,10 +159,16 @@ erDiagram
         uuid reference_territory_id FK
         float baseline_abstention_pct
         float hypothetical_abstention_pct
+        float baseline_error_lower_pct
+        float baseline_error_upper_pct
+        float hypothetical_error_lower_pct
+        float hypothetical_error_upper_pct
         float requested_reduction_pp
         float effective_reduction_pp
         text risk_a
         text risk_b
+        boolean risk_a_unstable
+        boolean risk_b_unstable
         boolean selected
     }
     report_artifact {
@@ -215,12 +227,24 @@ El contenedor `api` recibe **todas** las contraseñas de rol de base de datos
 (`DB_MIGRATOR_*`, `DB_WRITER_*`, `DB_API_*`, `DB_GIS_READER_*`) porque la CLI de
 mantenimiento (`db migrate`, `db load`, `model load`, …) corre en la misma
 imagen. El **proceso HTTP sólo usa `DB_API_*`**: `main.py` crea un único motor con
-el rol de menor privilegio `api` (sólo `SELECT`) y nunca toca las credenciales de
-`migrator`, `writer` o `gis_reader`. Rediseñar la separación (p. ej. una imagen
-de mantenimiento distinta) queda fuera del alcance del MVP y no se hace en T5.
+el rol de menor privilegio `api` (`SELECT` general e `INSERT` sólo en las dos
+tablas de escenario) y nunca toca las credenciales de `migrator`, `writer` o
+`gis_reader`. Rediseñar la separación (p. ej. una imagen de mantenimiento
+distinta) queda fuera del alcance del MVP y no se hace en T5/T6.
 
 ## Permiso de readiness (T5)
 
 La migración `0002` concede `SELECT ON alembic_version TO api` para que el
 chequeo de readiness pueda verificar que las migraciones están aplicadas sin
 ampliar ningún otro privilegio.
+
+## Escenarios persistidos (T6)
+
+La migración `0003` añade a `scenario` las versiones de supuesto/reglas y los
+hashes de entrada/modelo; a `scenario_result`, la banda A, la banda B traducida y
+los indicadores de inestabilidad A/B. Recrea la vista `scenario_results`
+agregando `risk_b AS risk` (y la banda/flags) para que el estilo de riesgo pueda
+renderizar el mapa B. También concede `INSERT` sobre `scenario` y
+`scenario_result` al rol `api`; no concede `UPDATE`/`DELETE` ni escritura sobre
+predicciones, modelo u observaciones. Los escenarios existentes se conservan
+(columnas nuevas con valores por defecto/nullable).

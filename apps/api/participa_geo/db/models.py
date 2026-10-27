@@ -262,7 +262,19 @@ class Scenario(Base):
     target_year: Mapped[int] = mapped_column(Integer, nullable=False)
     reduction_pp: Mapped[float] = mapped_column(nullable=False)
     assumption_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    assumption_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="'1.0'"
+    )
     rationale_text: Mapped[str] = mapped_column(Text, nullable=False)
+    rules_version: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="'scenario-rules-1.0.0'"
+    )
+    input_sha256: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default="''"
+    )
+    model_sha256: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default="''"
+    )
     selection: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
@@ -271,6 +283,10 @@ class Scenario(Base):
     __table_args__ = (
         CheckConstraint(
             "reduction_pp >= 0 AND reduction_pp <= 10", name="ck_scenario_reduction_range"
+        ),
+        CheckConstraint(
+            "assumption_code IN ('preventive_exploration', 'model_sensitivity')",
+            name="ck_scenario_assumption_code",
         ),
     )
 
@@ -287,10 +303,20 @@ class ScenarioResult(Base):
     )
     baseline_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
     hypothetical_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
+    baseline_error_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
+    baseline_error_upper_pct: Mapped[float | None] = mapped_column(nullable=True)
+    hypothetical_error_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
+    hypothetical_error_upper_pct: Mapped[float | None] = mapped_column(nullable=True)
     requested_reduction_pp: Mapped[float] = mapped_column(nullable=False)
     effective_reduction_pp: Mapped[float] = mapped_column(nullable=False)
     risk_a: Mapped[str | None] = mapped_column(String(16), nullable=True)
     risk_b: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    risk_a_unstable: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    risk_b_unstable: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
     selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
@@ -395,6 +421,47 @@ class PredictionRecord:
     model_run_id: UUID
 
 
+@dataclass(frozen=True)
+class ScenarioRecord:
+    """One persisted scenario header (the DTO fields without its results)."""
+
+    scenario_id: UUID
+    model_run_id: UUID
+    target_year: int
+    requested_reduction_pp: float
+    assumption_code: str
+    assumption_version: str
+    rationale_text: str
+    rules_version: str
+    input_sha256: str
+    model_sha256: str
+    selection: list[str]
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class ScenarioResultRecord:
+    """One persisted municipality result of a scenario (A/B and translated band)."""
+
+    scenario_id: UUID
+    territory_id: UUID
+    municipality_code: str
+    municipality_name: str
+    baseline_abstention_pct: float | None
+    hypothetical_abstention_pct: float | None
+    baseline_error_lower_pct: float | None
+    baseline_error_upper_pct: float | None
+    hypothetical_error_lower_pct: float | None
+    hypothetical_error_upper_pct: float | None
+    requested_reduction_pp: float
+    effective_reduction_pp: float
+    risk_a: str
+    risk_b: str
+    risk_a_unstable: bool
+    risk_b_unstable: bool
+    selected: bool
+
+
 __all__ = [
     "Base",
     "DatasetVersion",
@@ -408,7 +475,9 @@ __all__ = [
     "Prediction",
     "ReportArtifact",
     "Scenario",
+    "ScenarioRecord",
     "ScenarioResult",
+    "ScenarioResultRecord",
     "TerritoryCorrespondence",
     "TerritoryRecord",
     "TerritoryVersion",
