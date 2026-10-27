@@ -1,0 +1,61 @@
+{
+  "state_code": "14",
+  "state_name": "JALISCO",
+  "description": "Manifiesto de fuentes CCPC oficiales verificadas (Jalisco, 2009-2024).",
+  "sources": [
+    {
+      "year": 2009,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2009/datosabiertos_deceyec_conteoscensales2009_jal.csv",
+      "sha256": "078df1f9982e7322d4f5e05f70a52c0aad4a898b525b66dd9bbff8756f89ae79",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2009.csv"
+    },
+    {
+      "year": 2012,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2012/datosabiertos_deceyec_conteoscensales2012_jal.csv",
+      "sha256": "7835faa1e825ed0d32607f1f9483eb52b18520ebba6e0c7a583ae9f56d5e7a85",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2012.csv"
+    },
+    {
+      "year": 2015,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2015/datosabiertos_deceyec_conteoscensales2015_jal.csv",
+      "sha256": "82df85eac406a352f9d8595ee4f617a18faa646006e3fdb669a4ddc61648f665",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2015.csv"
+    },
+    {
+      "year": 2018,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2018/datosabiertos_deceyec_conteoscensales2018_jal.csv",
+      "sha256": "52423f5ff786845b6c04afe4a7e5b194b08f6befcb0c78eae512747c453e3758",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2018.csv"
+    },
+    {
+      "year": 2021,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2021/datosabiertos_deceyec_conteoscensales2021_jal.csv",
+      "sha256": "a9063ac201d15bd62b5f9c92c135515e707cdf839f5d9ccad26590c070d0fdfe",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2021.csv"
+    },
+    {
+      "year": 2024,
+      "source_url": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip",
+      "member": "DatosAbiertos_DECEyEC_ConteosCensales2024/datosabiertos_deceyec_conteoscensales2024_jal.csv",
+      "sha256": "20796c13455ad5853b11da54a3dde01689e8adbf27fda354dae7b026c16aeca7",
+      "encoding": "utf-8-sig",
+      "available_at": null,
+      "file_name": "jalisco-2024.csv"
+    }
+  ]
+}
