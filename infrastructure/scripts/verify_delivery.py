@@ -24,6 +24,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Emit the verification report as JSON (default: also JSON).",
     )
+    parser.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="Allow a package marked incomplete to exit 0 (diagnostics only).",
+    )
     args = parser.parse_args(argv)
     try:
         report = verify_archive(Path(args.archive))
@@ -31,6 +36,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"delivery verification failed: {exc}")
         return 1
     print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
+    if not report.get("complete") and not args.allow_incomplete:
+        print(
+            "delivery verification failed: el paquete está incompleto; "
+            "use --allow-incomplete sólo para diagnóstico."
+        )
+        return 1
     return 0
 
 

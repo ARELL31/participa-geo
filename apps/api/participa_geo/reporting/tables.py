@@ -227,7 +227,11 @@ def export_scenario_csv(
                 _cell(result.hypothetical_error_lower_pct),
                 _cell(result.hypothetical_error_upper_pct),
                 _cell(result.requested_reduction_pp),
-                _cell(result.effective_reduction_pp),
+                _cell(
+                    result.effective_reduction_pp
+                    if result.baseline_abstention_pct is not None
+                    else None
+                ),
                 _cell(result.risk_a),
                 _cell(result.risk_b),
                 _cell(result.risk_a_unstable),
@@ -325,9 +329,12 @@ def _write_metadata_sheet(sheet, meta: DatasetMeta, sources: dict | None) -> Non
 
 
 def _write_dictionary_sheet(sheet, columns: Sequence[tuple[str, str, str, str]]) -> None:
-    sheet.append(["campo", "tipo/unidad", "descripcion", "fuente"])
-    for field, unit, description, provenance in columns:
-        sheet.append([field, unit, description, provenance])
+    # Tuple order is (campo, etiqueta, tipo/unidad, descripción); keep the
+    # header exactly aligned with that order so labels are not silently written
+    # under "tipo/unidad".
+    sheet.append(["campo", "etiqueta", "tipo/unidad", "descripcion"])
+    for field, label, unit, description in columns:
+        sheet.append([field, label, unit, description])
     for cell in sheet[1]:
         cell.font = Font(bold=True, name="Inter")
     for index, width in {"A": 32, "B": 22, "C": 90, "D": 52}.items():

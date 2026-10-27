@@ -169,14 +169,20 @@ def run_delivery(
     team_slug: str,
     *,
     settings=None,
-    include_sources: bool = True,
+    source_mode: str,
 ) -> dict:
     """Generate the institutional documents, maps and technical package.
+
+    ``source_mode`` is ``"confirm"`` only after the human confirmed the source
+    redistribution terms (raw CSVs/GIS ZIP included) or ``"skip"`` (checksum/URL
+    package without original files). There is no implicit/safe-by-accident mode.
 
     This is the implementation shared by the CLI and the integration test. It
     fails explicitly (no placeholder) when a real GeoServer A/B map cannot be
     obtained.
     """
+    if source_mode not in {"confirm", "skip"}:
+        raise ValueError("source_mode debe ser 'confirm' o 'skip'")
     from participa_geo.api.gis_client import GeoServerClient
     from participa_geo.api.schemas.reports import MEDIA_TYPE_BY_FORMAT
     from participa_geo.db.session import api_engine, session_scope
@@ -208,14 +214,18 @@ def run_delivery(
             raise SystemExit(f"scenario {scenario_id} does not exist")
 
     context = load_delivery_context(scenario=scenario)
-    meta = _delivery_meta(context)
+    sources = _delivery_sources(context)
+    meta_csv = _delivery_meta(context, report_kind="scenario_csv")
+    meta_geojson = _delivery_meta(context, report_kind="scenario_geojson")
 
     methodology = generate_methodology(context)
     executive = generate_executive(context)
-    scenario_csv = export_scenario_csv(scenario, meta)
+    scenario_csv = export_scenario_csv(scenario, meta_csv, sources=sources)
     reference = repo_root() / "data" / "processed" / "gis" / "reference-2025-12-15.geojson"
-    scenario_geojson = export_scenario_geojson(scenario, reference, meta)
-    scenario_pdf = generate_scenario_pdf(scenario, meta, context=context)
+    scenario_geojson = export_scenario_geojson(
+        scenario, reference, meta_geojson, sources=sources
+    )
+    scenario_pdf = generate_scenario_pdf(scenario, meta_csv, context=context)
     gis_client = GeoServerClient(settings.gis_base_url, timeout=5.0)
     map_png = render_scenario_map(scenario, "png", client=gis_client)
     map_pdf = render_scenario_map(scenario, "pdf", client=gis_client)
@@ -238,8 +248,9 @@ def run_delivery(
         archive,
         root=repo_root(),
         reports=reports,
-        strict=include_sources,
+        strict=True,
         team_slug=team_slug,
+        include_raw_sources=source_mode == "confirm",
     )
     verification = verify_archive(archive)
     summary = {
@@ -247,6 +258,7 @@ def run_delivery(
         "scenario_id": str(scenario.scenario_id),
         "model_run_id": str(scenario.model_run_id),
         "output_dir": str(output_dir),
+        "source_mode": source_mode,
         "technical_zip": {
             "path": str(archive),
             "sha256": built.sha256,
@@ -290,7 +302,7 @@ def run_delivery(
         methodology,
         filename="methodology.pdf",
         media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )
@@ -299,7 +311,7 @@ def run_delivery(
         executive,
         filename="executive.pdf",
         media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )
@@ -308,17 +320,45 @@ def run_delivery(
         archive.read_bytes(),
         filename="technical.zip",
         media_type=MEDIA_TYPE_BY_FORMAT["zip"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id)},
+        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )
     return summary
 
 
-def _delivery_meta(context):
+def _delivery_sources(context) -> dict:
+    """Source/model metadata carried by the CLI scenario exports."""
+    return {
+        "sources": [
+            {
+                "year": source.year,
+                "source_url": source.source_url,
+                "member": source.member,
+                "sha256": source.sha256,
+                "municipality_count": source.municipality_count,
+            }
+            for source in context.sources
+        ],
+        "model": {
+            "family": context.model.family,
+            "model_run_id": str(context.model.model_run_id),
+            "data_aggregate_sha256": context.data_aggregate_sha256,
+            "reference_date": context.reference_date,
+            "versions": context.versions,
+        },
+    }
+
+
+def _delivery_meta(context, *, report_kind: str):
     from participa_geo.api.metadata import build_meta
 
+    filters: dict = {"report_kind": report_kind}
+    if context.scenario is not None:
+        filters["scenario_id"] = str(context.scenario.scenario_id)
+        filters["target_year"] = context.scenario.target_year
     return build_meta(
+        dataset_version_ids=list(context.dataset_version_ids),
         model_run_id=context.model.model_run_id,
         reference_date=context.reference_date,
         generated_at=context.generated_at,
@@ -326,9 +366,7 @@ def _delivery_meta(context):
             "Referencia cartográfica INE 2025-12-15. No implica igualdad de "
             "límites históricos (footprint_status=not_verified)."
         ),
-        filters={"scenario_id": str(context.scenario.scenario_id)}
-        if context.scenario
-        else {},
+        filters=filters,
     )
 
 
@@ -340,11 +378,21 @@ def _deliver(args: argparse.Namespace) -> int:
     except ValueError:
         print("scenario-id debe ser un UUID")
         return 2
+    if args.confirm_source_license:
+        source_mode = "confirm"
+    elif args.skip_sources:
+        source_mode = "skip"
+    else:  # argparse requires one; defensive for direct Namespace construction
+        print(
+            "deliver requiere --confirm-source-license o --skip-sources. "
+            "No se incluyen fuentes sin confirmación explícita."
+        )
+        return 2
     summary = run_delivery(
         scenario_id,
         Path(args.output_dir),
         args.team_slug,
-        include_sources=not args.skip_sources,
+        source_mode=source_mode,
     )
     print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False))
     return 0
@@ -359,6 +407,12 @@ def _verify_delivery(args: argparse.Namespace) -> int:
         print(f"delivery verification failed: {exc}")
         return 1
     print(json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False))
+    if not report.get("complete") and not getattr(args, "allow_incomplete", False):
+        print(
+            "delivery verification failed: el paquete está incompleto; "
+            "use --allow-incomplete sólo para diagnóstico."
+        )
+        return 1
     return 0
 
 
@@ -486,10 +540,22 @@ def build_parser() -> argparse.ArgumentParser:
         default="participa-geo",
         help="Identificador del equipo en el manifiesto (por defecto participa-geo).",
     )
-    deliver.add_argument(
+    source_group = deliver.add_mutually_exclusive_group(required=True)
+    source_group.add_argument(
+        "--confirm-source-license",
+        action="store_true",
+        help=(
+            "Confirmar que se revisaron las condiciones de redistribución y que "
+            "se incluyen los seis CSV y el ZIP GIS originales en el paquete."
+        ),
+    )
+    source_group.add_argument(
         "--skip-sources",
         action="store_true",
-        help="No exigir los seis CSV/ZIP originales (sólo para diagnóstico local).",
+        help=(
+            "No incluir los CSV/ZIP originales; el paquete llevará únicamente "
+            "URLs, checksums y el archivo de fuentes."
+        ),
     )
     deliver.set_defaults(handler=_deliver)
 
@@ -501,6 +567,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--archive",
         required=True,
         help="Ruta del technical.zip a verificar.",
+    )
+    verify_delivery.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help=(
+            "Permitir que un paquete marcado como incompleto salga con código 0 "
+            "(sólo diagnóstico; nunca para entrega)."
+        ),
     )
     verify_delivery.set_defaults(handler=_verify_delivery)
 

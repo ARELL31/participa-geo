@@ -10,20 +10,28 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
 import pytest
 from openpyxl import load_workbook
+from PIL import Image
 from pypdf import PdfReader
 
 from participa_geo.api.schemas.common import DatasetMeta
 from participa_geo.api.schemas.history import HistoryDTO
 from participa_geo.api.schemas.scenarios import ScenarioDTO, ScenarioResultDTO
+from participa_geo.reporting import maps as maps_module
 from participa_geo.reporting.delivery import DeliveryContext, load_delivery_context
 from participa_geo.reporting.geojson import export_scenario_geojson
-from participa_geo.reporting.maps import MapRenderError, render_scenario_map
+from participa_geo.reporting.maps import (
+    RISK_COLORS,
+    MapRenderError,
+    render_scenario_map,
+)
 from participa_geo.reporting.pdf import generate_executive, generate_methodology
 from participa_geo.reporting.tables import (
     export_history,
@@ -132,6 +140,20 @@ def test_csv_xlsx_preserve_nulls_and_versions():
     )
     assert "5bc387ce-6646-5b49-9c4f-ad302f4c422a" in metadata
     assert "2025-12-15" in metadata
+
+    dictionary = workbook["Diccionario"]
+    dictionary_headers = [cell.value for cell in dictionary[1]]
+    assert dictionary_headers == [
+        "campo",
+        "etiqueta",
+        "tipo/unidad",
+        "descripcion",
+    ]
+    first = [cell.value for cell in dictionary[2]]
+    assert first[0] == "territory_id"
+    assert first[1] == "identificador de referencia (UUID)"
+    assert first[2] == "texto"
+    assert "Municipio de referencia" in first[3]
 
 
 def test_spreadsheet_formula_text_is_escaped():
@@ -259,6 +281,7 @@ def test_geojson_matches_scenario_and_reference():
         if result.baseline_abstention_pct is None:
             assert props["baseline_abstention_pct"] is None
             assert props["hypothetical_abstention_pct"] is None
+            assert props["effective_reduction_pp"] is None
         for ring in _all_coordinates(feature["geometry"]):
             x, y = ring
             assert -180.0 <= x <= 180.0
@@ -293,10 +316,31 @@ def test_scenario_csv_matches_api_values():
         assert row["scenario_id"] == str(scenario.scenario_id)
         if result.baseline_abstention_pct is None:
             assert row["baseline_abstention_pct"] == ""
+            assert row["hypothetical_abstention_pct"] == ""
+            assert row["effective_reduction_pp"] == ""
         else:
             assert float(row["baseline_abstention_pct"]) == pytest.approx(
                 result.baseline_abstention_pct
             )
+
+
+def test_scenario_selected_means_do_not_use_all_eligible():
+    scenario = _real_scenario()
+    context = load_delivery_context(scenario=scenario)
+    assert context.scenario is not None
+    selected = [row for row in scenario.results if row.selected]
+    selected_a = [row.baseline_abstention_pct for row in selected]
+    all_a = [
+        row.baseline_abstention_pct
+        for row in scenario.results
+        if row.baseline_abstention_pct is not None
+    ]
+    assert len(all_a) > len(selected_a)
+    expected_selected = sum(selected_a) / len(selected_a)
+    expected_all = sum(all_a) / len(all_a)
+    assert context.scenario.baseline_mean == pytest.approx(expected_selected)
+    assert context.scenario.baseline_mean != pytest.approx(expected_all)
+    assert context.scenario.selected_count == len(selected)
 
 
 class _FakeClient:
@@ -342,8 +386,40 @@ def test_map_requests_1200x900_with_shared_reference():
         render_scenario_map(scenario, "png", client=client)
     assert len(client.calls) == 2
     for call in client.calls:
-        assert call["width"] == 1200
-        assert call["height"] == 900
+        assert call["width"] == maps_module.MAP_WIDTH
+        assert call["height"] == maps_module.MAP_HEIGHT
+
+
+def test_map_rejects_wrong_png_dimensions():
+    scenario = _real_scenario()
+    buffer = io.BytesIO()
+    Image.new("RGB", (600, 450), "#FFFFFF").save(buffer, format="PNG")
+    with pytest.raises(MapRenderError, match="1200×900"):
+        render_scenario_map(
+            scenario, "png", client=_FakeClient(body=buffer.getvalue())
+        )
+
+
+def test_ab_sld_legend_and_insufficient_style_are_identical():
+    risk = (REPO_ROOT / "gis" / "styles" / "risk.sld").read_text(encoding="utf-8")
+    risk_a = (REPO_ROOT / "gis" / "styles" / "risk_a.sld").read_text(
+        encoding="utf-8"
+    )
+
+    def rule_symbols(text: str, name: str) -> dict[str, str]:
+        match = re.search(rf"<Name>{name}</Name>(.*?)</Rule>", text, re.S)
+        assert match, f"rule {name} not found"
+        block = match.group(1)
+        return {
+            "fill": re.search(r'name="fill">([^<]+)', block).group(1).upper(),  # type: ignore[union-attr]
+            "opacity": re.search(r'name="fill-opacity">([^<]+)', block).group(1),  # type: ignore[union-attr]
+            "stroke": re.search(r'name="stroke">([^<]+)', block).group(1).upper(),  # type: ignore[union-attr]
+            "stroke-width": re.search(r'name="stroke-width">([^<]+)', block).group(1),  # type: ignore[union-attr]
+        }
+
+    for name in ("low", "medium", "high", "insufficient"):
+        assert rule_symbols(risk_a, name) == rule_symbols(risk, name), name
+        assert rule_symbols(risk_a, name)["fill"] == RISK_COLORS[name].upper()
 
 
 def test_methodology_page_count(delivery_context: DeliveryContext):
@@ -381,6 +457,40 @@ def test_pdf_text_contains_real_results_and_assumptions(delivery_context: Delive
     assert "85" in executive and "40" in executive
     assert "4.93" in executive
     assert "no causal" in executive.lower() or "no implica" in executive.lower()
+
+
+def test_pdf_numbers_are_derived_from_context(delivery_context: DeliveryContext):
+    mutated = replace(
+        delivery_context,
+        cohort=replace(
+            delivery_context.cohort,
+            total=200,
+            eligible=101,
+            insufficient=99,
+            unstable=66,
+        ),
+    )
+    methodology = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_methodology(mutated))).pages
+    )
+    assert "elegibles de 200" in methodology
+    assert "101" in methodology
+    assert "99" in methodology
+    assert "66" in methodology
+    assert "1200 observaciones municipales" in methodology
+    assert "70 de los 85" not in methodology
+    assert "750 observaciones" not in methodology
+
+    executive = "\n".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(generate_executive(mutated))).pages
+    )
+    assert "101" in executive
+    assert "99" in executive
+    assert "66" in executive
+    assert "1200" in executive
+    assert "750" not in executive
 
 
 def test_delivery_context_is_built_from_artifacts():

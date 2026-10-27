@@ -129,7 +129,7 @@ def export_scenario_geojson(
             ),
             "requested_reduction_pp": result.requested_reduction_pp,
             "effective_reduction_pp": (
-                result.effective_reduction_pp if baseline is not None else 0.0
+                result.effective_reduction_pp if baseline is not None else None
             ),
             "risk_a": result.risk_a if baseline is not None else "insufficient",
             "risk_b": result.risk_b if (baseline is not None and hypothetical is not None) else "insufficient",
@@ -160,6 +160,10 @@ def export_scenario_geojson(
             "model_run_id": str(scenario.model_run_id),
             "model_sha256": scenario.model_sha256,
             "input_sha256": scenario.input_sha256,
+            "dataset_version_ids": [
+                str(item) for item in meta.dataset_version_ids
+            ],
+            "report_kind": meta.filters.get("report_kind"),
             "target_year": scenario.target_year,
             "reference_date": meta.reference_date,
             "crs": "EPSG:4326",

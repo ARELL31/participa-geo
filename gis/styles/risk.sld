@@ -82,11 +82,11 @@
           </ogc:Filter>
           <PolygonSymbolizer>
             <Fill>
-              <CssParameter name="fill">#BDBDBD</CssParameter>
-              <CssParameter name="fill-opacity">0.9</CssParameter>
+              <CssParameter name="fill">#9E9E9E</CssParameter>
+              <CssParameter name="fill-opacity">0.7</CssParameter>
             </Fill>
             <Stroke>
-              <CssParameter name="stroke">#9E9E9E</CssParameter>
+              <CssParameter name="stroke">#FFFFFF</CssParameter>
               <CssParameter name="stroke-width">0.4</CssParameter>
             </Stroke>
           </PolygonSymbolizer>

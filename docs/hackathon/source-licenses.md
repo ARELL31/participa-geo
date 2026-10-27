@@ -14,14 +14,16 @@ publicación abierta, el usuario debe confirmar las condiciones aplicables.
 - Condición observada: la ficha pública ofrece las bases para descarga y análisis,
   pero **no publica en la misma página una licencia explícita de redistribución**.
   No se asume permiso adicional.
-- Decisión del MVP: el paquete técnico incluye los CSV originales de Jalisco en su
-  granularidad original (sección × sexo × edad), como excepción documental para
-  reproducibilidad. La API y las exportaciones analíticas sólo ofrecen agregados
-  municipales.
+- Decisión del MVP: el paquete técnico sólo incluye los CSV originales de
+  Jalisco cuando el usuario pasa `--confirm-source-license` después de revisar
+  esta condición. Sin esa confirmación, `deliver` exige `--skip-sources` y el
+  paquete lleva únicamente `sources/SOURCES.md` + `sources/sources.json` con URL
+  y SHA-256, sin los originales. La API y las exportaciones analíticas sólo
+  ofrecen agregados municipales.
 - **Acción humana requerida:** confirmar con el INE o con la convocatoria si la
-  redistribución de los originales está permitida. Si no se confirma, el paquete
-  debe sustituir los CSV/ZIP por checksums, URL y instrucciones de descarga; no
-  se deben quitar archivos en silencio ni inventar una licencia.
+  redistribución de los originales está permitida. Si no se confirma, use
+  `--skip-sources`; no se deben quitar archivos en silencio ni inventar una
+  licencia.
 
 ## 2. Cartografía INE 2025-12-15
 

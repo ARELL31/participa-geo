@@ -101,11 +101,24 @@ tardías y alternativa tabular. Playwright corre contra la API real a través de
 
 ```sh
 # Requiere un escenario persistido (UUID de /api/v1/scenarios) y el stack GIS activo.
+# Elija un modo de fuentes; no hay modo implícito.
 docker compose run --rm api python -m participa_geo.cli deliver \
-  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo
+  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo \
+  --confirm-source-license   # incluye los CSV/ZIP originales sólo tras confirmar
+# o, sin originales (URL/checksums):
+docker compose run --rm api python -m participa_geo.cli deliver \
+  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo \
+  --skip-sources
 docker compose run --rm api python -m participa_geo.cli verify-delivery \
   --archive dist/hackathon/technical.zip
 ```
+
+`--confirm-source-license` es una decisión humana sobre la redistribución de
+INE/cartografía; si no se confirma, `--skip-sources` genera un paquete con
+`sources/SOURCES.md` y `sources/sources.json` (URL y SHA-256) sin originales.
+Omitir ambas opciones hace que `deliver` falle con código distinto de cero.
+`verify-delivery` falla si el paquete está incompleto; `--allow-incomplete` es
+sólo para diagnóstico.
 
 `deliver` escribe el reporte metodológico (12 páginas), la presentación
 ejecutiva (9 diapositivas), CSV/GeoJSON/PDF del escenario, mapas A/B y el
@@ -115,12 +128,15 @@ la API sirve para `methodology_pdf`, `executive_pdf` y `technical_zip`; si no se
 han generado, `POST /reports` devuelve `409 institutional_package_not_generated`
 (sin cola ni estado pendiente).
 
-El ZIP incluye los seis CSV CCPC de Jalisco, el ZIP cartográfico original,
-diccionarios, agregados/artefactos del modelo, código/docs, reportes/mapas y
-checksums. Excluye `.git`, `node_modules`, cachés, `.env`, cartas firmadas,
-contactos y datos personales. Las condiciones de redistribución de INE y
-cartografía se documentan en `docs/hackathon/source-licenses.md` y requieren
-confirmación humana antes de una publicación abierta.
+El ZIP incluye diccionarios, agregados/artefactos del modelo, código/docs,
+`docs/api/openapi.json`, reportes/mapas condicionados al escenario y checksums.
+Los seis CSV CCPC y el ZIP cartográfico original sólo se añaden con
+`--confirm-source-license`; en `--skip-sources` se sustituyen por
+`sources/SOURCES.md` y `sources/sources.json` con URL y checksums. Excluye
+`.git`, `node_modules`, cachés, `.env`, cartas firmadas, contactos y datos
+personales. Las condiciones de redistribución se documentan en
+`docs/hackathon/source-licenses.md` y requieren confirmación humana antes de una
+publicación abierta.
 
 ## Estructura
 

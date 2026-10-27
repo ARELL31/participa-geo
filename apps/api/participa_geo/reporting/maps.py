@@ -123,8 +123,11 @@ def _open_png(payload: bytes, label: str) -> Image.Image:
         image.load()
     except Exception as exc:  # noqa: BLE001 - invalid image is a hard failure
         raise MapRenderError(f"{label}: PNG inválido ({exc})") from exc
-    if image.width < 2 or image.height < 2:
-        raise MapRenderError(f"{label}: imagen vacía")
+    if image.width != MAP_WIDTH or image.height != MAP_HEIGHT:
+        raise MapRenderError(
+            f"{label}: se esperaban {MAP_WIDTH}×{MAP_HEIGHT} px, "
+            f"GeoServer devolvió {image.width}×{image.height}"
+        )
     return image.convert("RGB")
 
 

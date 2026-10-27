@@ -366,6 +366,14 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
     model = context.model
     cohort = context.cohort
     scenario = context.scenario
+    source_years = [source.year for source in context.sources]
+    source_years_text = (
+        ", ".join(str(year) for year in source_years[:-1])
+        + f" y {source_years[-1]}"
+        if source_years
+        else "sin fuentes"
+    )
+    observation_count = cohort.total * len(source_years)
     story: list = []
 
     # 1 — Portada
@@ -408,8 +416,9 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Spacer(1, 8 * mm),
             Paragraph(
                 "Fuente primaria: Conteos Censales de Participación Ciudadana (CCPC) del INE, "
-                "2009–2024. Los seis archivos oficiales de Jalisco, sus checksums y el "
-                "diccionario se incluyen en el paquete técnico de reproducción.",
+                f"{source_years_text}. Los {len(source_years)} archivos oficiales de Jalisco, "
+                "sus checksums y el diccionario se incluyen en el paquete técnico de "
+                "reproducción.",
                 styles["small"],
             ),
         ]
@@ -442,7 +451,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Table(
                 [
                     [
-                        _metric_box(str(cohort.eligible), "elegibles de 125"),
+                        _metric_box(str(cohort.eligible), f"elegibles de {cohort.total}"),
                         _metric_box(str(cohort.insufficient), "información insuficiente"),
                         _metric_box(str(cohort.unstable), "categoría inestable"),
                         _metric_box(_pp(model.band_pp), "banda histórica de referencia"),
@@ -459,8 +468,9 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 styles["body"],
             ),
             Paragraph(
-                "• La calidad de datos es el primer filtro: 40 municipios no reciben "
-                "predicción y 70 de los 85 elegibles tienen categoría inestable.",
+                f"• La calidad de datos es el primer filtro: {cohort.insufficient} municipios "
+                f"no reciben predicción y {cohort.unstable} de los {cohort.eligible} elegibles "
+                "tienen categoría inestable.",
                 styles["body"],
             ),
             Paragraph(
@@ -543,11 +553,12 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
         [
             Paragraph("3. Fuentes, universo y granularidad", styles["h1"]),
             Paragraph(
-                f"Se usan los seis CCPC federales de Jalisco (2009, 2012, 2015, 2018, 2021 "
-                f"y 2024). La agregación produce <b>750 observaciones municipales</b> "
-                f"({cohort.total} municipios × 6 años) y conserva los conteos LN, SV, NV y NS "
-                "antes de recalcular tasas. Los agregados estatales suman conteos; nunca "
-                "promedian tasas municipales.",
+                f"Se usan los {len(source_years)} CCPC federales de Jalisco "
+                f"({source_years_text}). La agregación produce "
+                f"<b>{observation_count} observaciones municipales</b> "
+                f"({cohort.total} municipios × {len(source_years)} años) y conserva los "
+                "conteos LN, SV, NV y NS antes de recalcular tasas. Los agregados estatales "
+                "suman conteos; nunca promedian tasas municipales.",
                 styles["body"],
             ),
             _table(
@@ -642,15 +653,15 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Paragraph("5. Referencia territorial y correspondencias", styles["h1"]),
             Paragraph(
                 "La referencia es la cartografía INE con corte <b>2025-12-15</b>, "
-                "EPSG:4326, con 125 polígonos municipales. La importación convierte desde "
-                "EPSG:32613 con `to_crs` y valida las geometrías; nunca rotula una geometría "
-                "UTM como lon/lat.",
+                f"EPSG:4326, con {cohort.total} polígonos municipales. La importación convierte "
+                "desde EPSG:32613 con `to_crs` y valida las geometrías; nunca rotula una "
+                "geometría UTM como lon/lat.",
                 styles["body"],
             ),
             Paragraph(
                 "La identidad de catálogo (`identity_status=verified_catalogue`) exige "
-                "coincidencia de código INE, entidad y nombre normalizado en los seis CSV y "
-                "el catálogo de referencia. No prueba igualdad de límites históricos: el "
+                f"coincidencia de código INE, entidad y nombre normalizado en los "
+                f"{len(source_years)} CSV y el catálogo de referencia. No prueba igualdad de límites históricos: el "
                 "estado de huella es `footprint_status=not_verified` y se muestra en la "
                 "interfaz, los documentos y las exportaciones.",
                 styles["body"],
@@ -672,10 +683,10 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 styles["body"],
             ),
             Paragraph(
-                "El GeoJSON de escenario reutiliza exactamente los 125 polígonos de esta "
-                "referencia, sin simplificar, inventar ni re-proyectar. Las exportaciones "
-                "A/B contienen los valores persistidos y conservan `null` cuando la "
-                "información es insuficiente.",
+                f"El GeoJSON de escenario reutiliza exactamente los {cohort.total} polígonos "
+                "de esta referencia, sin simplificar, inventar ni re-proyectar. Las "
+                "exportaciones A/B contienen los valores persistidos y conservan `null` "
+                "cuando la información es insuficiente.",
                 styles["body"],
             ),
             _warning(
@@ -941,11 +952,13 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Spacer(1, 2 * mm),
             Paragraph("Reproducibilidad y entrega", styles["h2"]),
             Paragraph(
-                "El paquete técnico incorpora los seis CSV oficiales de Jalisco, el ZIP "
-                "cartográfico original, diccionarios, agregados municipales, artefactos del "
-                "modelo y métricas, código, documentación, reportes/mapas y un manifiesto con "
-                "checksums. No incluye `.git`, `node_modules`, cachés, `.env`, cartas "
-                "firmadas, contactos ni datos personales.",
+                f"El paquete técnico incorpora los {len(source_years)} CSV oficiales de "
+                "Jalisco y el ZIP cartográfico original únicamente cuando el usuario confirma "
+                "la licencia de redistribución; en el modo `--skip-sources` incluye sólo URL y "
+                "checksums. En ambos casos añade diccionarios, agregados municipales, "
+                "artefactos del modelo y métricas, código, documentación, reportes/mapas y un "
+                "manifiesto con checksums. No incluye `.git`, `node_modules`, cachés, `.env`, "
+                "cartas firmadas, contactos ni datos personales.",
                 styles["body"],
             ),
             Paragraph(
@@ -1012,6 +1025,14 @@ def _executive_story(context: DeliveryContext, styles) -> list:
     model = context.model
     cohort = context.cohort
     scenario = context.scenario
+    source_years = [source.year for source in context.sources]
+    source_years_text = (
+        ", ".join(str(year) for year in source_years[:-1])
+        + f" y {source_years[-1]}"
+        if source_years
+        else "sin fuentes"
+    )
+    observation_count = cohort.total * len(source_years)
     story: list = []
 
     story.extend(
@@ -1072,12 +1093,16 @@ def _executive_story(context: DeliveryContext, styles) -> list:
             "Seis CCPC federales del INE, agregados municipales de Jalisco",
             [
                 Paragraph(
-                    f"• 2009, 2012, 2015, 2018, 2021 y 2024: <b>{cohort.total}</b> municipios y "
-                    f"<b>750</b> observaciones municipales.",
+                    f"• {source_years_text}: <b>{cohort.total}</b> municipios y "
+                    f"<b>{observation_count}</b> observaciones municipales.",
                     styles["slide_body"],
                 ),
                 Paragraph("• Conteos LN, SV, NV y NS; tasas recalculadas desde los conteos.", styles["slide_body"]),
-                Paragraph("• Referencia cartográfica INE 2025-12-15, 125 polígonos EPSG:4326.", styles["slide_body"]),
+                Paragraph(
+                    f"• Referencia cartográfica INE 2025-12-15, {cohort.total} polígonos "
+                    "EPSG:4326.",
+                    styles["slide_body"],
+                ),
                 Paragraph("• Checksums y diccionarios incluidos en el paquete técnico.", styles["slide_body"]),
                 _warning(
                     "Límite: la referencia 2025 no prueba igualdad histórica de límites. "
@@ -1270,7 +1295,7 @@ def generate_scenario_pdf(
     *,
     context: DeliveryContext | None = None,
 ) -> bytes:
-    """A compact PDF for one persisted scenario (summary + 125-row annex)."""
+    """A compact PDF for one persisted scenario (summary + full annex)."""
     styles = _styles()
     buffer = io.BytesIO()
     doc = _document(buffer, title="Escenario hipotético PARTICIPA-GEO")
@@ -1287,7 +1312,9 @@ def generate_scenario_pdf(
                 f"{result.municipality_code} · {result.municipality_name}",
                 _pct(result.baseline_abstention_pct),
                 _pct(result.hypothetical_abstention_pct),
-                f"{result.effective_reduction_pp:.1f} pp",
+                f"{result.effective_reduction_pp:.1f} pp"
+                if result.baseline_abstention_pct is not None
+                else "—",
                 result.risk_a,
                 result.risk_b,
                 "Sí" if result.selected else "No",
@@ -1319,7 +1346,7 @@ def generate_scenario_pdf(
             widths=[58 * mm, 112 * mm],
         ),
         Spacer(1, 4 * mm),
-        Paragraph("Anexo: 125 resultados municipales", styles["h2"]),
+        Paragraph(f"Anexo: {len(scenario.results)} resultados municipales", styles["h2"]),
         LongTable(
             [
                 [

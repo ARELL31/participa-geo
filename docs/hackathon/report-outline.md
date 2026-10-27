@@ -23,7 +23,8 @@ Comprobaciones:
 
 ```sh
 docker compose run --rm api python -m participa_geo.cli deliver \
-  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo
+  --scenario-id <UUID> --output-dir dist/hackathon --team-slug participa-geo \
+  --confirm-source-license   # o --skip-sources
 docker compose run --rm api pytest tests/integration/test_delivery.py -q
 ```
 

@@ -110,6 +110,7 @@ class DeliveryContext:
     model: ModelFacts
     cohort: CohortFacts
     sources: tuple[SourceFact, ...]
+    dataset_version_ids: tuple[UUID, ...]
     exclusions: dict[int, int]
     limitations: tuple[str, ...]
     scenario: ScenarioFacts | None = None
@@ -130,7 +131,7 @@ def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
     selected = [row for row in results if row.selected]
     baseline_values = [
         row.baseline_abstention_pct
-        for row in results
+        for row in selected
         if row.baseline_abstention_pct is not None
     ]
     hypothetical_values = [
@@ -310,6 +311,14 @@ def load_delivery_context(
             excluded_by_year=excluded_by_year,
         ),
         sources=sources,
+        dataset_version_ids=tuple(
+            UUID(str(source.get("source_version_id")))
+            for source in sorted(
+                provenance.get("sources", []),
+                key=lambda item: int(item.get("year", 0)),
+            )
+            if source.get("source_version_id")
+        ),
         exclusions={
             int(year): len(values)
             for year, values in (evaluation.get("exclusions") or {}).items()
@@ -329,6 +338,7 @@ def context_manifest(context: DeliveryContext) -> dict:
         "reference_date": context.reference_date,
         "data_aggregate_sha256": context.data_aggregate_sha256,
         "versions": context.versions,
+        "dataset_version_ids": [str(item) for item in context.dataset_version_ids],
         "model": {
             "family": context.model.family,
             "model_run_id": str(context.model.model_run_id),
@@ -433,6 +443,7 @@ ALLOWLIST_FILES = (
     "compose.yaml",
     "alembic.ini",
     "data/sources.json",
+    "docs/api/openapi.json",
     "apps/web/package.json",
     "apps/web/package-lock.json",
     "apps/web/index.html",
@@ -477,13 +488,7 @@ REQUIRED_MEMBERS = (
     "uv.lock",
     "compose.yaml",
     "data/sources.json",
-    "data/raw/ccpc/jalisco-2009.csv",
-    "data/raw/ccpc/jalisco-2012.csv",
-    "data/raw/ccpc/jalisco-2015.csv",
-    "data/raw/ccpc/jalisco-2018.csv",
-    "data/raw/ccpc/jalisco-2021.csv",
-    "data/raw/ccpc/jalisco-2024.csv",
-    "data/raw/gis/ine-jalisco-2025-12-15.zip",
+    "docs/api/openapi.json",
     "data/processed/municipal-observations.parquet",
     "data/processed/quality.json",
     "data/processed/provenance.json",
@@ -492,12 +497,32 @@ REQUIRED_MEMBERS = (
     "data/processed/model/manifest.json",
     "data/processed/model/predictions-2027.parquet",
     "data/processed/gis/reference-2025-12-15.geojson",
+    "sources/SOURCES.md",
+    "sources/sources.json",
     "dictionaries/history.csv",
     "dictionaries/scenario.csv",
     "docs/hackathon/delivery-checklist.md",
     "docs/hackathon/source-licenses.md",
     "reports/methodology.pdf",
     "reports/executive.pdf",
+)
+
+RAW_SOURCE_MEMBERS = (
+    "data/raw/ccpc/jalisco-2009.csv",
+    "data/raw/ccpc/jalisco-2012.csv",
+    "data/raw/ccpc/jalisco-2015.csv",
+    "data/raw/ccpc/jalisco-2018.csv",
+    "data/raw/ccpc/jalisco-2021.csv",
+    "data/raw/ccpc/jalisco-2024.csv",
+    "data/raw/gis/ine-jalisco-2025-12-15.zip",
+)
+
+SCENARIO_REPORT_MEMBERS = (
+    "reports/scenario.csv",
+    "reports/scenario.geojson",
+    "reports/scenario.pdf",
+    "reports/scenario-map.png",
+    "reports/scenario-map.pdf",
 )
 
 
@@ -511,9 +536,13 @@ def _is_forbidden(relative: Path) -> bool:
     return any(fragment in name for fragment in FORBIDDEN_NAME_FRAGMENTS)
 
 
-def _candidate_files(root: Path) -> list[Path]:
+def _candidate_files(root: Path, *, include_raw_sources: bool) -> list[Path]:
     candidates: list[Path] = []
     allowed_explicit = set(ALLOWLIST_EXPLICIT) | set(ALLOWLIST_FILES)
+    if not include_raw_sources:
+        allowed_explicit = {
+            item for item in allowed_explicit if not item.startswith("data/raw/")
+        }
     for relative in allowed_explicit:
         path = root / relative
         if path.is_file():
@@ -572,6 +601,65 @@ def _add_path(
     files[arcname] = {"sha256": digest.hexdigest(), "bytes": size}
 
 
+def _sources_markdown(context: DeliveryContext, *, include_raw_sources: bool) -> bytes:
+    mode = (
+        "confirmado: se incluyen los CSV/ZIP originales con atribución"
+        if include_raw_sources
+        else "sólo checksums/URL: no se incluyen los originales"
+    )
+    lines = [
+        "# Fuentes CCPC y checksums",
+        "",
+        f"Modo de entrega: **{mode}**.",
+        "",
+        "La API y las exportaciones analíticas sólo exponen agregados municipales.",
+        "Los originales, cuando se incluyen, conservan la granularidad pública del INE",
+        "(sección × sexo × edad) y no contienen listas nominales ni identificadores",
+        "individuales. Está prohibida cualquier inferencia personal.",
+        "",
+        "| Año | URL | Miembro | SHA-256 |",
+        "|---|---|---|---|",
+    ]
+    for source in context.sources:
+        lines.append(
+            f"| {source.year} | {source.source_url} | {source.member} | `{source.sha256}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Condiciones de redistribución",
+            "",
+            _license_review_text(),
+            "",
+            "Si no se confirma la licencia, use el modo `--skip-sources` y descargue",
+            "los originales desde las URL/checksums anteriores.",
+        ]
+    )
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def _sources_json(context: DeliveryContext, *, include_raw_sources: bool) -> bytes:
+    payload = {
+        "source_mode": "confirm" if include_raw_sources else "skip",
+        "raw_sources_included": include_raw_sources,
+        "license_review": _license_review_text(),
+        "sources": [
+            {
+                "year": source.year,
+                "source_url": source.source_url,
+                "member": source.member,
+                "sha256": source.sha256,
+                "municipality_count": source.municipality_count,
+                "ln": source.ln,
+            }
+            for source in context.sources
+        ],
+    }
+    return (
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+
+
 def _license_review_text() -> str:
     return (
         "Fuentes INE CCPC: se conservan URL, miembro, corte y checksum. La página "
@@ -590,19 +678,35 @@ def build_technical_zip(
     reports: dict[str, Path | str | bytes] | None = None,
     strict: bool = True,
     team_slug: str | None = None,
+    include_raw_sources: bool = False,
 ) -> DeliveryManifest:
-    """Build and atomically publish the allowlisted technical ZIP."""
+    """Build and atomically publish the allowlisted technical ZIP.
+
+    ``include_raw_sources`` is only true after an explicit human confirmation
+    (CLI ``--confirm-source-license``). The default (and ``--skip-sources``)
+    omits the original CSVs/GIS ZIP and ships ``sources/SOURCES.md`` +
+    ``sources/sources.json`` with URLs and SHA-256 values instead.
+    """
     source_root = Path(root) if root is not None else repo_root()
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.parent / f".tmp-{uuid4().hex}.zip"
+
+    required = list(REQUIRED_MEMBERS)
+    if include_raw_sources:
+        required.extend(RAW_SOURCE_MEMBERS)
+    if context.scenario is not None:
+        required.extend(SCENARIO_REPORT_MEMBERS)
+    required = list(dict.fromkeys(required))
 
     files: dict[str, dict[str, Any]] = {}
     try:
         with zipfile.ZipFile(
             temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6
         ) as archive:
-            for path in _candidate_files(source_root):
+            for path in _candidate_files(
+                source_root, include_raw_sources=include_raw_sources
+            ):
                 relative = path.relative_to(source_root).as_posix()
                 _add_path(archive, relative, path, files)
 
@@ -618,6 +722,18 @@ def build_technical_zip(
                 scenario_dictionary_csv(),
                 files,
             )
+            _add_bytes(
+                archive,
+                "sources/SOURCES.md",
+                _sources_markdown(context, include_raw_sources=include_raw_sources),
+                files,
+            )
+            _add_bytes(
+                archive,
+                "sources/sources.json",
+                _sources_json(context, include_raw_sources=include_raw_sources),
+                files,
+            )
 
             for arcname, value in (reports or {}).items():
                 safe = Path(arcname).as_posix().lstrip("/")
@@ -631,7 +747,7 @@ def build_technical_zip(
                         raise DeliveryError(f"reporte faltante: {path}")
                     _add_path(archive, safe, path, files)
 
-            missing = [member for member in REQUIRED_MEMBERS if member not in files]
+            missing = [member for member in required if member not in files]
             if strict and missing:
                 raise DeliveryError(
                     "faltan archivos obligatorios en el paquete: " + ", ".join(missing)
@@ -644,6 +760,16 @@ def build_technical_zip(
                 "generated_at": context.generated_at.isoformat(),
                 "reference_date": context.reference_date,
                 "data_aggregate_sha256": context.data_aggregate_sha256,
+                "dataset_version_ids": [
+                    str(item) for item in context.dataset_version_ids
+                ],
+                "source_mode": "confirm" if include_raw_sources else "skip",
+                "raw_sources_included": include_raw_sources,
+                "source_license_confirmed": include_raw_sources,
+                "scenario_required": context.scenario is not None,
+                "scenario_id": (
+                    str(context.scenario.scenario_id) if context.scenario else None
+                ),
                 "complete": bool(strict and not missing),
                 "missing": missing,
                 "model": context_manifest(context)["model"],
@@ -657,6 +783,7 @@ def build_technical_zip(
                     context.scenario.error_band_label if context.scenario else None
                 ),
                 "license_review": _license_review_text(),
+                "required_members": required,
                 "not_included": [
                     ".git",
                     "node_modules",
@@ -760,8 +887,31 @@ def verify_archive(archive_path: Path | str) -> dict:
                         errors.append(f"checksum de archivo ausente: {name}")
                     elif hashlib.sha256(archive.read(name)).hexdigest() != expected:
                         errors.append(f"checksum no coincide: {name}")
+
+            source_mode = str(manifest.get("source_mode", "confirm"))
+            raw_names = [
+                name for name in names if name.startswith("data/raw/ccpc/")
+                or name.startswith("data/raw/gis/")
+            ]
+            if source_mode == "skip":
+                if raw_names:
+                    errors.append(
+                        "el modo skip-sources no debe incluir originales: "
+                        + ", ".join(raw_names[:5])
+                    )
+                for member in ("sources/SOURCES.md", "sources/sources.json"):
+                    if member not in names:
+                        errors.append(f"falta el archivo de fuentes: {member}")
+            else:
+                for member in RAW_SOURCE_MEMBERS:
+                    if member not in names:
+                        errors.append(f"falta el original confirmado: {member}")
+
+            required = list(manifest.get("required_members") or REQUIRED_MEMBERS)
+            if manifest.get("scenario_required"):
+                required.extend(SCENARIO_REPORT_MEMBERS)
             if manifest.get("complete"):
-                for member in REQUIRED_MEMBERS:
+                for member in dict.fromkeys(required):
                     if member not in names:
                         errors.append(f"falta el miembro obligatorio: {member}")
     except zipfile.BadZipFile as exc:
@@ -775,6 +925,8 @@ def verify_archive(archive_path: Path | str) -> dict:
         "size_bytes": path.stat().st_size,
         "file_count": len(files),
         "complete": bool(manifest.get("complete")),
+        "source_mode": manifest.get("source_mode"),
+        "scenario_required": bool(manifest.get("scenario_required")),
         "team_slug": manifest.get("team_slug"),
         "generated_at": manifest.get("generated_at"),
         "members": names,
@@ -791,7 +943,9 @@ __all__ = [
     "DeliveryManifest",
     "FORBIDDEN_PARTS",
     "ModelFacts",
+    "RAW_SOURCE_MEMBERS",
     "REQUIRED_MEMBERS",
+    "SCENARIO_REPORT_MEMBERS",
     "ScenarioFacts",
     "SourceFact",
     "build_technical_zip",

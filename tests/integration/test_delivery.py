@@ -3,14 +3,23 @@
 from __future__ import annotations
 
 import contextlib
+import csv
 import json
 import urllib.request
+import zipfile
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
+from uuid import UUID
 
 import pytest
 
 from participa_geo.reporting.delivery import (
+    REQUIRED_MEMBERS,
+    SCENARIO_REPORT_MEMBERS,
+    DeliveryContext,
     DeliveryError,
+    ScenarioFacts,
     build_technical_zip,
     load_delivery_context,
     verify_archive,
@@ -106,8 +115,6 @@ def test_verify_detects_tampered_member(tmp_path):
         },
     )
 
-    import zipfile
-
     tampered = tmp_path / "tampered.zip"
     with zipfile.ZipFile(archive) as source, zipfile.ZipFile(
         tampered, "w", compression=zipfile.ZIP_DEFLATED
@@ -120,6 +127,117 @@ def test_verify_detects_tampered_member(tmp_path):
 
     with pytest.raises(DeliveryError):
         verify_archive(tampered)
+
+
+def _complete_fixture_root(tmp_path: Path) -> Path:
+    root = _fixture_root(tmp_path)
+    generated_prefixes = ("dictionaries/", "sources/", "reports/", "data/raw/")
+    for relative in REQUIRED_MEMBERS:
+        if relative.startswith(generated_prefixes):
+            continue
+        path = root / relative
+        if not path.is_file():
+            _write(path, "fixture\n")
+    return root
+
+
+def _scenario_context(context: DeliveryContext) -> DeliveryContext:
+    facts = ScenarioFacts(
+        scenario_id=UUID("9b2c5f1e-4d3a-4c6b-8e7f-1a2b3c4d5e6f"),
+        model_run_id=context.model.model_run_id,
+        model_sha256="0" * 64,
+        input_sha256="1" * 64,
+        target_year=2027,
+        requested_reduction_pp=3.0,
+        effective_reduction_pp=3.0,
+        assumption_code="preventive_exploration",
+        assumption_version="1.0",
+        rationale_text="Supuesto de prueba revisado.",
+        rules_version="scenario-rules-1.0.0",
+        error_band_label=(
+            "rango de error histórico de referencia trasladado condicionalmente; "
+            "no es un intervalo causal"
+        ),
+        selected_count=1,
+        risk_a_counts={"low": 1, "medium": 2, "high": 3, "insufficient": 4},
+        risk_b_counts={"low": 1, "medium": 2, "high": 3, "insufficient": 4},
+        risk_a_unstable=0,
+        risk_b_unstable=0,
+        baseline_mean=42.0,
+        hypothetical_mean=39.0,
+    )
+    return replace(context, scenario=facts)
+
+
+def test_complete_zip_requires_and_verifies_scenario_reports(tmp_path):
+    root = _complete_fixture_root(tmp_path)
+    context = _scenario_context(load_delivery_context())
+    archive = tmp_path / "complete.zip"
+    reports = {
+        "reports/methodology.pdf": b"%PDF-1.4\n",
+        "reports/executive.pdf": b"%PDF-1.4\n",
+        **{name: b"scenario-report\n" for name in SCENARIO_REPORT_MEMBERS},
+    }
+    manifest = build_technical_zip(
+        context,
+        archive,
+        root=root,
+        reports=reports,
+        strict=True,
+        include_raw_sources=False,
+    )
+    assert manifest.manifest["scenario_required"] is True
+    assert "reports/scenario-map.png" in manifest.manifest["required_members"]
+    assert verify_archive(archive)["complete"] is True
+
+    broken = tmp_path / "broken.zip"
+    with zipfile.ZipFile(archive) as source, zipfile.ZipFile(
+        broken, "w", compression=zipfile.ZIP_DEFLATED
+    ) as target:
+        for item in source.infolist():
+            if item.filename == "reports/scenario-map.png":
+                continue
+            target.writestr(item, source.read(item.filename))
+    with pytest.raises(DeliveryError, match="scenario-map.png"):
+        verify_archive(broken)
+
+
+def test_verify_cli_fails_incomplete_unless_allowed(tmp_path):
+    root = _fixture_root(tmp_path)
+    archive = tmp_path / "incomplete.zip"
+    build_technical_zip(load_delivery_context(), archive, root=root, strict=False)
+    from participa_geo.cli import _verify_delivery
+
+    assert _verify_delivery(SimpleNamespace(archive=str(archive), allow_incomplete=False)) == 1
+    assert _verify_delivery(SimpleNamespace(archive=str(archive), allow_incomplete=True)) == 0
+
+
+def test_deliver_requires_an_explicit_source_mode(tmp_path):
+    from participa_geo.cli import build_parser
+
+    parser = build_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(
+            [
+                "deliver",
+                "--scenario-id",
+                "9b2c5f1e-4d3a-4c6b-8e7f-1a2b3c4d5e6f",
+                "--output-dir",
+                str(tmp_path / "out"),
+            ]
+        )
+    parsed = parser.parse_args(
+        [
+            "deliver",
+            "--scenario-id",
+            "9b2c5f1e-4d3a-4c6b-8e7f-1a2b3c4d5e6f",
+            "--output-dir",
+            str(tmp_path / "out"),
+            "--skip-sources",
+        ]
+    )
+    assert parsed.skip_sources is True
+    assert parsed.confirm_source_license is False
 
 
 def _settings(db_config: dict, tmp_path: Path):
@@ -229,7 +347,7 @@ def test_cli_delivery_builds_verified_package_with_real_scenario(
             tmp_path / "delivery",
             "participa-geo",
             settings=settings,
-            include_sources=True,
+            source_mode="confirm",
         )
 
     archive = Path(summary["technical_zip"]["path"])
@@ -237,6 +355,7 @@ def test_cli_delivery_builds_verified_package_with_real_scenario(
     report = verify_archive(archive)
     assert report["complete"] is True
     assert report["team_slug"] == "participa-geo"
+    assert report["source_mode"] == "confirm"
 
     import zipfile
 
@@ -247,13 +366,76 @@ def test_cli_delivery_builds_verified_package_with_real_scenario(
         assert "data/raw/gis/ine-jalisco-2025-12-15.zip" in names
         assert "data/processed/model/model.json" in names
         assert "docs/hackathon/source-licenses.md" in names
+        assert "docs/api/openapi.json" in names
+        assert "sources/SOURCES.md" in names
+        assert "sources/sources.json" in names
+        source_info = json.loads(package.read("sources/sources.json"))
+        assert source_info["source_mode"] == "confirm"
+        assert source_info["raw_sources_included"] is True
+        assert len(source_info["sources"]) == 6
+        assert all(len(item["sha256"]) == 64 for item in source_info["sources"])
         assert "reports/methodology.pdf" in names
         assert "reports/executive.pdf" in names
+        assert "reports/scenario.csv" in names
+        assert "reports/scenario.geojson" in names
         assert "reports/scenario-map.png" in names
         assert not any(name.startswith(".git/") for name in names)
         assert not any("node_modules" in name for name in names)
         assert not any("cartas" in name for name in names)
         assert not any(name == ".env" or name.startswith(".env.") for name in names)
+
+    scenario_csv = (tmp_path / "delivery" / "scenario.csv").read_text(
+        encoding="utf-8-sig"
+    )
+    assert "dataset_version_ids=[" in scenario_csv
+    assert "# dataset_version_ids=[]" not in scenario_csv
+    assert "# sources=" in scenario_csv
+    assert "# kind=scenario_csv" in scenario_csv
+    data_rows = [
+        row
+        for row in csv.DictReader(
+            [line for line in scenario_csv.splitlines() if line and not line.startswith("#")]
+        )
+    ]
+    insufficient = next(row for row in data_rows if row["baseline_abstention_pct"] == "")
+    assert insufficient["effective_reduction_pp"] == ""
+
+    scenario_geojson = json.loads(
+        (tmp_path / "delivery" / "scenario.geojson").read_text(encoding="utf-8")
+    )
+    assert scenario_geojson["metadata"]["dataset_version_ids"]
+    assert len(scenario_geojson["metadata"]["sources"]["sources"]) == 6
+    null_feature = next(
+        feature
+        for feature in scenario_geojson["features"]
+        if feature["properties"]["baseline_abstention_pct"] is None
+    )
+    assert null_feature["properties"]["effective_reduction_pp"] is None
+
+    # A second delivery in skip mode must omit originals but remain complete.
+    skip_summary = run_delivery(
+        scenario_id,
+        tmp_path / "delivery-skip",
+        "participa-geo",
+        settings=settings,
+        source_mode="skip",
+    )
+    skip_archive = Path(skip_summary["technical_zip"]["path"])
+    skip_report = verify_archive(skip_archive)
+    assert skip_report["complete"] is True
+    assert skip_report["source_mode"] == "skip"
+    with zipfile.ZipFile(skip_archive) as package:
+        skip_names = set(package.namelist())
+        assert not any(name.startswith("data/raw/ccpc/") for name in skip_names)
+        assert "data/raw/gis/ine-jalisco-2025-12-15.zip" not in skip_names
+        assert "sources/SOURCES.md" in skip_names
+        assert "sources/sources.json" in skip_names
+        skip_info = json.loads(package.read("sources/sources.json"))
+        assert skip_info["source_mode"] == "skip"
+        assert skip_info["raw_sources_included"] is False
+        assert len(skip_info["sources"]) == 6
+        assert "docs/api/openapi.json" in skip_names
+        assert any(name.startswith("reports/scenario") for name in skip_names)
 
     assert (tmp_path / "delivery" / "methodology.pdf").is_file()
     assert (tmp_path / "delivery" / "executive.pdf").is_file()
