@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Generic, TypeVar
 from uuid import UUID
 
@@ -17,12 +17,12 @@ class DatasetMeta(BaseModel):
     dataset_version_ids: list[UUID] = Field(default_factory=list)
     reference_date: str = "2025-12-15"
     model_run_id: UUID | None = None
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     geographic_warning: str = ""
     filters: dict = Field(default_factory=dict)
 
 
-class Page(BaseModel, Generic[T]):
+class Page(BaseModel, Generic[T]):  # noqa: UP046 - pydantic-compatible Generic alias
     """The paginated envelope returned by every list endpoint."""
 
     items: list[T]

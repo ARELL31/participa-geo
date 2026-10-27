@@ -7,6 +7,7 @@ Demographic shares (young/senior/rural) use ``LN`` as denominator, never ``SV``.
 from __future__ import annotations
 
 import pytest
+
 from participa_geo.indicators.calculations import calculate_indicators
 from participa_geo.ingestion.aggregate import aggregate_municipal
 from participa_geo.ingestion.schema import CCPCRow

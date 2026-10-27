@@ -223,35 +223,35 @@ export function PredictionPage() {
             <dd data-testid="coverage-eligible">
               {summary.eligible} de {summary.total}
             </dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               Cobertura del universo municipal publicado para 2027.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Información insuficiente</dt>
             <dd data-testid="coverage-insufficient">{summary.insufficient}</dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               No se imputan como cero ni se clasifican como riesgo bajo.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Categoría inestable</dt>
             <dd data-testid="unstable-kpi">{unstableValue}</dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               La banda cruza un umbral de riesgo; la etiqueta se muestra como
               inestable. El conteo depende de las filas de predicción.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Rango de error histórico de referencia</dt>
             <dd data-testid="historical-band">
               {formatPp(metrics?.bandAmplitudePp, 2)}
             </dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               Amplitud sobre {metrics?.bandErrors ?? 91} errores de la validación
               2021. No es un intervalo de confianza del 90 % ni un intervalo
               causal.
-            </p>
+            </dd>
           </div>
         </dl>
 

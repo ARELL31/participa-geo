@@ -95,7 +95,7 @@ export function MunicipalMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const selectRef = useRef(onSelectMunicipality);
   const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
+  const [mapError, setMapError] = useState(() => !supportsWebGl());
   const [tableOpen, setTableOpen] = useState(false);
 
   useEffect(() => {
@@ -103,16 +103,7 @@ export function MunicipalMap({
   }, [onSelectMunicipality]);
 
   useEffect(() => {
-    if (featuresError) setTableOpen(true);
-  }, [featuresError]);
-
-  useEffect(() => {
     if (mapError) return;
-    if (!supportsWebGl()) {
-      setMapError(true);
-      setTableOpen(true);
-      return;
-    }
     const container = containerRef.current;
     if (!container) return;
 

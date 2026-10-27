@@ -125,7 +125,11 @@ export function ScenarioPage() {
   });
 
   const scenario = mutation.data ?? scenarioQuery.data;
-  const predictions = predictionsQuery.data?.items ?? [];
+  const scenarioIdValue = scenario?.scenario_id ?? null;
+  const predictions = useMemo(
+    () => predictionsQuery.data?.items ?? [],
+    [predictionsQuery.data],
+  );
   const eligible = useMemo(
     () => eligiblePredictions(predictions),
     [predictions],
@@ -145,8 +149,8 @@ export function ScenarioPage() {
   }, [reviewing]);
 
   useEffect(() => {
-    if (scenario) resultHeadingRef.current?.focus();
-  }, [scenario?.scenario_id]);
+    if (scenarioIdValue) resultHeadingRef.current?.focus();
+  }, [scenarioIdValue]);
 
   function handleChange(next: Partial<ScenarioFormValues>) {
     mutation.reset();
@@ -452,33 +456,33 @@ export function ScenarioPage() {
               <div className="kpi">
                 <dt>Reducción solicitada</dt>
                 <dd>{scenario.requested_reduction_pp.toFixed(1)} pp</dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   Sólo en municipios seleccionados.
-                </p>
+                </dd>
               </div>
               <div className="kpi">
                 <dt>Municipios seleccionados</dt>
                 <dd>{scenario.selected_territory_ids.length}</dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   De {scenario.results.length} resultados persistidos.
-                </p>
+                </dd>
               </div>
               <div className="kpi">
                 <dt>Supuesto</dt>
                 <dd className="kpi__text">
                   {assumptionLabel(scenario.assumption_code)}
                 </dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   Versión {scenario.assumption_version} · reglas{" "}
                   {scenario.rules_version}.
-                </p>
+                </dd>
               </div>
               <div className="kpi">
                 <dt>Banda A/B</dt>
                 <dd className="kpi__text">Error histórico de referencia</dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   No es un intervalo de confianza ni causal.
-                </p>
+                </dd>
               </div>
             </dl>
 

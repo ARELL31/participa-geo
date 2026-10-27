@@ -41,7 +41,7 @@ def test_db_and_geoserver_publish_no_host_ports():
 
 def test_only_web_publishes_loopback_port():
     assert "ports" not in SERVICES["api"], "api must be reachable only through web"
-    assert SERVICES["web"]["ports"] == ["127.0.0.1:8080:80"]
+    assert SERVICES["web"]["ports"] == ["127.0.0.1:${WEB_PORT:-8080}:80"]
 
 
 def test_images_are_pinned_by_digest():
@@ -62,6 +62,10 @@ def test_web_proxies_the_api_and_never_geoserver():
     assert "proxy_pass http://api:8000;" in nginx
     assert "proxy_pass http://geoserver" not in nginx
     assert "proxy_pass http://participa_geo" not in nginx
+    # Administrative GIS paths are explicitly blocked instead of falling back
+    # to index.html; the GIS admin only exists on the internal network.
+    assert "location /geoserver/" in nginx
+    assert "return 404;" in nginx
 
 
 def test_password_secrets_have_no_default():
@@ -102,3 +106,14 @@ def test_env_example_has_placeholders_not_secrets():
     # Placeholders, not real credential defaults shipped as usable values.
     for forbidden in ("POSTGRES_PASSWORD=postgres", "GIS_ADMIN_PASSWORD=geoserver"):
         assert forbidden not in text
+
+
+def test_services_rotate_logs_and_web_is_healthchecked():
+    for name in ("api", "web", "db", "geoserver"):
+        logging = SERVICES[name]["logging"]
+        assert logging["driver"] == "json-file"
+        assert logging["options"]["max-size"] == "10m"
+        assert logging["options"]["max-file"] == "3"
+    web_healthcheck = SERVICES["web"]["healthcheck"]["test"]
+    assert web_healthcheck[:2] == ["CMD", "curl"]
+    assert "http://127.0.0.1/healthz" in web_healthcheck

@@ -8,6 +8,7 @@ import {
   Map,
   Package,
   RefreshCw,
+  type LucideIcon,
 } from "lucide-react";
 import { useContext, useState } from "react";
 
@@ -42,12 +43,25 @@ const INSTITUTIONAL: readonly ReportKind[] = [
   "technical_zip",
 ];
 
-function kindIcon(kind: ReportKind) {
+function kindIcon(kind: ReportKind): LucideIcon {
   if (kind === "technical_zip") return Package;
   if (kind.includes("map")) return Map;
   if (kind.includes("xlsx") || kind.includes("csv")) return FileSpreadsheet;
   return FileText;
 }
+
+const KIND_ICONS: Record<ReportKind, LucideIcon> = {
+  history_csv: kindIcon("history_csv"),
+  history_xlsx: kindIcon("history_xlsx"),
+  scenario_csv: kindIcon("scenario_csv"),
+  scenario_geojson: kindIcon("scenario_geojson"),
+  scenario_pdf: kindIcon("scenario_pdf"),
+  scenario_map_png: kindIcon("scenario_map_png"),
+  scenario_map_pdf: kindIcon("scenario_map_pdf"),
+  methodology_pdf: kindIcon("methodology_pdf"),
+  executive_pdf: kindIcon("executive_pdf"),
+  technical_zip: kindIcon("technical_zip"),
+};
 
 function formatBytes(value: number): string {
   if (value < 1024) return `${value} B`;
@@ -67,7 +81,7 @@ function ArtifactRow({ artifact }: { artifact: ReportArtifactDTO }) {
       );
     },
   });
-  const Icon = kindIcon(artifact.kind);
+  const Icon = KIND_ICONS[artifact.kind];
   return (
     <li className="artifact-row">
       <div className="artifact-row__identity">

@@ -3,6 +3,9 @@ the scenario PDF. All numbers come from :class:`DeliveryContext`; no page is
 filled with invented results.
 """
 
+# Long Spanish editorial strings in the PDF templates are intentional.
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import io

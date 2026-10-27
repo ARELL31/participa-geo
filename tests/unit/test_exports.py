@@ -209,7 +209,11 @@ def _real_scenario() -> ScenarioDTO:
         if choose:
             selected = UUID(str(row.territory_id))
         hypothetical = max(0.0, baseline - 3.0) if choose and baseline is not None else baseline
-        effective = (baseline - hypothetical) if baseline is not None and hypothetical is not None else 0.0
+        effective = (
+            (baseline - hypothetical)
+            if baseline is not None and hypothetical is not None
+            else 0.0
+        )
         results.append(
             ScenarioResultDTO(
                 territory_id=UUID(str(row.territory_id)),

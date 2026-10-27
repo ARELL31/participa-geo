@@ -278,7 +278,7 @@ export function TerritoryPage() {
                           selectedRecord?.participation_pct,
                         )}
                 </dd>
-                <p className="kpi__note">Porcentaje de la lista nominal.</p>
+                <dd className="kpi__note">Porcentaje de la lista nominal.</dd>
               </div>
               <div className="kpi">
                 <dt>Abstención</dt>
@@ -289,9 +289,9 @@ export function TerritoryPage() {
                       ? "No disponible"
                       : formatRateOrInsufficient(selectedRecord?.abstention_pct)}
                 </dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   Nunca se sustituye un dato ausente por cero.
-                </p>
+                </dd>
               </div>
               <div className="kpi">
                 <dt>NS (no especificados)</dt>
@@ -302,13 +302,13 @@ export function TerritoryPage() {
                       ? "No disponible"
                       : formatCount(selectedRecord?.ns)}
                 </dd>
-                <p className="kpi__note">
+                <dd className="kpi__note">
                   {selectedState === "loading"
                     ? "Cargando año seleccionado…"
                     : selectedRecord
                       ? `${formatShare(selectedRecord.unknown_share)} de la lista nominal.`
                       : "Sin dato de participación de NS."}
-                </p>
+                </dd>
               </div>
               <div className="kpi">
                 <dt>Universo conocido</dt>
@@ -321,7 +321,7 @@ export function TerritoryPage() {
                           knownUniverse(selectedRecord.ln, selectedRecord.ns),
                         )}
                 </dd>
-                <p className="kpi__note">LN − NS. Conteo absoluto, no una tasa.</p>
+                <dd className="kpi__note">LN − NS. Conteo absoluto, no una tasa.</dd>
               </div>
             </dl>
 

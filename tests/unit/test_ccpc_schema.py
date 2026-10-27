@@ -9,6 +9,7 @@ are retained as ``None`` — never invented.
 from __future__ import annotations
 
 import pytest
+
 from participa_geo.ingestion.schema import CCPCSchemaError
 from participa_geo.ingestion.source import read_ccpc
 

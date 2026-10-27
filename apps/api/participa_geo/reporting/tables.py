@@ -6,6 +6,9 @@ prefixed with an apostrophe in both CSV and XLSX. The XLSX workbook always has a
 data sheet, a metadata sheet and a dictionary sheet.
 """
 
+# Long Spanish dictionary labels/descriptions are intentional editorial text.
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import csv

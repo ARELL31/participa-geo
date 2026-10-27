@@ -302,7 +302,11 @@ def run_delivery(
         methodology,
         filename="methodology.pdf",
         media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
+        sources={
+            "scenario_id": str(scenario.scenario_id),
+            "model_run_id": str(scenario.model_run_id),
+            "source_mode": source_mode,
+        },
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )
@@ -311,7 +315,11 @@ def run_delivery(
         executive,
         filename="executive.pdf",
         media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
+        sources={
+            "scenario_id": str(scenario.scenario_id),
+            "model_run_id": str(scenario.model_run_id),
+            "source_mode": source_mode,
+        },
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )
@@ -320,7 +328,11 @@ def run_delivery(
         archive.read_bytes(),
         filename="technical.zip",
         media_type=MEDIA_TYPE_BY_FORMAT["zip"],
-        sources={"scenario_id": str(scenario.scenario_id), "model_run_id": str(scenario.model_run_id), "source_mode": source_mode},
+        sources={
+            "scenario_id": str(scenario.scenario_id),
+            "model_run_id": str(scenario.model_run_id),
+            "source_mode": source_mode,
+        },
         model_run_id=scenario.model_run_id,
         scenario_id=scenario.scenario_id,
     )

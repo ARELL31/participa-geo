@@ -1,5 +1,11 @@
 name: participa-geo
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   api:
     build:
@@ -56,6 +62,8 @@ services:
       - ./compose.yaml:/workspace/compose.yaml:ro
       - ./README.md:/workspace/README.md:ro
       - ./.env.example:/workspace/.env.example:ro
+      - ./.dockerignore:/workspace/.dockerignore:ro
+      - ./.github:/workspace/.github:ro
       # Read/write the git-ignored data sources and processed artifacts, plus the
       # methodology evidence (cross-checked by integration tests). No Docker
       # socket is ever mounted.
@@ -67,6 +75,7 @@ services:
       - geoserver
     networks:
       - internal
+    logging: *default-logging
 
   web:
     build:
@@ -74,12 +83,23 @@ services:
       dockerfile: infrastructure/docker/web.Dockerfile
       target: runtime
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
     depends_on:
       api:
         condition: service_healthy
     networks:
       - internal
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://127.0.0.1/healthz
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
     # Only the web/API proxy is published. nginx forwards `/api/` to api:8000;
     # GeoServer remains unreachable from the host and from the browser.
 
@@ -108,6 +128,25 @@ services:
     networks:
       - internal
 
+  e2e:
+    # Acceptance suite (T10): root tests/e2e mounted into the pinned web image.
+    # One worker against the real API/PostGIS/GeoServer stack; no MSW.
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      target: e2e
+    working_dir: /app
+    environment:
+      PLAYWRIGHT_BASE_URL: http://web:80
+    volumes:
+      - ./tests/e2e:/app/tests/e2e:ro
+    depends_on:
+      web:
+        condition: service_started
+    networks:
+      - internal
+
   db:
     image: postgis/postgis:17-3.6@sha256:5d4c5c5d10b415bec52b0b9cea1ae93ace3a451ff10ab8f8974988e336274452
     environment:
@@ -127,6 +166,7 @@ services:
       - ./infrastructure/docker/db-init.sh:/docker-entrypoint-initdb.d/10-db-init.sh:ro
     networks:
       - internal
+    logging: *default-logging
     # No host ports: the database is reachable only on the internal network.
 
   geoserver:
@@ -141,6 +181,7 @@ services:
       - geodata:/opt/geoserver_data
     networks:
       - internal
+    logging: *default-logging
     # No host ports: GeoServer administrative access is internal-network only.
 
 volumes:

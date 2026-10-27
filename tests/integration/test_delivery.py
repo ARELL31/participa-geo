@@ -39,6 +39,15 @@ def _fixture_root(tmp_path: Path) -> Path:
     _write(root / "pyproject.toml", "[project]\nname='x'\n")
     _write(root / "uv.lock", "lock\n")
     _write(root / "compose.yaml", "services: {}\n")
+    _write(root / ".env.example", "DB_API_PASSWORD=change-me-api\n")
+    _write(root / ".dockerignore", ".env\n")
+    _write(root / "infrastructure" / "docker" / "api.Dockerfile", "FROM scratch\n")
+    _write(root / "infrastructure" / "docker" / "web.Dockerfile", "FROM scratch\n")
+    init_script = root / "infrastructure" / "docker" / "db-init.sh"
+    _write(init_script, "#!/bin/sh\n")
+    init_script.chmod(0o755)
+    _write(root / "tests" / "e2e" / "full-journey.spec.ts", "export {};\n")
+    _write(root / ".github" / "workflows" / "ci.yml", "name: ci\n")
     _write(root / "data" / "sources.json", "{}\n")
     _write(root / "docs" / "hackathon" / "source-licenses.md", "# licencias\n")
     _write(root / "docs" / "hackathon" / "delivery-checklist.md", "# checklist\n")
@@ -85,13 +94,25 @@ def test_technical_zip_excludes_private_files(tmp_path):
         assert "apps/api/participa_geo/ok.py" in names
         assert "apps/web/src/ok.ts" in names
         assert "README.md" in names
+        assert ".env.example" in names
+        assert ".dockerignore" in names
+        assert "infrastructure/docker/api.Dockerfile" in names
+        assert "infrastructure/docker/web.Dockerfile" in names
+        assert "tests/e2e/full-journey.spec.ts" in names
+        assert ".github/workflows/ci.yml" in names
+        init_info = package.getinfo("infrastructure/docker/db-init.sh")
+        assert (init_info.external_attr >> 16) & 0o111
         assert "dictionaries/history.csv" in names
         assert "MANIFEST.json" in names
         assert "CHECKSUMS.sha256" in names
         assert not any(name.startswith(".git/") for name in names)
         assert not any("node_modules" in name for name in names)
         assert not any("__pycache__" in name for name in names)
-        assert not any(name == ".env" or name.startswith(".env.") for name in names)
+        assert not any(
+            name == ".env"
+            or (name.startswith(".env.") and name != ".env.example")
+            for name in names
+        )
         assert not any("cartas" in name for name in names)
         assert not any("credential" in name.lower() for name in names)
         assert not any("secret" in name.lower() for name in names)
@@ -167,6 +188,45 @@ def _scenario_context(context: DeliveryContext) -> DeliveryContext:
         hypothetical_mean=39.0,
     )
     return replace(context, scenario=facts)
+
+
+def test_clean_room_bootstrap_members_are_required(tmp_path):
+    root = _complete_fixture_root(tmp_path)
+    archive = tmp_path / "complete.zip"
+    build_technical_zip(
+        load_delivery_context(),
+        archive,
+        root=root,
+        strict=True,
+        reports={
+            "reports/methodology.pdf": b"%PDF-1.4\n",
+            "reports/executive.pdf": b"%PDF-1.4\n",
+        },
+    )
+    with zipfile.ZipFile(archive) as package:
+        names = set(package.namelist())
+    for required in (
+        ".env.example",
+        ".dockerignore",
+        "infrastructure/docker/api.Dockerfile",
+        "infrastructure/docker/web.Dockerfile",
+        "tests/e2e/full-journey.spec.ts",
+        ".github/workflows/ci.yml",
+    ):
+        assert required in names
+
+    (root / "infrastructure" / "docker" / "api.Dockerfile").unlink()
+    with pytest.raises(DeliveryError, match="api.Dockerfile"):
+        build_technical_zip(
+            load_delivery_context(),
+            tmp_path / "broken.zip",
+            root=root,
+            strict=True,
+            reports={
+                "reports/methodology.pdf": b"%PDF-1.4\n",
+                "reports/executive.pdf": b"%PDF-1.4\n",
+            },
+        )
 
 
 def test_complete_zip_requires_and_verifies_scenario_reports(tmp_path):
@@ -382,7 +442,11 @@ def test_cli_delivery_builds_verified_package_with_real_scenario(
         assert not any(name.startswith(".git/") for name in names)
         assert not any("node_modules" in name for name in names)
         assert not any("cartas" in name for name in names)
-        assert not any(name == ".env" or name.startswith(".env.") for name in names)
+        assert not any(
+            name == ".env"
+            or (name.startswith(".env.") and name != ".env.example")
+            for name in names
+        )
 
     scenario_csv = (tmp_path / "delivery" / "scenario.csv").read_text(
         encoding="utf-8-sig"

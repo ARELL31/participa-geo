@@ -15,8 +15,9 @@ Estado: piloto municipal, diseño y plan aprobados; ejecución por agentes autor
 - [x] Tras aprobación del diseño, invocar writing-plans.
 - [x] Guardar y autorrevisar plan técnico de diez tareas verificables.
 - [x] Presentar el plan y obtener elección del método de ejecución.
-- [ ] Implementar T1–T10 con agentes y revisión independiente.
-- [ ] Ejecutar revisión final del conjunto y verificación de entrega.
-- [ ] Obtener aprobación del plan antes de implementar.
+- [x] Implementar T1–T10 con agentes y revisión independiente por tarea.
+- [ ] Ejecutar revisión final independiente del conjunto (T10 Step 6).
+- [x] Ejecutar verificación técnica final, ensayo limpio y checklist de entrega.
+- [x] Obtener aprobación del plan antes de implementar.
 
 Los documentos y evidencias de investigación se conservaron en `/home/arell31/participa-geo/docs`; los CSV completos y ZIP fuente aún están en el espacio temporal y se incorporarán al almacenamiento de datos ignorado porGit durante la implementación autorizada.

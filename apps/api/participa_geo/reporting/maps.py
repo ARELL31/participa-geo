@@ -183,7 +183,12 @@ def compose_png(
     small_font = _load_font(16)
 
     draw.rectangle((0, 0, 1600, 96), fill=PRIMARY)
-    draw.text((40, 24), "PARTICIPA-GEO · Comparación cartográfica A/B 2027", font=title_font, fill="#FFFFFF")
+    draw.text(
+        (40, 24),
+        "PARTICIPA-GEO · Comparación cartográfica A/B 2027",
+        font=title_font,
+        fill="#FFFFFF",
+    )
     draw.text(
         (40, 66),
         "Escenario hipotético — no implica efecto causal · agregados municipales",
@@ -213,7 +218,12 @@ def compose_png(
     # Shared legend: identical classes and colors for A and B.
     legend_y = 714
     draw.rectangle((35, legend_y, 1565, legend_y + 92), fill=SURFACE, outline=BORDER)
-    draw.text((55, legend_y + 12), "Leyenda compartida A/B — mismos cortes", font=panel_font, fill=TEXT)
+    draw.text(
+        (55, legend_y + 12),
+        "Leyenda compartida A/B — mismos cortes",
+        font=panel_font,
+        fill=TEXT,
+    )
     x = 55
     for key in ("low", "medium", "high", "insufficient"):
         draw.rectangle((x, legend_y + 52, x + 26, legend_y + 74), fill=RISK_COLORS[key])
@@ -231,7 +241,8 @@ def compose_png(
         f"reducción solicitada: {scenario.requested_reduction_pp:.1f} pp · "
         f"fecha de generación: {generated_at.astimezone(UTC).isoformat()}",
         "B = max(0, A − reducción) sólo en municipios seleccionados y elegibles. "
-        "La banda es un rango de error histórico de referencia trasladado; no es un intervalo causal.",
+        "La banda es un rango de error histórico de referencia trasladado; "
+        "no es un intervalo causal.",
         "Uso responsable: no estimar personas, no inferir comportamiento individual y no "
         "atribuir causalidad a una intervención.",
     ]

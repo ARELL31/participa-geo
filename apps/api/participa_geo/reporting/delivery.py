@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import zipfile
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -282,11 +283,21 @@ def load_delivery_context(
         versions={str(k): str(v) for k, v in (manifest.get("versions") or {}).items()},
         model=ModelFacts(
             family=str(evaluation.get("selected_family", model.get("family", "M0"))),
-            model_run_id=UUID(str(manifest.get("model_run_id", model.get("model_run_id")))),
+            model_run_id=UUID(
+                str(manifest.get("model_run_id", model.get("model_run_id")))
+            ),
             validation_year=validation_year,
             test_year=test_year,
-            mae_2021=_float(m0.get(str(validation_year), {}).get("mae", selection.get("m0_mae_2021", 0.0))),
-            m1_mae_2021=_float(m1.get(str(validation_year), {}).get("mae", selection.get("m1_mae_2021", 0.0))),
+            mae_2021=_float(
+                m0.get(str(validation_year), {}).get(
+                    "mae", selection.get("m0_mae_2021", 0.0)
+                )
+            ),
+            m1_mae_2021=_float(
+                m1.get(str(validation_year), {}).get(
+                    "mae", selection.get("m1_mae_2021", 0.0)
+                )
+            ),
             mae_2024=_float(m0.get(str(test_year), {}).get("mae", 0.0)),
             m1_mae_2024=_float(m1.get(str(test_year), {}).get("mae", 0.0)),
             band_pp=_float(band.get("amplitude_pp", 0.0)),
@@ -441,6 +452,8 @@ ALLOWLIST_FILES = (
     "pyproject.toml",
     "uv.lock",
     "compose.yaml",
+    ".env.example",
+    ".dockerignore",
     "alembic.ini",
     "data/sources.json",
     "docs/api/openapi.json",
@@ -451,6 +464,7 @@ ALLOWLIST_FILES = (
     "apps/web/tsconfig.app.json",
     "apps/web/tsconfig.node.json",
     "apps/web/vite.config.ts",
+    "apps/web/vitest.config.ts",
     "apps/web/playwright.config.ts",
     "apps/web/eslint.config.js",
 )
@@ -459,10 +473,12 @@ ALLOWLIST_DIRS: tuple[tuple[str, frozenset[str]], ...] = (
     ("apps/api/participa_geo", frozenset({".py"})),
     ("apps/web/src", frozenset({".ts", ".tsx", ".css"})),
     ("apps/web/tests", frozenset({".ts"})),
+    ("tests", frozenset({".py", ".ts"})),
+    (".github/workflows", frozenset({".yml", ".yaml"})),
     ("pipelines", frozenset({".py"})),
     ("gis", frozenset({".py", ".sld"})),
     ("alembic", frozenset({".py", ".mako", ".ini"})),
-    ("infrastructure", frozenset({".py", ".sh", ".conf"})),
+    ("infrastructure", frozenset({".py", ".sh", ".conf", ".dockerfile"})),
     ("docs", frozenset({".md", ".ttf", ".txt"})),
     ("data/processed/model", frozenset({".json", ".csv", ".parquet"})),
 )
@@ -487,6 +503,10 @@ REQUIRED_MEMBERS = (
     "pyproject.toml",
     "uv.lock",
     "compose.yaml",
+    ".env.example",
+    ".dockerignore",
+    "infrastructure/docker/api.Dockerfile",
+    "infrastructure/docker/web.Dockerfile",
     "data/sources.json",
     "docs/api/openapi.json",
     "data/processed/municipal-observations.parquet",
@@ -531,7 +551,7 @@ def _is_forbidden(relative: Path) -> bool:
     if parts & FORBIDDEN_PARTS:
         return True
     name = relative.name.lower()
-    if name == ".env" or name.startswith(".env."):
+    if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
         return True
     return any(fragment in name for fragment in FORBIDDEN_NAME_FRAGMENTS)
 
@@ -571,6 +591,14 @@ def _candidate_files(root: Path, *, include_raw_sources: bool) -> list[Path]:
     return sorted(unique, key=lambda item: item.relative_to(root).as_posix())
 
 
+def _zip_info(arcname: str, mode: int) -> zipfile.ZipInfo:
+    """A deterministic ZIP entry that preserves the Unix file mode."""
+    info = zipfile.ZipInfo(arcname, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = (stat.S_IFREG | mode) << 16
+    return info
+
+
 def _add_bytes(
     archive: zipfile.ZipFile,
     arcname: str,
@@ -578,7 +606,7 @@ def _add_bytes(
     files: dict[str, dict[str, Any]],
 ) -> None:
     digest = hashlib.sha256(payload).hexdigest()
-    archive.writestr(arcname, payload)
+    archive.writestr(_zip_info(arcname, 0o644), payload)
     files[arcname] = {"sha256": digest, "bytes": len(payload)}
 
 
@@ -590,7 +618,10 @@ def _add_path(
 ) -> None:
     digest = hashlib.sha256()
     size = 0
-    with path.open("rb") as source, archive.open(arcname, "w") as target:
+    mode = path.stat().st_mode & 0o777
+    with path.open("rb") as source, archive.open(
+        _zip_info(arcname, mode or 0o644), "w"
+    ) as target:
         while True:
             chunk = source.read(1024 * 1024)
             if not chunk:

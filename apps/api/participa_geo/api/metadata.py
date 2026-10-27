@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -25,7 +25,7 @@ def build_meta(
         dataset_version_ids=dataset_version_ids or [],
         reference_date=reference_date,
         model_run_id=model_run_id,
-        generated_at=generated_at or datetime.now(timezone.utc),
+        generated_at=generated_at or datetime.now(UTC),
         geographic_warning=geographic_warning,
         filters=filters or {},
     )

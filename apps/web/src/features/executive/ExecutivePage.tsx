@@ -255,32 +255,32 @@ export function ExecutivePage() {
             <dd>
               {summary.eligible} de {summary.total}
             </dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               {(coverage * 100).toFixed(1)} % de municipios elegibles.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Riesgo alto</dt>
             <dd data-testid="executive-high-risk">{highRisk.length}</dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               Abstención estimada de 50 % o más entre elegibles.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Información insuficiente</dt>
             <dd>{summary.insufficient}</dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               No se imputan como cero ni como riesgo bajo.
-            </p>
+            </dd>
           </div>
           <div className="kpi">
             <dt>Categoría inestable</dt>
             <dd>
               {summary.unstable} de {summary.eligible}
             </dd>
-            <p className="kpi__note">
+            <dd className="kpi__note">
               La banda histórica cruza un umbral de riesgo.
-            </p>
+            </dd>
           </div>
         </dl>
       </section>

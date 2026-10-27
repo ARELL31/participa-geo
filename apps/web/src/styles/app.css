@@ -551,6 +551,12 @@ button {
   color: var(--color-text-secondary);
 }
 
+.kpi dd.kpi__note {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
 .source-note {
   margin-top: var(--space-6);
   padding-top: var(--space-3);

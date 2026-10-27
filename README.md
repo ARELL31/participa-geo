@@ -43,6 +43,10 @@ curl -i http://127.0.0.1:8080/api/v1/health/ready
 # Interfaz: http://127.0.0.1:8080/territory?year=2024
 ```
 
+`WEB_PORT` (por defecto 8080) cambia sólo el puerto de loopback. Un ensayo limpio
+usa `WEB_PORT=8081` y `docker compose -p participa_geo_cleanroom` con volúmenes
+propios; nunca ejecute `down -v` sobre el proyecto de trabajo.
+
 `db` y `geoserver` no publican puertos de host: sólo son alcanzables dentro de la
 red `internal` de Compose. La API tampoco publica un puerto de host; nginx en
 `web` reenvía `/api/` a `api:8000`. El navegador nunca habla con GeoServer.
@@ -138,6 +142,97 @@ personales. Las condiciones de redistribución se documentan en
 `docs/hackathon/source-licenses.md` y requieren confirmación humana antes de una
 publicación abierta.
 
+## Comandos probados (T10, aceptación)
+
+```sh
+# Lint y pruebas rápidas (mismas que CI; ver .github/workflows/ci.yml).
+docker compose run --rm --no-deps api ruff check .
+docker compose run --rm --no-deps api pytest -q
+docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run lint
+docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run typecheck
+docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run test -- --run
+docker compose run --rm --no-deps -v "$PWD/apps/web:/app" web-test npm run build
+
+# E2E de producto (T7-T9) y aceptación completa (T10), siempre contra el stack real.
+docker compose --profile tools run --rm --no-deps web-e2e npx playwright test
+docker compose --profile test run --rm e2e \
+  npx playwright test --config tests/e2e/playwright.config.ts
+```
+
+La suite de aceptación crea un escenario real por la interfaz, descarga
+CSV/XLSX/GeoJSON/PDF y compara los valores con la API. La suite de accesibilidad
+comprueba teclado/foco/etiquetas, axe sin violaciones críticas ni serias, reflow
+320/375/1440, reducción de movimiento y una aproximación de zoom 200%. **No es una
+certificación AA**: la revisión con lector de pantalla y la lectura final siguen
+siendo pasos humanos documentados en
+`docs/hackathon/verification-results.md`.
+
+El workflow de CI está configurado con acciones fijadas por SHA. En este entorno
+no se ejecutó en GitHub Actions; el estado real (configurado/no ejecutado y las
+pruebas locales que sí corrieron) está en `verification-results.md`. CI cubre
+ruff, unitarias sin datos, contrato de salud, ESLint, typecheck, Vitest y build.
+La integración PostGIS/GeoServer/E2E y el ensayo limpio son locales porque
+necesitan los datos oficiales empaquetados y aproximadamente 8 GB de memoria.
+
+## Ensayo limpio
+
+El ZIP técnico se puede extraer en un directorio nuevo y arrancar sin depender de
+`/tmp/opencode` ni de este repositorio:
+
+```sh
+mkdir -p /tmp/opencode/participa-geo-cleanroom-<timestamp>
+cd /tmp/opencode/participa-geo-cleanroom-<timestamp>
+unzip /ruta/technical.zip
+sha256sum -c CHECKSUMS.sha256
+cp .env.example .env   # generar los seis secretos; WEB_PORT=8081
+docker compose -p participa_geo_cleanroom --env-file .env up -d db geoserver
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli db migrate
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli ingest \
+  --source-dir data/raw/ccpc --output-dir data/processed
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli db load --processed-dir data/processed
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli gis import \
+  --archive data/raw/gis/ine-jalisco-2025-12-15.zip
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli train --processed-dir data/processed \
+  --output-dir data/processed/model-cleanroom
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli model load --bundle-dir data/processed/model-cleanroom
+docker compose -p participa_geo_cleanroom --env-file .env run --rm api \
+  python -m participa_geo.cli gis publish
+docker compose -p participa_geo_cleanroom --env-file .env up -d web
+curl -i http://127.0.0.1:8081/api/v1/health/ready
+```
+
+Para retirar únicamente el ensayo: `docker compose -p participa_geo_cleanroom
+down --volumes`, después de comprobar que los volúmenes son
+`participa_geo_cleanroom_*`. El paquete `--confirm-source-license` contiene los
+seis CSV y el ZIP cartográfico original con atribución y checksums; el modo
+`--skip-sources` sólo lleva URL/checksums.
+
+## Limitaciones del MVP
+
+- **Cobertura:** Jalisco, 125 municipios; 2027 tiene **85 elegibles** y **40 con
+  información insuficiente** (no se imputan como cero).
+- **Modelo:** M0 (persistencia) fue seleccionado; M1 (sociodemográfico) no redujo
+  el MAE de validación 2021. MAE M0 4.93 pp en 2021 y 3.43 pp en 2024; banda
+  histórica de referencia 8.56 pp (P90 de 91 errores), no un intervalo de
+  confianza ni causal.
+- **Horizonte:** predicción fija 2027; los años históricos 2009–2024 no cambian
+  el horizonte. Los escenarios son aritméticos e hipotéticos: no implican efecto
+  causal.
+- **Geografía:** referencia cartográfica INE 2025-12-15, EPSG:4326; la igualdad
+  histórica de límites no está verificada (`footprint_status=not_verified`).
+- **Operación:** sin autenticación ni perfiles, sólo loopback y uso local. No hay
+  alta disponibilidad, cola distribuida ni despliegue público.
+- **Datos y privacidad:** la API, la base analítica y los entregables usan
+  agregados municipales; no contienen datos personales, contactos, listas
+  nominales ni cartas. Las cartas firmadas y el envío final son pasos humanos
+  fuera de Git, la API, los contenedores y el ZIP técnico.
+
 ## Estructura
 
 ```text
@@ -145,18 +240,17 @@ apps/api/participa_geo/   # API FastAPI y CLI
 apps/web/                 # React/Vite/TS, MapLibre y pruebas web
 infrastructure/docker/    # Dockerfiles de API/web, nginx y db-init.sh
 tests/                    # unit, contract, integration
+tests/e2e/                # aceptación completa y accesibilidad (T10)
+.github/workflows/        # CI reproducible con acciones fijadas por SHA
 docs/api/                 # contrato HTTP
-docs/architecture/        # dependencias e imágenes
+docs/architecture/        # dependencias, imágenes y despliegue local
+docs/hackathon/           # checklist, licencias y resultados de verificación
 docs/design-system/       # tokens, shell y verificaciones de UI
 compose.yaml
 pyproject.toml / uv.lock
 apps/web/package-lock.json
 .env.example
 ```
-
-## Pendiente (tareas siguientes)
-
-- T10: CI, ensayo limpio y aceptación final.
 
 Mientras no se carguen datos, migraciones, modelo y capas GIS, `/health/ready`
 devuelve `503` (por diseño); `live` no depende de GIS.

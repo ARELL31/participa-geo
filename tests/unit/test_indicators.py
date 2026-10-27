@@ -8,6 +8,7 @@ points 0–100. ``NS`` is never reclassified as abstention.
 from __future__ import annotations
 
 import pytest
+
 from participa_geo.indicators.calculations import (
     assess_quality,
     calculate_indicators,

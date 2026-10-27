@@ -132,7 +132,11 @@ def export_scenario_geojson(
                 result.effective_reduction_pp if baseline is not None else None
             ),
             "risk_a": result.risk_a if baseline is not None else "insufficient",
-            "risk_b": result.risk_b if (baseline is not None and hypothetical is not None) else "insufficient",
+            "risk_b": (
+                result.risk_b
+                if (baseline is not None and hypothetical is not None)
+                else "insufficient"
+            ),
             "risk_a_unstable": bool(result.risk_a_unstable and baseline is not None),
             "risk_b_unstable": bool(
                 result.risk_b_unstable and baseline is not None and hypothetical is not None

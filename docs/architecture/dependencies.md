@@ -57,7 +57,9 @@ redistribución en T9):
 
 Dependencias de desarrollo/pruebas (`[dependency-groups].dev`): `pytest` (MIT),
 `httpx` (BSD-3-Clause), `pyyaml` (MIT), `ruff` (MIT), `mypy` (MIT), `pypdf`
-(BSD-3-Clause).
+(BSD-3-Clause). En el frontend: `eslint` (MIT), `typescript-eslint` (MIT),
+`eslint-plugin-react-hooks` (MIT) y `@axe-core/playwright` (MPL-2.0); todas
+quedan fijadas en `apps/web/package-lock.json`.
 
 Fuente de los PDF: Inter Regular/SemiBold, © The Inter Project Authors, SIL Open
 Font License 1.1. Los TTF y `OFL.txt` viven en `docs/hackathon/fonts/` y se

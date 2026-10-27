@@ -70,19 +70,17 @@ function ScenarioMapPanel({
   riskField,
 }: ScenarioMapPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "error">(() =>
+    supportsWebGl() ? "loading" : "error",
+  );
 
   useEffect(() => {
-    if (!supportsWebGl()) {
-      setState("error");
-      return;
-    }
+    if (!supportsWebGl()) return;
     const container = containerRef.current;
     if (!container) return;
 
     let disposed = false;
     let map: MapLibreMap | undefined;
-    setState("loading");
 
     void import("maplibre-gl")
       .then((maplibregl) => {
