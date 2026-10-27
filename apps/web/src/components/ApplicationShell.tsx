@@ -45,7 +45,6 @@ function NavigationList({ pathname, onNavigate }: NavigationListProps) {
               <a
                 className="navigation__link"
                 href={pathWithCurrentFilters(item.path)}
-                aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 onClick={(event) => {
                   if (

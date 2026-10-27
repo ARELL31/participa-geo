@@ -247,6 +247,7 @@ export function HistoryChart({
             header: "Elegible",
             render: (row) => {
               if (!row.record) return "No disponible";
+              if (row.record.territory_id === null) return "No aplica";
               return row.record.eligible ? "Sí" : "No";
             },
           },

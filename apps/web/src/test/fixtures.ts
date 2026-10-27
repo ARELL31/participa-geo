@@ -74,6 +74,21 @@ export function territoriesHandler(items: TerritoryDTO[]) {
   );
 }
 
+export function territoriesErrorHandler(status = 503) {
+  return http.get("*/api/v1/territories", () =>
+    HttpResponse.json(
+      {
+        type: "urn:participa-geo:error:unavailable",
+        title: "Servicio no disponible",
+        status,
+        detail: "No fue posible cargar la lista de municipios.",
+        code: "unavailable",
+      },
+      { status },
+    ),
+  );
+}
+
 export function historyHandler(
   resolve: (search: URLSearchParams) => HistoryDTO[] | Promise<HistoryDTO[]>,
 ) {

@@ -184,12 +184,8 @@ export const queryKeys = {
       "history",
       { territoryId: filters.territoryId, year: filters.historicalYear },
     ] as const,
-  historySeries: (filters: GlobalFilters) =>
-    [
-      "history",
-      "series",
-      { territoryId: filters.territoryId, year: filters.historicalYear },
-    ] as const,
+  historySeries: (territoryId: string | null) =>
+    ["history", "series", { territoryId }] as const,
   municipalFeatures: (year: ElectionYear) =>
     ["gis", "wfs", "participation_history", year] as const,
 };

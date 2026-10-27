@@ -40,10 +40,26 @@ export function TerritoryPage() {
     staleTime: 5 * 60_000,
   });
 
+  // The chart needs all six observations, so its request is intentionally
+  // unfiltered by year and its key depends only on the territory.
   const seriesQuery = useQuery({
-    queryKey: queryKeys.historySeries({ territoryId, historicalYear }),
+    queryKey: queryKeys.historySeries(territoryId),
     queryFn: ({ signal }) =>
       fetchHistory({ territoryId, pageSize: 125, signal }),
+    staleTime: 60_000,
+  });
+
+  // The selected-year query uses the now-valid `year` contract and feeds the
+  // KPI/selected row; it is the only history query keyed by historical year.
+  const selectedQuery = useQuery({
+    queryKey: queryKeys.history({ territoryId, historicalYear }),
+    queryFn: ({ signal }) =>
+      fetchHistory({
+        territoryId,
+        year: historicalYear,
+        pageSize: 1,
+        signal,
+      }),
     staleTime: 60_000,
   });
 
@@ -58,19 +74,54 @@ export function TerritoryPage() {
   const selectedTerritory = territoryId
     ? territories.find((item) => item.id === territoryId)
     : undefined;
-  const selectedMunicipalityCode = selectedTerritory?.municipality_code ?? null;
 
   // Guard against any stale envelope whose territory does not match the URL.
   const records =
     seriesQuery.data?.items.filter(
       (record) => record.territory_id === territoryId,
     ) ?? [];
-  const rows = historyRows(records);
-  const selectedRecord = rows.find((row) => row.year === historicalYear)?.record;
 
-  const territoryLabel = selectedTerritory
-    ? `${selectedTerritory.name} · ${selectedTerritory.municipality_code}`
-    : "Agregado estatal de Jalisco";
+  // The unfiltered series is authoritative for the chart and its table. The
+  // selected-year query supplies the current KPI/selected row and is merged in
+  // only for that year, so a transient year request cannot relabel the series.
+  const selectedRecord = selectedQuery.data?.items.find(
+    (record) =>
+      record.territory_id === territoryId && record.year === historicalYear,
+  );
+  const rows = historyRows(records).map((row) =>
+    row.year === historicalYear && selectedRecord
+      ? { ...row, record: selectedRecord }
+      : row,
+  );
+
+  const firstRecord = records[0];
+  const selectedMunicipalityCode =
+    selectedTerritory?.municipality_code ??
+    firstRecord?.municipality_code ??
+    null;
+
+  // A non-null UUID is always a municipality, even if the catalogue request is
+  // delayed or failed; never fall back to the state-aggregate label.
+  const territoryLabel =
+    territoryId === null
+      ? "Agregado estatal de Jalisco"
+      : selectedTerritory
+        ? `${selectedTerritory.name} · ${selectedTerritory.municipality_code}`
+        : firstRecord?.name
+          ? `${firstRecord.name} · ${firstRecord.municipality_code ?? "sin código"}`
+          : "Municipio seleccionado";
+
+  const isStateAggregate = territoryId === null;
+  const eligibilityText = isStateAggregate
+    ? "Agregado estatal calculado sumando conteos municipales antes de recalcular tasas."
+    : selectedRecord?.eligible === false
+      ? "El registro no es elegible para comparación."
+      : "Tasas calculadas sobre la fuente CCPC.";
+  const selectedState = selectedQuery.isPending
+    ? "loading"
+    : selectedQuery.isError
+      ? "error"
+      : "ready";
 
   return (
     <div className="page territory-page">
@@ -181,7 +232,10 @@ export function TerritoryPage() {
             <button
               type="button"
               className="button button--primary"
-              onClick={() => void seriesQuery.refetch()}
+              onClick={() => {
+                void seriesQuery.refetch();
+                void selectedQuery.refetch();
+              }}
             >
               <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
               Reintentar consulta
@@ -201,9 +255,10 @@ export function TerritoryPage() {
               <div>
                 <h2 id="summary-heading">{territoryLabel}</h2>
                 <p>
-                  Observación histórica {historicalYear}. {selectedRecord?.eligible === false
-                    ? "El registro no es elegible para comparación."
-                    : "Tasas calculadas sobre la fuente CCPC."}
+                  Observación histórica {historicalYear}.{" "}
+                  {selectedState === "error"
+                    ? "No se pudo cargar el año seleccionado; la serie histórica permanece visible."
+                    : eligibilityText}
                 </p>
               </div>
               <span className="status-pill status-pill--neutral">
@@ -215,14 +270,24 @@ export function TerritoryPage() {
               <div className="kpi">
                 <dt>Participación</dt>
                 <dd data-testid="kpi-participation">
-                  {formatRateOrInsufficient(selectedRecord?.participation_pct)}
+                  {selectedState === "loading"
+                    ? "Cargando…"
+                    : selectedState === "error"
+                      ? "No disponible"
+                      : formatRateOrInsufficient(
+                          selectedRecord?.participation_pct,
+                        )}
                 </dd>
                 <p className="kpi__note">Porcentaje de la lista nominal.</p>
               </div>
               <div className="kpi">
                 <dt>Abstención</dt>
                 <dd data-testid="kpi-abstention">
-                  {formatRateOrInsufficient(selectedRecord?.abstention_pct)}
+                  {selectedState === "loading"
+                    ? "Cargando…"
+                    : selectedState === "error"
+                      ? "No disponible"
+                      : formatRateOrInsufficient(selectedRecord?.abstention_pct)}
                 </dd>
                 <p className="kpi__note">
                   Nunca se sustituye un dato ausente por cero.
@@ -231,22 +296,30 @@ export function TerritoryPage() {
               <div className="kpi">
                 <dt>NS (no especificados)</dt>
                 <dd data-testid="kpi-ns">
-                  {formatCount(selectedRecord?.ns)}
+                  {selectedState === "loading"
+                    ? "Cargando…"
+                    : selectedState === "error"
+                      ? "No disponible"
+                      : formatCount(selectedRecord?.ns)}
                 </dd>
                 <p className="kpi__note">
-                  {selectedRecord
-                    ? `${formatShare(selectedRecord.unknown_share)} de la lista nominal.`
-                    : "Sin dato de participación de NS."}
+                  {selectedState === "loading"
+                    ? "Cargando año seleccionado…"
+                    : selectedRecord
+                      ? `${formatShare(selectedRecord.unknown_share)} de la lista nominal.`
+                      : "Sin dato de participación de NS."}
                 </p>
               </div>
               <div className="kpi">
                 <dt>Universo conocido</dt>
                 <dd data-testid="kpi-known">
-                  {selectedRecord
-                    ? formatCount(
-                        knownUniverse(selectedRecord.ln, selectedRecord.ns),
-                      )
-                    : "No disponible"}
+                  {selectedState === "loading"
+                    ? "Cargando…"
+                    : selectedState === "error" || !selectedRecord
+                      ? "No disponible"
+                      : formatCount(
+                          knownUniverse(selectedRecord.ln, selectedRecord.ns),
+                        )}
                 </dd>
                 <p className="kpi__note">LN − NS. Conteo absoluto, no una tasa.</p>
               </div>
@@ -254,8 +327,10 @@ export function TerritoryPage() {
 
             <p className="source-note">
               Fuente: CCPC Jalisco, cortes {HISTORICAL_YEARS[0]}–{HISTORICAL_YEARS.at(-1)}.
-              Referencia cartográfica: 15 de diciembre de 2025. Los agregados
-              estatales suman conteos antes de recalcular tasas.
+              Referencia cartográfica: 15 de diciembre de 2025.{" "}
+              {isStateAggregate
+                ? "El agregado estatal suma conteos municipales antes de recalcular tasas; la elegibilidad de modelo no aplica."
+                : "Los agregados estatales suman conteos antes de recalcular tasas."}
             </p>
           </section>
 

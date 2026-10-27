@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -8,8 +9,10 @@ import {
   historyHandler,
   historyYear,
   municipalityFeature,
+  page,
   TERRITORY_A,
   TERRITORY_B,
+  territoriesErrorHandler,
   territoriesHandler,
   territory,
   wfsHandler,
@@ -76,7 +79,9 @@ describe("TerritoryPage", () => {
     renderAt(`?territory_id=${TERRITORY_A}&year=2018`);
 
     const abstention = await screen.findByTestId("kpi-abstention");
-    expect(abstention).toHaveTextContent("Información insuficiente");
+    await waitFor(() =>
+      expect(abstention).toHaveTextContent("Información insuficiente"),
+    );
     expect(abstention).not.toHaveTextContent(/\b0\b/);
 
     const table = await screen.findByRole("table", {
@@ -186,5 +191,110 @@ describe("TerritoryPage", () => {
     expect(
       await screen.findByRole("heading", { name: "TEPATITLAN · 002" }),
     ).toBeInTheDocument();
+  });
+
+  it("does not refetch the six-year series when only the historical year changes", async () => {
+    let seriesRequests = 0;
+    let yearRequests = 0;
+    const records = [2009, 2012, 2015, 2018, 2021, 2024].map((year) =>
+      historyYear(TERRITORY_A, year, {
+        name: "ACATIC",
+        municipality_code: "001",
+        abstention_pct: year === 2021 ? 48.2 : 46.7,
+      }),
+    );
+    server.use(
+      territoriesHandler(TERRITORIES),
+      http.get("*/api/v1/participation/history", ({ request }) => {
+        const url = new URL(request.url);
+        const year = url.searchParams.get("year");
+        if (year) {
+          yearRequests += 1;
+          return HttpResponse.json(
+            page(records.filter((record) => String(record.year) === year)),
+          );
+        }
+        seriesRequests += 1;
+        return HttpResponse.json(page(records));
+      }),
+      wfsHandler([featureFor(TERRITORY_A), featureFor(TERRITORY_B)]),
+    );
+    const user = userEvent.setup();
+    renderAt(`?territory_id=${TERRITORY_A}&year=2024`);
+
+    expect(
+      await screen.findByRole("heading", { name: "ACATIC · 001" }),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("kpi-abstention")).toHaveTextContent("46.7 %"),
+    );
+
+    await user.selectOptions(screen.getByLabelText("Año histórico"), "2021");
+    await waitFor(() => expect(window.location.search).toContain("year=2021"));
+    await waitFor(() =>
+      expect(screen.getByTestId("kpi-abstention")).toHaveTextContent("48.2 %"),
+    );
+
+    expect(seriesRequests).toBe(1);
+    expect(yearRequests).toBe(2);
+  });
+
+  it("labels a deep-linked municipality from history when the catalogue fails", async () => {
+    server.use(
+      territoriesErrorHandler(503),
+      historyHandler((params) => [
+        historyYear(params.get("territory_id") ?? TERRITORY_A, 2024, {
+          name: "ACATIC",
+          municipality_code: "001",
+          abstention_pct: 46.7,
+        }),
+      ]),
+      wfsHandler([featureFor(TERRITORY_A)]),
+    );
+    renderAt(`?territory_id=${TERRITORY_A}&year=2024`);
+
+    expect(
+      await screen.findByRole("heading", { name: "ACATIC · 001" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Agregado estatal de Jalisco" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Observación histórica de ACATIC · 001/),
+    ).toBeInTheDocument();
+  });
+
+  it("describes the state aggregate as summed counts and marks eligibility as not applicable", async () => {
+    const stateRecords = [2009, 2012, 2015, 2018, 2021, 2024].map((year) =>
+      historyYear(null, year, {
+        eligible: false,
+        abstention_pct: year === 2024 ? 42.9 : 47.9,
+      }),
+    );
+    server.use(
+      territoriesHandler(TERRITORIES),
+      historyHandler(() => stateRecords),
+      wfsHandler([featureFor(TERRITORY_A), featureFor(TERRITORY_B)]),
+    );
+    renderAt("?year=2024");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Agregado estatal de Jalisco",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Agregado estatal calculado sumando conteos municipales antes de recalcular tasas/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/El registro no es elegible para comparación/),
+    ).not.toBeInTheDocument();
+
+    const table = await screen.findByRole("table", {
+      name: "Historia de participación por año",
+    });
+    expect(within(table).getAllByText("No aplica")).toHaveLength(6);
   });
 });

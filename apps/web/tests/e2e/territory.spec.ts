@@ -69,20 +69,43 @@ test("territory selection and year update the KPI and the accessible table", asy
   await expect(row2021.locator("td").nth(2)).toHaveText(rate(expected2021 ?? null));
 });
 
+test("history year contract accepts approved years and rejects 2023", async ({
+  page,
+}) => {
+  const accepted = await page.request.get(
+    "/api/v1/participation/history?year=2024&page=1&page_size=1",
+  );
+  expect(accepted.status()).toBe(200);
+  const acceptedBody = (await accepted.json()) as {
+    items: Array<{ year: number }>;
+  };
+  expect(acceptedBody.items[0]?.year).toBe(2024);
+
+  const rejected = await page.request.get(
+    "/api/v1/participation/history?year=2023&page=1&page_size=1",
+  );
+  expect(rejected.status()).toBe(422);
+  const rejectedBody = (await rejected.json()) as { code: string };
+  expect(rejectedBody.code).toBe("validation_error");
+});
+
 test("keyboard navigation reaches the module link and activates it with Enter", async ({
   page,
 }) => {
   await page.goto("/");
+  const predictionLink = page.getByRole("link", { name: /Predicción/ });
+  await expect(predictionLink).toBeVisible();
+  await expect(predictionLink).toHaveAccessibleName(/Pendiente/);
   const skip = page.getByRole("link", { name: "Saltar al contenido" });
   await page.keyboard.press("Tab");
   await expect(skip).toBeFocused();
 
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
-  const focusedLabel = await page.evaluate(
-    () => document.activeElement?.getAttribute("aria-label") ?? "",
+  const focusedText = await page.evaluate(
+    () => document.activeElement?.textContent ?? "",
   );
-  expect(focusedLabel).toBe("Inteligencia territorial");
+  expect(focusedText).toContain("Inteligencia territorial");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/territory/);
   await expect(page.getByRole("heading", { level: 1, name: "Inteligencia territorial" })).toBeVisible();

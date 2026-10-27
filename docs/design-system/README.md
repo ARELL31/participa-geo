@@ -92,6 +92,8 @@ no realizadas se registran en el reporte de la tarea.
   presenta como verde ni como cero.
 - **HistoryChart**: SVG simple con línea de abstención, puntos del año
   seleccionado, quiebres cuando falta un dato y tabla de seis años equivalente.
+  En el agregado estatal la columna “Elegible” dice “No aplica”: es una serie
+  derivada de conteos municipales, no un municipio candidato al modelo.
 - **MunicipalMap**: WMS raster vía gateway, interacción WFS y tabla alternativa
   siempre disponible; si MapLibre o la capa fallan, la tabla se abre y el error
   queda visible.
@@ -103,8 +105,17 @@ no realizadas se registran en el reporte de la tarea.
 - Los filtros se serializan en la URL (`territory_id`, `year`). Un año distinto
   de 2009/2012/2015/2018/2021/2024 produce `RangeError`; el shell ofrece
   “Restablecer filtros” en lugar de una página en blanco.
-- Los resultados se cachean por filtros y usan `AbortSignal`; una respuesta
-  antigua no puede reemplazar la selección vigente.
+- La serie de seis años se solicita sin `year` (filtro opcional del contrato) y
+  su clave de caché depende sólo del territorio. El año seleccionado usa una
+  consulta separada con `year=<histórico>` para KPI y fila seleccionada; cambiar
+  de año no vuelve a descargar ni a ocultar la serie completa.
+- Los resultados usan `AbortSignal`; una respuesta antigua no puede reemplazar
+  la selección vigente.
+- Las etiquetas de municipio se derivan también de la historia devuelta si el
+  catálogo de territorios tarda o falla; un UUID nunca se presenta como agregado
+  estatal.
+- El estado “Pendiente” forma parte del nombre accesible de los enlaces de
+  navegación, no es sólo un distintivo visual.
 
 ## Responsive y movimiento
 
@@ -122,12 +133,15 @@ no realizadas se registran en el reporte de la tarea.
 
 Ejecutadas dentro de Docker:
 
-- Vitest/RTL: 16 pruebas (filtros de URL, shell, foco móvil, datos nulos,
-  respuesta tardía con `AbortSignal`, aviso geográfico y alternativa tabular).
-- Playwright/Chromium: 8 pruebas contra la API real por el proxy web; municipio y
-  año actualizan KPI y tabla, navegación Tab/Enter, sidebar móvil 375 px con
-  retorno de foco, layout 1440 px, reflujo 320 px, aproximación de zoom 200 %,
-  WMS/WFS reales y fallo de WMS con tabla disponible.
+- Vitest/RTL: 20 pruebas (filtros de URL, shell, foco móvil, datos nulos,
+  respuesta tardía con `AbortSignal`, aviso geográfico, alternativa tabular,
+  agregado estatal, enlace profundo sin catálogo, clave de serie y contrato de
+  `year`).
+- Playwright/Chromium: 9 pruebas contra la API real por el proxy web; municipio y
+  año actualizan KPI y tabla, contrato `year=2024` 200 / `year=2023` 422,
+  navegación Tab/Enter, sidebar móvil 375 px con retorno de foco, layout 1440 px,
+  reflujo 320 px, aproximación de zoom 200 %, WMS/WFS reales y fallo de WMS con
+  tabla disponible.
 - `npm run typecheck` y `npm run build` en el contenedor Node 24.
 - Contraste calculado con la fórmula WCAG 2.x para todas las combinaciones de la
   tabla anterior.

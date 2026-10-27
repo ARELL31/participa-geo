@@ -41,7 +41,9 @@ describe("ApplicationShell", () => {
       ["Escenarios", "/scenarios"],
       ["Reportes", "/reports"],
     ] as const) {
-      expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+      expect(
+        screen.getByRole("link", { name: new RegExp(`^${name}`) }),
+      ).toHaveAttribute("href", href);
     }
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
@@ -61,7 +63,7 @@ describe("ApplicationShell", () => {
     expect(skipLink).toHaveAttribute("href", "#contenido");
 
     const territoryLink = screen.getByRole("link", {
-      name: "Inteligencia territorial",
+      name: /^Inteligencia territorial/,
     });
     territoryLink.focus();
     expect(territoryLink).toHaveFocus();
@@ -77,7 +79,10 @@ describe("ApplicationShell", () => {
   it("marks modules pending without fake actions", async () => {
     const user = userEvent.setup();
     renderApp("/");
-    await user.click(screen.getByRole("link", { name: "Predicción" }));
+    expect(
+      screen.getByRole("link", { name: /^Predicción/ }),
+    ).toHaveAccessibleName(/Pendiente/);
+    await user.click(screen.getByRole("link", { name: /^Predicción/ }));
     const main = screen.getByRole("main");
     expect(within(main).getByText("Pendiente")).toBeInTheDocument();
     expect(
