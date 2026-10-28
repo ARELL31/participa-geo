@@ -1,13 +1,74 @@
 {
-  "description": "National CCPC official ZIP sources; member SHA-256 values are computed and persisted per state/year by ingest-national.",
+  "description": "National CCPC source inventory. ZIP hashes are computed and recorded at ingestion; CSV member names are expanded from the declared per-year directory/prefix and state suffixes.",
   "source": "Instituto Nacional Electoral (INE), Conteos Censales de Participación Ciudadana",
   "years": [2009, 2012, 2015, 2018, 2021, 2024],
+  "member_names": [
+    "ags.csv", "bc.csv", "bcs.csv", "camp.csv", "cdmx.csv", "chih.csv", "chis.csv", "coah.csv",
+    "col.csv", "dgo.csv", "gro.csv", "gto.csv", "hgo.csv", "jal.csv", "mex.csv", "mich.csv",
+    "mor.csv", "nay.csv", "nl.csv", "oax.csv", "pue.csv", "qro.csv", "qroo.csv", "sin.csv",
+    "slp.csv", "son.csv", "tab.csv", "tamps.csv", "tlax.csv", "ver.csv", "yuc.csv", "zac.csv"
+  ],
   "sources": [
-    {"year": 2009, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip", "last_modified": "2022-04-18", "zip": "ccpc-2009.zip"},
-    {"year": 2012, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip", "last_modified": "2022-04-18", "zip": "ccpc-2012.zip"},
-    {"year": 2015, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip", "last_modified": "2022-04-18", "zip": "ccpc-2015.zip"},
-    {"year": 2018, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip", "last_modified": "2022-04-18", "zip": "ccpc-2018.zip"},
-    {"year": 2021, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip", "last_modified": "2022-04-18", "zip": "ccpc-2021.zip"},
-    {"year": 2024, "source_url": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip", "last_modified": "2025-08-13", "zip": "ccpc-2024.zip"}
+    {
+      "year": 2009,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip",
+      "zip": "ccpc-2009.zip",
+      "sha256": null,
+      "last_modified": "2022-04-18",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2009/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2009_"
+    },
+    {
+      "year": 2012,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip",
+      "zip": "ccpc-2012.zip",
+      "sha256": null,
+      "last_modified": "2022-04-18",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2012/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2012_"
+    },
+    {
+      "year": 2015,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip",
+      "zip": "ccpc-2015.zip",
+      "sha256": null,
+      "last_modified": "2022-04-18",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2015/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2015_"
+    },
+    {
+      "year": 2018,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip",
+      "zip": "ccpc-2018.zip",
+      "sha256": null,
+      "last_modified": "2022-04-18",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2018/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2018_"
+    },
+    {
+      "year": 2021,
+      "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip",
+      "zip": "ccpc-2021.zip",
+      "sha256": null,
+      "last_modified": "2022-04-18",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2021/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2021_"
+    },
+    {
+      "year": 2024,
+      "source_url": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip",
+      "zip": "ccpc-2024.zip",
+      "sha256": null,
+      "last_modified": "2025-08-13",
+      "retrieved_at": "2026-10-27",
+      "member_directory": "DatosAbiertos_DECEyEC_ConteosCensales2024/",
+      "member_prefix": "datosabiertos_deceyec_conteoscensales2024_",
+      "member_suffix_overrides": {"tamps.csv": "tam.csv"}
+    }
   ]
 }

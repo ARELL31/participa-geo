@@ -67,11 +67,10 @@ def upgrade() -> None:
     op.execute(
         "GRANT SELECT, INSERT, DELETE, TRUNCATE ON fact_ccpc_section TO writer"
     )
-    op.execute("GRANT SELECT ON fact_ccpc_section TO api")
+    op.execute("REVOKE SELECT ON fact_ccpc_section FROM api")
 
 
 def downgrade() -> None:
-    op.execute("REVOKE SELECT ON fact_ccpc_section FROM api")
     op.execute("REVOKE SELECT, INSERT, DELETE, TRUNCATE ON fact_ccpc_section FROM writer")
     op.execute("DROP TABLE IF EXISTS fact_ccpc_section CASCADE")
     op.execute("ALTER TABLE dataset_version DROP COLUMN IF EXISTS state_code")

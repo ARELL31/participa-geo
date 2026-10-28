@@ -7,6 +7,7 @@ from pathlib import Path
 from uuid import UUID
 
 from participa_geo.db.session import writer_engine
+from participa_geo.ingestion.national import resolve_current_generation
 from participa_geo.settings import Settings
 
 FACT_COLUMNS = (
@@ -39,7 +40,7 @@ def load_national_facts(processed_dir: Path, settings: Settings | None = None) -
     from pyarrow import parquet
 
     settings = settings or Settings()
-    processed_dir = Path(processed_dir)
+    processed_dir = resolve_current_generation(Path(processed_dir))
     manifest = json.loads((processed_dir / "national-ingest.json").read_text())
     source_rows = []
     for source in manifest["sources"]:

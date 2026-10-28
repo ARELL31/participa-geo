@@ -7,6 +7,13 @@ CSV/fila a la vez. Verifica los 32 CSV y el encabezado exacto de 16 columnas,
 tipos/códigos, clave analítica única y `LN = SV + NV + NS`; cualquier incumplimiento
 detiene la carga. No se extraen los CSV completos ni se corrigen valores fuente.
 
+`data/sources-national.json` es el inventario autoritativo: URL, nombre local,
+Last-Modified, fecha de recuperación, prefijo/directorio y los 32 sufijos de
+miembro esperados. La carga verifica el SHA-256 si el inventario incluye uno; de
+lo contrario calcula y registra el SHA-256 del ZIP. No descarga archivos en red.
+Los nombres esperados se comparan exactamente con los 32 miembros CSV hallados,
+y la carga además verifica 32 valores `EDOCVE` distintos (uno por CSV).
+
 `EDOCVE`, `MPIOCVE` y `DEF` se normalizan a 2, 3 y 2 dígitos. Las columnas
 `source_state_code`, `source_municipality_code` y `source_district` retienen sus
 representaciones originales; `source_row` es el número de fila en el miembro y
@@ -16,11 +23,15 @@ por año. `DEF` se guarda como `district_2021` para 2009–2021 y `district_2023
 para 2024; un campo vacío permanece `NULL`. No se reconstruyen distritos en esta
 tarea.
 
-La salida procesada contiene `ccpc-section-{año}.parquet`, agregados
-`municipal-observations.csv` y `national-ingest.json`. El manifiesto registra URL,
-SHA-256 del ZIP, SHA-256 de cada CSV, miembro, fecha Last-Modified publicada por
-la auditoría, conteos y versiones. Las salidas se escriben con reemplazo atómico.
-El manifiesto es determinista para facilitar comprobaciones de idempotencia.
+Cada ingesta se escribe primero en un directorio privado de staging. Sólo cuando
+los seis Parquet seccionales, `municipal-observations.csv`/`.parquet` y
+`national-ingest.json` con SHA-256/bytes de cada artefacto están completos se
+renombra a `generations/<generation_id>/`; después `current.json` se reemplaza
+atómicamente como el único punto de publicación. Una generación fallida no cambia
+el puntero anterior. Los consumidores deben resolver `current.json`; el CLI y el
+loader DB hacen esto automáticamente. El manifiesto de generación registra URL,
+hash computado del ZIP, SHA de cada CSV, miembro, fechas fuente, conteos y
+versiones. Mismo inventario y datos producen la misma generación y hashes.
 
 Agregación municipal suma LN/SV/NV/NS antes de calcular composición demográfica.
 Las participaciones joven (18–29), senior (60+) y rural se dividen entre LN. Una
@@ -33,7 +44,8 @@ Ejecutar después de aplicar migraciones:
 ```bash
 python -m participa_geo.cli ingest-national \
   --source-dir data/raw/ccpc-national \
-  --output-dir data/processed/national
+  --output-dir data/processed/national \
+  --sources data/sources-national.json
 ```
 
 El comando valida/genera los artefactos, luego reemplaza los hechos nacionales

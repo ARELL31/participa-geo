@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import stat
 import tempfile
 import zipfile
@@ -19,14 +20,7 @@ from participa_geo.ingestion.schema import CCPC_COLUMNS, CCPCSchemaError, normal
 from participa_geo.ingestion.section_fact import NationalMunicipalObservation, SectionFact
 
 NATIONAL_YEARS = (2009, 2012, 2015, 2018, 2021, 2024)
-NATIONAL_ZIP_URLS = {
-    2009: "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip",
-    2012: "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip",
-    2015: "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip",
-    2018: "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip",
-    2021: "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip",
-    2024: "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip",
-}
+INGESTION_FORMAT = "national-ccpc-v2"
 _FIELDS = {name: index for index, name in enumerate(CCPC_COLUMNS)}
 
 
@@ -246,6 +240,7 @@ class NationalIngestReport:
     mismatch_count: int
     blank_def_count: int
     aggregate_sha256: str
+    generation_id: str
 
 
 def _atomic_json(path: Path, value: dict) -> None:
@@ -263,195 +258,368 @@ def _atomic_json(path: Path, value: dict) -> None:
         raise
 
 
-def ingest_national(source_dir: Path, output_dir: Path) -> NationalIngestReport:
-    """Ingest six verified national ZIPs to atomic year-partitioned Parquet files."""
+def _sha256_path(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _load_source_inventory(path: Path) -> list[dict]:
+    inventory = json.loads(path.read_text(encoding="utf-8"))
+    sources = inventory.get("sources")
+    years = inventory.get("years")
+    if years != list(NATIONAL_YEARS) or not isinstance(sources, list):
+        raise CCPCSchemaError(f"{path}: source inventory must declare the six CCPC years")
+    if sorted(source.get("year") for source in sources) != list(NATIONAL_YEARS):
+        raise CCPCSchemaError(f"{path}: source inventory needs one record per year")
+    state_member_names = inventory.get("member_names")
+    for source in sources:
+        for field in ("source_url", "last_modified", "retrieved_at", "zip"):
+            if field not in source:
+                raise CCPCSchemaError(
+                    f"{path}: year {source.get('year')} is missing source field {field!r}"
+                )
+        if "members" not in source and state_member_names:
+            directory = source.get("member_directory", "")
+            prefix = source.get("member_prefix", "")
+            source["members"] = [
+                f"{directory}{prefix}"
+                f"{source.get('member_suffix_overrides', {}).get(member_name, member_name)}"
+                for member_name in state_member_names
+            ]
+        if "members" not in source:
+            raise CCPCSchemaError(
+                f"{path}: year {source['year']} must declare exact member names"
+            )
+        if not isinstance(source["members"], list) or len(source["members"]) != 32:
+            raise CCPCSchemaError(
+                f"{path}: year {source['year']} must declare 32 member names"
+            )
+        if len(set(source["members"])) != 32:
+            raise CCPCSchemaError(f"{path}: year {source['year']} repeats member names")
+        for member in source["members"]:
+            normalized_member = member.replace("\\", "/")
+            if normalized_member.startswith("/") or ".." in normalized_member.split("/"):
+                raise CCPCSchemaError(f"{path}: unsafe member name {member!r}")
+        expected_hash = source.get("sha256")
+        if expected_hash is not None and (
+            len(expected_hash) != 64 or any(c not in "0123456789abcdef" for c in expected_hash)
+        ):
+            raise CCPCSchemaError(f"{path}: invalid archive SHA-256 for {source['year']}")
+    return sorted(sources, key=lambda source: source["year"])
+
+
+def resolve_current_generation(output_dir: Path) -> Path:
+    """Resolve and verify the atomically published current-generation pointer."""
+    output_dir = Path(output_dir)
+    pointer_path = output_dir / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation_id = pointer.get("generation_id", "")
+    if not generation_id or Path(generation_id).name != generation_id:
+        raise CCPCSchemaError(f"{pointer_path}: invalid generation id")
+    generation = output_dir / "generations" / generation_id
+    manifest_path = generation / "national-ingest.json"
+    if _sha256_path(manifest_path) != pointer.get("manifest_sha256"):
+        raise CCPCSchemaError(f"{pointer_path}: published generation manifest hash mismatch")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("generation_id") != generation_id:
+        raise CCPCSchemaError(f"{pointer_path}: generation id does not match its manifest")
+    for name, artifact in manifest.get("artifacts", {}).items():
+        artifact_path = generation / name
+        if not artifact_path.is_file() or _sha256_path(artifact_path) != artifact["sha256"]:
+            raise CCPCSchemaError(f"{artifact_path}: published artifact hash mismatch")
+    return generation
+
+
+def _verify_archive(source_dir: Path, source: dict) -> tuple[Path, str]:
+    archive_name = source["zip"]
+    if Path(archive_name).name != archive_name:
+        raise CCPCSchemaError(f"unsafe archive filename: {archive_name!r}")
+    archive_path = source_dir / archive_name
+    if not archive_path.is_file():
+        raise FileNotFoundError(f"missing national CCPC archive: {archive_path}")
+    archive_hash = _sha256_path(archive_path)
+    expected_hash = source.get("sha256")
+    if expected_hash and archive_hash != expected_hash:
+        raise CCPCSchemaError(
+            f"{archive_name}: SHA-256 mismatch: expected {expected_hash}, got {archive_hash}"
+        )
+    with zipfile.ZipFile(archive_path) as archive:
+        csv_members = sorted(name for name in archive.namelist() if name.lower().endswith(".csv"))
+        declared_members = sorted(source["members"])
+        if len(csv_members) != 32 or csv_members != declared_members:
+            raise CCPCSchemaError(
+                f"{archive_name}: CSV member names/count differ from source inventory"
+            )
+    return archive_path, archive_hash
+
+
+def ingest_national(
+    source_dir: Path,
+    output_dir: Path,
+    *,
+    sources_path: Path | None = None,
+) -> NationalIngestReport:
+    """Stream and validate all inputs, then atomically publish one full generation."""
     from pyarrow import Table, parquet
 
     source_dir, output_dir = Path(source_dir), Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    sources_path = sources_path or Path.cwd() / "data" / "sources-national.json"
+    source_inventory = _load_source_inventory(Path(sources_path))
+    verified_sources = []
+    for source in source_inventory:
+        archive_path, archive_hash = _verify_archive(source_dir, source)
+        verified_sources.append((source, archive_path, archive_hash))
+    batch_id_input = [
+        {
+            "year": source["year"],
+            "source_url": source["source_url"],
+            "last_modified": source["last_modified"],
+            "retrieved_at": source["retrieved_at"],
+            "zip": source["zip"],
+            "expected_zip_sha256": source.get("sha256"),
+            "archive_sha256": archive_hash,
+            "members": source["members"],
+        }
+        for source, _archive_path, archive_hash in verified_sources
+    ]
+    generation_id = hashlib.sha256(
+        (INGESTION_FORMAT + json.dumps(batch_id_input, sort_keys=True)).encode()
+    ).hexdigest()
+    generations_dir = output_dir / "generations"
+    generations_dir.mkdir(parents=True, exist_ok=True)
+    staging_dir = Path(tempfile.mkdtemp(dir=generations_dir, prefix=".staging-"))
     all_municipal: list[dict] = []
     source_records: list[dict] = []
     total_rows = blank_defs = mismatches = 0
     districts_2023: set[tuple[str, str]] = set()
     aggregate_digest = hashlib.sha256()
-
-    for year in NATIONAL_YEARS:
-        archive_path = source_dir / f"ccpc-{year}.zip"
-        if not archive_path.is_file():
-            raise FileNotFoundError(f"missing national CCPC archive: {archive_path}")
-        zip_digest = hashlib.sha256()
-        with archive_path.open("rb") as zip_handle:
-            for chunk in iter(lambda: zip_handle.read(1024 * 1024), b""):
-                zip_digest.update(chunk)
-        zip_hash = zip_digest.hexdigest()
-        with zipfile.ZipFile(archive_path) as archive:
-            csv_members = sorted(n for n in archive.namelist() if n.lower().endswith(".csv"))
-            if len(csv_members) != 32:
-                raise CCPCSchemaError(f"{archive_path.name}: expected 32 CSV members")
-            member_info = []
-            year_municipal: dict[tuple[str, str], dict] = {}
-            tmp_path = output_dir / f".ccpc-section-{year}.parquet.tmp"
-            writer = None
-            try:
-                for member in csv_members:
-                    csv_hash = _sha256_member(archive, member)
-                    count = 0
-                    state_code = None
-                    version_id = None
-                    # Parse one member at a time; batches bound section-fact RAM.
-                    batch: list[dict] = []
-                    for fact in _parse_member(archive, member, year):
-                        if state_code is None:
-                            state_code = fact.state_code
-                            version_id = str(fact.dataset_version_id)
-                        count += 1
-                        total_rows += 1
-                        if fact.source_district is None or not fact.source_district.strip():
-                            blank_defs += 1
-                        if fact.ln != fact.sv + fact.nv + fact.ns:
-                            mismatches += 1
-                        if fact.district_2023:
-                            districts_2023.add((fact.state_code, fact.district_2023))
-                        key = (fact.state_code, fact.municipality_code)
-                        group = year_municipal.setdefault(
-                            key,
-                            {
-                                "state_name": fact.state_name,
-                                "municipality_name": fact.municipality_name,
-                                "ln": 0,
-                                "sv": 0,
-                                "nv": 0,
-                                "ns": 0,
-                                "young": 0,
-                                "senior": 0,
-                                "rural": 0,
-                                "versions": set(),
-                            },
-                        )
-                        for field in ("ln", "sv", "nv", "ns"):
-                            group[field] += getattr(fact, field)
-                        if 18 <= fact.age <= 29:
-                            group["young"] += fact.ln
-                        if fact.age >= 60:
-                            group["senior"] += fact.ln
-                        if fact.section_type == "R":
-                            group["rural"] += fact.ln
-                        group["versions"].add(str(fact.dataset_version_id))
-                        batch.append(
-                            fact.__dict__
-                            | {"dataset_version_id": str(fact.dataset_version_id)}
-                        )
-                        if len(batch) >= 20_000:
+    try:
+        for source, archive_path, zip_hash in verified_sources:
+            year = source["year"]
+            with zipfile.ZipFile(archive_path) as archive:
+                csv_members = sorted(
+                    name for name in archive.namelist() if name.lower().endswith(".csv")
+                )
+                member_info = []
+                state_codes: set[str] = set()
+                year_municipal: dict[tuple[str, str], dict] = {}
+                parquet_path = staging_dir / f"ccpc-section-{year}.parquet"
+                writer = None
+                try:
+                    for member in csv_members:
+                        csv_hash = _sha256_member(archive, member)
+                        count = 0
+                        state_code = None
+                        version_id = None
+                        batch: list[dict] = []
+                        for fact in _parse_member(archive, member, year):
+                            if state_code is None:
+                                state_code = fact.state_code
+                                version_id = str(fact.dataset_version_id)
+                            elif fact.state_code != state_code:
+                                raise CCPCSchemaError(
+                                    f"{member}: contains more than one EDOCVE"
+                                )
+                            count += 1
+                            total_rows += 1
+                            if fact.source_district is None or not fact.source_district.strip():
+                                blank_defs += 1
+                            if fact.ln != fact.sv + fact.nv + fact.ns:
+                                mismatches += 1
+                            if fact.district_2023:
+                                districts_2023.add((fact.state_code, fact.district_2023))
+                            key = (fact.state_code, fact.municipality_code)
+                            group = year_municipal.setdefault(
+                                key,
+                                {
+                                    "state_name": fact.state_name,
+                                    "municipality_name": fact.municipality_name,
+                                    "ln": 0,
+                                    "sv": 0,
+                                    "nv": 0,
+                                    "ns": 0,
+                                    "young": 0,
+                                    "senior": 0,
+                                    "rural": 0,
+                                    "versions": set(),
+                                },
+                            )
+                            for field in ("ln", "sv", "nv", "ns"):
+                                group[field] += getattr(fact, field)
+                            if 18 <= fact.age <= 29:
+                                group["young"] += fact.ln
+                            if fact.age >= 60:
+                                group["senior"] += fact.ln
+                            if fact.section_type == "R":
+                                group["rural"] += fact.ln
+                            group["versions"].add(str(fact.dataset_version_id))
+                            batch.append(
+                                fact.__dict__
+                                | {"dataset_version_id": str(fact.dataset_version_id)}
+                            )
+                            if len(batch) >= 20_000:
+                                table = Table.from_pylist(batch)
+                                if writer is None:
+                                    writer = parquet.ParquetWriter(
+                                        parquet_path, table.schema, compression="zstd"
+                                    )
+                                writer.write_table(table)
+                                batch.clear()
+                        if count == 0 or state_code is None:
+                            raise CCPCSchemaError(f"{member}: empty CSV has no EDOCVE")
+                        if state_code in state_codes:
+                            raise CCPCSchemaError(
+                                f"{archive_path.name}: CSV members do not contain 32 "
+                                "distinct EDOCVE values"
+                            )
+                        state_codes.add(state_code)
+                        if batch:
                             table = Table.from_pylist(batch)
                             if writer is None:
                                 writer = parquet.ParquetWriter(
-                                    tmp_path, table.schema, compression="zstd"
+                                    parquet_path, table.schema, compression="zstd"
                                 )
                             writer.write_table(table)
-                            batch.clear()
-                    if batch:
-                        table = Table.from_pylist(batch)
-                        if writer is None:
-                            writer = parquet.ParquetWriter(
-                                tmp_path, table.schema, compression="zstd"
-                            )
-                        writer.write_table(table)
-                    member_info.append(
-                        {
-                            "state_code": state_code,
-                            "member": member,
-                            "sha256": csv_hash,
-                            "dataset_version_id": version_id,
-                            "rows": count,
-                        }
-                    )
-                if writer is not None:
-                    writer.close()
-                os.replace(tmp_path, output_dir / f"ccpc-section-{year}.parquet")
-            except BaseException:
-                if writer is not None:
-                    writer.close()
-                tmp_path.unlink(missing_ok=True)
-                raise
-        for (state_code, municipality_code), group in sorted(year_municipal.items()):
-            ln = group["ln"]
-            reasons = []
-            if group["sv"] + group["nv"] < 1000:
-                reasons.append("insufficient_known_votes")
-            if ln == 0 or group["ns"] / ln > 0.10:
-                reasons.append("unknown_share_above_0.10")
-            record = {
-                "year": year,
-                "state_code": state_code,
-                "municipality_code": municipality_code,
-                "state_name": group["state_name"],
-                "municipality_name": group["municipality_name"],
-                "ln": ln,
-                "sv": group["sv"],
-                "nv": group["nv"],
-                "ns": group["ns"],
-                "young_share": group["young"] / ln if ln else None,
-                "senior_share": group["senior"] / ln if ln else None,
-                "rural_share": group["rural"] / ln if ln else None,
-                "eligible": not reasons,
-                "quality_reasons": reasons,
-                "source_version_ids": sorted(group["versions"]),
-            }
-            all_municipal.append(record)
-            aggregate_digest.update(
-                json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
+                        member_info.append(
+                            {
+                                "state_code": state_code,
+                                "member": member,
+                                "sha256": csv_hash,
+                                "dataset_version_id": version_id,
+                                "rows": count,
+                            }
+                        )
+                    if len(state_codes) != 32:
+                        raise CCPCSchemaError(
+                            f"{archive_path.name}: expected 32 distinct EDOCVE values, "
+                            f"got {len(state_codes)}"
+                        )
+                    if writer is not None:
+                        writer.close()
+                        writer = None
+                except BaseException:
+                    if writer is not None:
+                        writer.close()
+                    raise
+
+            for (state_code, municipality_code), group in sorted(year_municipal.items()):
+                ln = group["ln"]
+                reasons = []
+                if group["sv"] + group["nv"] < 1000:
+                    reasons.append("insufficient_known_votes")
+                if ln == 0 or group["ns"] / ln > 0.10:
+                    reasons.append("unknown_share_above_0.10")
+                record = {
+                    "year": year,
+                    "state_code": state_code,
+                    "municipality_code": municipality_code,
+                    "state_name": group["state_name"],
+                    "municipality_name": group["municipality_name"],
+                    "ln": ln,
+                    "sv": group["sv"],
+                    "nv": group["nv"],
+                    "ns": group["ns"],
+                    "young_share": group["young"] / ln if ln else None,
+                    "senior_share": group["senior"] / ln if ln else None,
+                    "rural_share": group["rural"] / ln if ln else None,
+                    "eligible": not reasons,
+                    "quality_reasons": reasons,
+                    "source_version_ids": sorted(group["versions"]),
+                }
+                all_municipal.append(record)
+                aggregate_digest.update(
+                    json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
+                )
+                aggregate_digest.update(b"\n")
+            source_records.append(
+                {
+                    "year": year,
+                    "source_url": source["source_url"],
+                    "zip": source["zip"],
+                    "zip_sha256": zip_hash,
+                    "expected_zip_sha256": source.get("sha256"),
+                    "retrieved_at": source["retrieved_at"],
+                    "last_modified": source["last_modified"],
+                    "csv_members": member_info,
+                    "source_row_count": sum(item["rows"] for item in member_info),
+                    "dataset_version_count": len(member_info),
+                }
             )
-            aggregate_digest.update(b"\n")
-        source_records.append(
-            {
-                "year": year,
-                "source_url": NATIONAL_ZIP_URLS[year],
-                "zip": archive_path.name,
-                "zip_sha256": zip_hash,
-                "last_modified": "2025-08-13" if year == 2024 else "2022-04-18",
-                "csv_members": member_info,
-                "source_row_count": sum(row["rows"] for row in member_info),
-                "dataset_version_count": len(member_info),
-            }
+
+        csv_path = staging_dir / "municipal-observations.csv"
+        with csv_path.open("w", encoding="utf-8", newline="") as handle:
+            columns = list(all_municipal[0]) if all_municipal else []
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(all_municipal)
+            handle.flush()
+            os.fsync(handle.fileno())
+        parquet.write_table(
+            Table.from_pylist(all_municipal),
+            staging_dir / "municipal-observations.parquet",
+            compression="zstd",
         )
 
-    # CSV is intentionally used for aggregates to avoid holding a second full
-    # pandas frame; the artifact is small (at most 14,858 observations).
-    aggregate_path = output_dir / "municipal-observations.csv"
-    temp_aggregate = output_dir / ".municipal-observations.csv.tmp"
-    with temp_aggregate.open("w", encoding="utf-8", newline="") as handle:
-        columns = list(all_municipal[0]) if all_municipal else []
-        writer = csv.DictWriter(handle, fieldnames=columns)
-        writer.writeheader()
-        writer.writerows(all_municipal)
-        handle.flush()
-        os.fsync(handle.fileno())
-    os.replace(temp_aggregate, aggregate_path)
-    report = NationalIngestReport(
-        row_count=total_rows,
-        csv_count=sum(len(source["csv_members"]) for source in source_records),
-        municipality_observation_count=len(all_municipal),
-        municipality_count=sum(1 for record in all_municipal if record["year"] == 2024),
-        district_count=len(districts_2023),
-        mismatch_count=mismatches,
-        blank_def_count=blank_defs,
-        aggregate_sha256=aggregate_digest.hexdigest(),
-    )
-    _atomic_json(
-        output_dir / "national-ingest.json",
-        {
-            "row_count": report.row_count,
-            "csv_count": report.csv_count,
-            "municipality_observation_count": report.municipality_observation_count,
-            "municipality_count": report.municipality_count,
-            "district_count": report.district_count,
-            "mismatch_count": report.mismatch_count,
-            "blank_def_count": report.blank_def_count,
-            "aggregate_sha256": report.aggregate_sha256,
-            "sources": source_records,
-        },
-    )
-    return report
+        report = NationalIngestReport(
+            row_count=total_rows,
+            csv_count=sum(len(source["csv_members"]) for source in source_records),
+            municipality_observation_count=len(all_municipal),
+            municipality_count=sum(1 for record in all_municipal if record["year"] == 2024),
+            district_count=len(districts_2023),
+            mismatch_count=mismatches,
+            blank_def_count=blank_defs,
+            aggregate_sha256=aggregate_digest.hexdigest(),
+            generation_id=generation_id,
+        )
+        artifact_records = {}
+        for artifact_path in sorted(staging_dir.iterdir()):
+            artifact_records[artifact_path.name] = {
+                "sha256": _sha256_path(artifact_path),
+                "size_bytes": artifact_path.stat().st_size,
+            }
+        _atomic_json(
+            staging_dir / "national-ingest.json",
+            {
+                "generation_id": generation_id,
+                "ingestion_format": INGESTION_FORMAT,
+                "source_inventory_sha256": _sha256_path(Path(sources_path)),
+                "row_count": report.row_count,
+                "csv_count": report.csv_count,
+                "municipality_observation_count": report.municipality_observation_count,
+                "municipality_count": report.municipality_count,
+                "district_count": report.district_count,
+                "mismatch_count": report.mismatch_count,
+                "blank_def_count": report.blank_def_count,
+                "aggregate_sha256": report.aggregate_sha256,
+                "artifacts": artifact_records,
+                "sources": source_records,
+            },
+        )
+
+        generation_dir = generations_dir / generation_id
+        if generation_dir.exists():
+            old_manifest_path = generation_dir / "national-ingest.json"
+            if not old_manifest_path.is_file():
+                raise CCPCSchemaError(f"existing generation is incomplete: {generation_dir}")
+            old_manifest = json.loads(old_manifest_path.read_text(encoding="utf-8"))
+            if old_manifest.get("artifacts") != artifact_records:
+                raise CCPCSchemaError(f"existing generation content differs: {generation_dir}")
+            shutil.rmtree(staging_dir)
+        else:
+            os.replace(staging_dir, generation_dir)
+        manifest_hash = _sha256_path(generation_dir / "national-ingest.json")
+        _atomic_json(
+            output_dir / "current.json",
+            {"generation_id": generation_id, "manifest_sha256": manifest_hash},
+        )
+        return report
+    finally:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir)
 
 
 __all__ = [
@@ -460,4 +628,5 @@ __all__ = [
     "aggregate_national_municipal",
     "ingest_national",
     "read_national_ccpc",
+    "resolve_current_generation",
 ]

@@ -186,6 +186,11 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
                     "SELECT has_table_privilege('writer', 'fact_ccpc_section', 'INSERT')"
                 )
             ) is True
+            assert connection.scalar(
+                text(
+                    "SELECT has_table_privilege('api', 'fact_ccpc_section', 'SELECT')"
+                )
+            ) is False
     finally:
         with engine.begin() as connection:
             connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))

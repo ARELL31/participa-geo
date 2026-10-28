@@ -38,7 +38,7 @@ def _ingest_national(args: argparse.Namespace) -> int:
 
     source_dir = Path(args.source_dir)
     output_dir = Path(args.output_dir)
-    report = ingest_national(source_dir, output_dir)
+    report = ingest_national(source_dir, output_dir, sources_path=Path(args.sources))
     loaded = load_national_facts(output_dir)
     if loaded != report.row_count:
         raise RuntimeError(f"loaded {loaded} rows, expected {report.row_count}")
@@ -501,6 +501,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-dir",
         default="data/processed/national",
         help="Directorio para Parquet particionado, agregados y manifiesto.",
+    )
+    ingest_national.add_argument(
+        "--sources",
+        default="data/sources-national.json",
+        help="Inventario autoritativo de URLs, hashes y miembros CCPC.",
     )
     ingest_national.set_defaults(handler=_ingest_national)
 
