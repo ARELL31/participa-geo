@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { ElectionYear } from "../app/filters";
-import { ApiProblem, fetchHistory, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
+import { ApiProblem, fetchHistory, fetchNationalStateFeatures, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
 import {
   historyYear,
   page,
@@ -110,5 +110,23 @@ describe("national API requests", () => {
     expect(seen[2]?.params.get("count")).toBe("500");
     expect(seen[2]?.params.get("state_code")).not.toBe("all");
     expect(wmsTerritoryUrl()).toContain("participa_geo_national%3Astates");
+  });
+
+  it("requests only the 32 national state geometries for the choropleth", async () => {
+    const seen: URLSearchParams[] = [];
+    server.use(
+      http.get("*/api/v1/gis/wfs", ({ request }) => {
+        seen.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ type: "FeatureCollection", features: [] });
+      }),
+    );
+
+    await fetchNationalStateFeatures();
+
+    expect(seen[0]?.get("typeNames")).toBe("participa_geo_national:states");
+    expect(seen[0]?.get("count")).toBe("32");
+    expect(seen[0]?.get("bbox")).toBe("14.5,-118.5,32.8,-86.8");
+    expect(seen[0]?.get("state_code")).toBeNull();
+    expect(seen[0]?.has("year")).toBe(false);
   });
 });

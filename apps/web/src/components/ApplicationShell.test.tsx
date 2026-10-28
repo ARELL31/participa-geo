@@ -18,7 +18,7 @@ import { server } from "../test/server";
 
 function renderApp(path = "/") {
   window.history.replaceState({}, "", path);
-  server.use(summaryHandler([]));
+  server.use(summaryHandler([]), emptyWfsHandler());
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },

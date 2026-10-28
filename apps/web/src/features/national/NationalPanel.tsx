@@ -6,23 +6,32 @@ import { navigate, pathWithCurrentFilters } from "../../app/navigation";
 import { DataTable } from "../../components/DataTable";
 import { PageState } from "../../components/PageState";
 import {
+  fetchNationalStateFeatures,
   fetchParticipationSummary,
   fetchTerritories,
   queryKeys,
   wmsTerritoryUrl,
+  type NationalStateFeatureCollection,
   type StateParticipationSummary,
   type TerritoryDTO,
 } from "../../lib/api";
 import { formatCount, formatRateOrInsufficient, formatShare } from "../territory/format";
 
 export function NationalPanel() {
-  const { level, stateCode, historicalYear, setFilters } = useGlobalFilters();
+  const { level, stateCode, setFilters } = useGlobalFilters();
   const [mapFailed, setMapFailed] = useState(false);
+  const summaryYear = 2024 as const;
   const summaryQuery = useQuery({
-    queryKey: queryKeys.summary(level, historicalYear),
+    queryKey: queryKeys.summary(level, summaryYear),
     queryFn: ({ signal }) =>
-      fetchParticipationSummary({ level, year: historicalYear, signal }),
+      fetchParticipationSummary({ level, year: summaryYear, signal }),
     staleTime: 5 * 60_000,
+  });
+  const stateFeaturesQuery = useQuery({
+    queryKey: queryKeys.nationalStateFeatures(),
+    queryFn: ({ signal }) => fetchNationalStateFeatures(signal),
+    enabled: stateCode === "all" && level === "municipality",
+    staleTime: 60 * 60_000,
   });
   const territoriesQuery = useQuery({
     queryKey: queryKeys.territories(stateCode, level),
@@ -64,30 +73,42 @@ export function NationalPanel() {
               {stateCode === "all" ? "Resumen nacional" : `${selectedSummary?.state_name ?? "Entidad seleccionada"} · ${stateCode}`}
             </h2>
             <p>
-              Observación histórica {historicalYear}; abstención calculada desde conteos observados, cobertura del catálogo y elegibilidad del nivel seleccionado.
+              {level === "municipality"
+                ? `Observación municipal ${summaryYear}; tasas estatales calculadas desde conteos agregados y cobertura del catálogo.`
+                : "Observación distrital 2024 y cobertura publicadas. Sin modelo 2027."}
             </p>
           </div>
-          <span className="status-pill status-pill--neutral">{level === "municipality" ? "Municipio" : "Distrito federal · Observado 2024"}</span>
+          <span className="status-pill status-pill--neutral">{level === "municipality" ? "Municipio" : "Distrito federal · Observado 2024 · Sin modelo 2027"}</span>
         </div>
         {level === "federal_district" ? (
           <p className="district-pending" role="status">
-            Observado 2024 / perfil distrital pendiente. La historia distrital anterior y cualquier predicción 2027 no están disponibles para este nivel.
+            Observado 2024 / perfil distrital pendiente. Se muestran únicamente abstención observada y cobertura. Sin modelo 2027.
           </p>
         ) : null}
         {stateCode === "all" ? (
           <>
-            <NationalMap failed={mapFailed} onError={() => setMapFailed(true)} />
+            {level === "municipality" ? (
+              <NationalMap
+                failed={mapFailed}
+                onError={() => setMapFailed(true)}
+                year={2024}
+                summaries={summaries}
+                features={stateFeaturesQuery.data}
+                featuresLoading={stateFeaturesQuery.isPending}
+                featuresError={stateFeaturesQuery.isError}
+              />
+            ) : null}
             <DataTable
               caption="Resumen por entidad"
               rows={summaries}
               rowKey={(row) => row.state_code}
               emptyMessage="La API no devolvió entidades para este nivel y año."
-              columns={summaryColumns((row) => setFilters({ stateCode: row.state_code as StateCode, territoryId: null }))}
+              columns={summaryColumns(level, (row) => setFilters({ stateCode: row.state_code as StateCode, territoryId: null }))}
             />
           </>
         ) : (
           <>
-            {selectedSummary ? <SummaryFacts summary={selectedSummary} /> : <p role="status">Sin resumen publicado para esta entidad.</p>}
+            {selectedSummary ? <SummaryFacts summary={selectedSummary} level={level} /> : <p role="status">Sin resumen publicado para esta entidad.</p>}
             {level === "municipality" ? (
               <>
                 <h3 className="national-subheading">Municipios de la entidad</h3>
@@ -103,7 +124,7 @@ export function NationalPanel() {
           </>
         )}
       </section>
-      <p className="source-note">La tasa estatal se obtiene al sumar conteos observados, no al promediar tasas territoriales. La cartografía nacional es WMS; WFS se solicita sólo con entidad seleccionada.</p>
+      <p className="source-note">{level === "municipality" ? "La tasa estatal se obtiene al sumar conteos observados, no al promediar tasas territoriales. El mapa temático usa la observación municipal de 2024 y 32 geometrías estatales WFS; el WMS conserva los contornos de referencia." : "Las cifras distritales son observaciones agregadas de 2024. No hay un modelo 2027 publicado para este nivel."}</p>
     </div>
   );
 }
@@ -114,32 +135,39 @@ function NationalHeading({ level }: { level: "municipality" | "federal_district"
       <p className="eyebrow">Observatorio · Nacional</p>
       <h1>Panel ejecutivo</h1>
       <p className="page-heading__lead">
-        {level === "municipality" ? "Comparación de abstención observada, cobertura e indicadores municipales en las 32 entidades." : "Consulta de observación distrital 2024 con su plan y cobertura; no se publican predicciones distritales."}
+        {level === "municipality" ? "Comparación de abstención observada, cobertura e indicadores municipales en las 32 entidades." : "Observación distrital 2024 y cobertura por entidad. Sin modelo 2027."}
       </p>
     </header>
   );
 }
 
-function SummaryFacts({ summary }: { summary: StateParticipationSummary }) {
+function SummaryFacts({ summary, level }: { summary: StateParticipationSummary; level: "municipality" | "federal_district" }) {
   return (
     <dl className="kpi-grid">
       <div className="kpi"><dt>Abstención observada</dt><dd>{formatRateOrInsufficient(summary.observed_abstention_pct)}</dd><dd className="kpi__note">{summary.year} · calculada desde conteos agregados</dd></div>
-      <div className="kpi"><dt>Cobertura</dt><dd>{formatShare(summary.coverage_share)}</dd><dd className="kpi__note">del catálogo municipal publicado</dd></div>
-      <div className="kpi"><dt>Riesgo alto</dt><dd>{formatCount(summary.high_risk_count)}</dd><dd className="kpi__note">unidades elegibles para predicción</dd></div>
-      <div className="kpi"><dt>Información insuficiente</dt><dd>{formatCount(summary.insufficient_count)}</dd><dd className="kpi__note">no se representa como cero ni riesgo bajo</dd></div>
+      <div className="kpi"><dt>Cobertura</dt><dd>{formatShare(summary.coverage_share)}</dd><dd className="kpi__note">{level === "municipality" ? "del catálogo municipal publicado" : "de unidades distritales publicadas"}</dd></div>
+      {level === "municipality" ? (
+        <>
+          <div className="kpi"><dt>Riesgo alto</dt><dd>{formatCount(summary.high_risk_count)}</dd><dd className="kpi__note">unidades elegibles para predicción</dd></div>
+          <div className="kpi"><dt>Información insuficiente</dt><dd>{formatCount(summary.insufficient_count)}</dd><dd className="kpi__note">no se representa como cero ni riesgo bajo</dd></div>
+        </>
+      ) : null}
     </dl>
   );
 }
 
-function summaryColumns(onSelect: (row: StateParticipationSummary) => void) {
-  return [
+function summaryColumns(level: "municipality" | "federal_district", onSelect: (row: StateParticipationSummary) => void) {
+  const columns = [
     { key: "state", header: "Entidad", render: (row: StateParticipationSummary) => `${row.state_name} · ${row.state_code}` },
     { key: "observed", header: "Abstención observada", align: "right" as const, render: (row: StateParticipationSummary) => formatRateOrInsufficient(row.observed_abstention_pct) },
     { key: "coverage", header: "Cobertura", align: "right" as const, render: (row: StateParticipationSummary) => formatShare(row.coverage_share) },
-    { key: "high", header: "Riesgo alto", align: "right" as const, render: (row: StateParticipationSummary) => formatCount(row.high_risk_count) },
-    { key: "insufficient", header: "Insuficientes", align: "right" as const, render: (row: StateParticipationSummary) => formatCount(row.insufficient_count) },
-    { key: "action", header: "Acción", render: (row: StateParticipationSummary) => <button type="button" className="button button--link" onClick={() => onSelect(row)}>Ver municipios de {row.state_name}</button> },
+    ...(level === "municipality" ? [
+      { key: "high", header: "Riesgo alto", align: "right" as const, render: (row: StateParticipationSummary) => formatCount(row.high_risk_count) },
+      { key: "insufficient", header: "Insuficientes", align: "right" as const, render: (row: StateParticipationSummary) => formatCount(row.insufficient_count) },
+    ] : []),
+    { key: "action", header: "Acción", render: (row: StateParticipationSummary) => <button type="button" className="button button--link" onClick={() => onSelect(row)}>{level === "municipality" ? `Ver municipios de ${row.state_name}` : `Ver observación distrital de ${row.state_name}`}</button> },
   ];
+  return columns;
 }
 
 function TerritoryList({ territories, onSelect }: { territories: TerritoryDTO[]; onSelect(territory: TerritoryDTO): void }) {
@@ -157,11 +185,98 @@ function TerritoryList({ territories, onSelect }: { territories: TerritoryDTO[];
   );
 }
 
-function NationalMap({ failed, onError }: { failed: boolean; onError(): void }) {
+const NATIONAL_BOUNDS = { minLon: -118.5, maxLon: -86.8, minLat: 14.5, maxLat: 32.8 };
+const CHOROPLETH_COLORS = {
+  unavailable: "#d1d5db",
+  under30: "#d7eee5",
+  under40: "#93cfb6",
+  under50: "#f4d58d",
+  "50plus": "#c96969",
+} as const;
+
+function observedColor(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return CHOROPLETH_COLORS.unavailable;
+  if (value < 30) return CHOROPLETH_COLORS.under30;
+  if (value < 40) return CHOROPLETH_COLORS.under40;
+  if (value < 50) return CHOROPLETH_COLORS.under50;
+  return CHOROPLETH_COLORS["50plus"];
+}
+
+function projectCoordinate(coordinate: number[]): [number, number] {
+  const longitude = coordinate[0]!;
+  const latitude = coordinate[1]!;
+  const x = ((longitude - NATIONAL_BOUNDS.minLon) / (NATIONAL_BOUNDS.maxLon - NATIONAL_BOUNDS.minLon)) * 1200;
+  const y = ((NATIONAL_BOUNDS.maxLat - latitude) / (NATIONAL_BOUNDS.maxLat - NATIONAL_BOUNDS.minLat)) * 700;
+  return [x, y];
+}
+
+function ringPath(ring: number[][]): string {
+  return ring.map((coordinate, index) => {
+    const [x, y] = projectCoordinate(coordinate);
+    return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(" ") + " Z";
+}
+
+function stateGeometryPath(geometry: NationalStateFeatureCollection["features"][number]["geometry"]): string {
+  if (geometry.type === "Polygon") return geometry.coordinates.map(ringPath).join(" ");
+  if (geometry.type === "MultiPolygon") return geometry.coordinates.flatMap((polygon) => polygon.map(ringPath)).join(" ");
+  return "";
+}
+
+function NationalMap({
+  failed,
+  onError,
+  year,
+  summaries,
+  features,
+  featuresLoading,
+  featuresError,
+}: {
+  failed: boolean;
+  onError(): void;
+  year: number;
+  summaries: StateParticipationSummary[];
+  features: NationalStateFeatureCollection | undefined;
+  featuresLoading: boolean;
+  featuresError: boolean;
+}) {
+  const summariesByState = new Map(summaries.map((summary) => [summary.state_code, summary]));
   return (
     <section className="national-map" aria-labelledby="national-map-heading">
-      <div className="card-heading"><div><h3 id="national-map-heading">Mapa nacional de entidades</h3><p>Contornos estatales desde WMS. Los valores observados y la navegación territorial están disponibles en la tabla.</p></div></div>
-      {failed ? <p className="inline-alert" role="alert">No se pudo cargar el mapa WMS. Los resúmenes por entidad siguen disponibles en la tabla.</p> : <img src={wmsTerritoryUrl()} alt="Mapa WMS nacional con límites de las 32 entidades federativas" onError={onError} />}
+      <div className="card-heading"><div><h3 id="national-map-heading">Mapa nacional de entidades</h3><p>Abstención municipal observada {year}, calculada desde conteos agregados. Los contornos de referencia provienen del WMS nacional.</p></div></div>
+      {failed ? <p className="inline-alert" role="alert">No se pudo cargar el mapa WMS. Los resúmenes por entidad siguen disponibles en la tabla.</p> : (
+        <div className="national-map__viewport">
+          <img src={wmsTerritoryUrl()} alt="Mapa WMS nacional con límites de las 32 entidades federativas" onError={onError} />
+          {features ? (
+            <svg className="national-map__choropleth" viewBox="0 0 1200 700" role="img" aria-labelledby="national-choropleth-title national-choropleth-desc">
+              <title id="national-choropleth-title">Abstención municipal observada por entidad</title>
+              <desc id="national-choropleth-desc">Las entidades se colorean según la tasa de abstención observada; los valores exactos y los datos insuficientes están en la tabla Resumen por entidad.</desc>
+              {features.features.map((feature) => {
+                const code = feature.properties?.state_code;
+                if (!code || !feature.geometry) return null;
+                const summary = summariesByState.get(code);
+                return <path key={code} data-state-code={code} d={stateGeometryPath(feature.geometry)} fill={observedColor(summary?.observed_abstention_pct)} fillOpacity="0.58" stroke="#ffffff" strokeWidth="1.25" />;
+              })}
+            </svg>
+          ) : null}
+        </div>
+      )}
+      <div className="national-map__legend" role="group" aria-label={`Leyenda de abstención observada ${year}`}>
+        <span className="national-map__legend-title">Abstención observada · {year}</span>
+        <ul>
+          <LegendItem color={CHOROPLETH_COLORS.under30} label="Menos de 30 %" />
+          <LegendItem color={CHOROPLETH_COLORS.under40} label="30–39.9 %" />
+          <LegendItem color={CHOROPLETH_COLORS.under50} label="40–49.9 %" />
+          <LegendItem color={CHOROPLETH_COLORS["50plus"]} label="50 % o más" />
+          <LegendItem color={CHOROPLETH_COLORS.unavailable} label="Información insuficiente" />
+        </ul>
+      </div>
+      {featuresLoading ? <p role="status">Cargando geometrías de las 32 entidades…</p> : null}
+      {featuresError ? <p role="status">No se pudo cargar el relleno temático. Los valores observados siguen disponibles en la tabla accesible.</p> : null}
     </section>
   );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return <li><span className="national-map__swatch" aria-hidden="true" style={{ backgroundColor: color }} />{label}</li>;
 }

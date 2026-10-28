@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { GlobalFiltersContext } from "../../app/filters";
@@ -7,7 +7,10 @@ import { NationalPanel } from "./NationalPanel";
 import { server } from "../../test/server";
 import { http, HttpResponse } from "msw";
 
-function renderPanel(stateCode = "all") {
+function renderPanel(
+  stateCode = "all",
+  level: "municipality" | "federal_district" = "municipality",
+) {
   const setFilters = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -16,7 +19,7 @@ function renderPanel(stateCode = "all") {
     <QueryClientProvider client={client}>
       <GlobalFiltersContext.Provider
         value={{
-          level: "municipality",
+          level,
           stateCode: stateCode as "all" | `${number}${number}`,
           territoryId: null,
           historicalYear: 2024,
@@ -52,6 +55,7 @@ describe("NationalPanel", () => {
       http.get("*/api/v1/participation/summary", () =>
         HttpResponse.json(summaries),
       ),
+      http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
     );
     renderPanel();
     const table = await screen.findByRole("table", { name: "Resumen por entidad" });
@@ -65,9 +69,59 @@ describe("NationalPanel", () => {
       http.get("*/api/v1/participation/summary", () =>
         HttpResponse.json(summaries),
       ),
+      http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
     );
     const { setFilters } = renderPanel();
     fireEvent.click(await screen.findByRole("button", { name: "Ver municipios de Entidad 14" }));
     expect(setFilters).toHaveBeenCalledWith({ stateCode: "14", territoryId: null });
+  });
+
+  it("colors the 32-state WMS map by observed abstention and keeps the summary table accessible", async () => {
+    const summaryRequests: URLSearchParams[] = [];
+    server.use(
+      http.get("*/api/v1/participation/summary", ({ request }) => {
+        summaryRequests.push(new URL(request.url).searchParams);
+        return HttpResponse.json(summaries);
+      }),
+      http.get("*/api/v1/gis/wfs", () => HttpResponse.json({
+        type: "FeatureCollection",
+        features: [
+          { type: "Feature", geometry: { type: "Polygon", coordinates: [[[-110, 25], [-109, 25], [-109, 26], [-110, 26], [-110, 25]]] }, properties: { state_code: "01", name: "Entidad 1" } },
+          { type: "Feature", geometry: { type: "Polygon", coordinates: [[[-109, 25], [-108, 25], [-108, 26], [-109, 26], [-109, 25]]] }, properties: { state_code: "02", name: "Entidad 2" } },
+        ],
+      })),
+    );
+
+    renderPanel();
+
+    const legend = await screen.findByRole("group", { name: "Leyenda de abstención observada 2024" });
+    expect(within(legend).getByText("Menos de 30 %")).toBeVisible();
+    expect(within(legend).getByText("40–49.9 %")).toBeVisible();
+    expect(within(legend).getByText("50 % o más")).toBeVisible();
+    expect(screen.getByRole("img", { name: "Mapa WMS nacional con límites de las 32 entidades federativas" })).toBeVisible();
+    await waitFor(() => {
+      expect(document.querySelector('[data-state-code="01"]')).toHaveAttribute("fill", "#d1d5db");
+      expect(document.querySelector('[data-state-code="02"]')).toHaveAttribute("fill", "#f4d58d");
+    });
+    const table = screen.getByRole("table", { name: "Resumen por entidad" });
+    expect(within(table).getByText("Abstención observada")).toBeVisible();
+    expect(within(table).getByText("Información insuficiente")).toBeVisible();
+    expect(summaryRequests[0]?.get("level")).toBe("municipality");
+    expect(summaryRequests[0]?.get("year")).toBe("2024");
+  });
+
+  it("shows observed-only district summaries without prediction or risk labels", async () => {
+    server.use(
+      http.get("*/api/v1/participation/summary", () => HttpResponse.json(summaries)),
+    );
+
+    renderPanel("all", "federal_district");
+
+    const table = await screen.findByRole("table", { name: "Resumen por entidad" });
+    expect(within(table).getByText("Abstención observada")).toBeVisible();
+    expect(within(table).getByText("Cobertura")).toBeVisible();
+    expect(within(table).queryByText(/Riesgo|predicción|elegibles/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/Sin modelo 2027/);
+    expect(screen.getByRole("button", { name: "Ver observación distrital de Entidad 14" })).toBeVisible();
   });
 });

@@ -56,6 +56,18 @@ export type MunicipalityFeatureCollection = FeatureCollection<
   }>;
 };
 
+export type NationalStateFeatureCollection = FeatureCollection<
+  Geometry,
+  GeoJsonProperties
+> & {
+  features: Array<{
+    type: "Feature";
+    id?: string | number;
+    geometry: Geometry;
+    properties: { state_code?: string; name?: string } | null;
+  }>;
+};
+
 export class ApiProblem extends Error {
   readonly status: number;
   readonly statusText: string;
@@ -358,6 +370,23 @@ export async function fetchParticipationSummary(
   return getJson<StateParticipationSummary[]>(path, options.signal);
 }
 
+/** Bounded national outline request; the layer contains only 32 state features. */
+export async function fetchNationalStateFeatures(
+  signal?: AbortSignal,
+): Promise<NationalStateFeatureCollection> {
+  const path = withQuery("/api/v1/gis/wfs", {
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: "participa_geo_national:states",
+    outputFormat: "application/json",
+    srsName: "EPSG:4326",
+    count: 32,
+    bbox: "14.5,-118.5,32.8,-86.8",
+  });
+  return getJson<NationalStateFeatureCollection>(path, signal);
+}
+
 /** National/state WMS layer. It is raster-only; the country is never fetched as WFS. */
 export function wmsTerritoryUrl(): string {
   // The state layer is a light national WMS overview; municipality/district
@@ -413,6 +442,7 @@ export const queryKeys = {
   municipalFeatures: (stateCode = "14") =>
     ["gis", "wfs", "municipalities", stateCode] as const,
   summary: (level: TerritoryLevel, year: ElectionYear) => ["summary", level, year] as const,
+  nationalStateFeatures: () => ["gis", "wfs", "national_states"] as const,
   models: (level: TerritoryLevel = "municipality") => ["models", level] as const,
   predictions: (modelRunId: string | null, level: TerritoryLevel = "municipality", stateCode = "all", territoryId: string | null = null) =>
     ["predictions", { modelRunId, level, stateCode, territoryId, targetYear: 2027 }] as const,

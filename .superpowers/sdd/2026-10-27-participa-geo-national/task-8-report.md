@@ -30,3 +30,13 @@ La causa del 503 original era el uso de la capa MVP inexistente en el workspace 
 ## Alcance excluido
 
 - No se implementó Task 9 ni la ficha observada distrital ni reportes.
+
+## Fix round 1
+
+- Se añadió al mapa nacional municipal el coroplético de abstención observada de 2024, calculado con los conteos agregados `sv` y `nv`; la tabla accesible conserva las 32 entidades y marca como no disponibles las tasas nulas. El WMS permanece como referencia y el WFS temático solicita sólo `participa_geo_national:states`, con `count=32` y bbox `14.5,-118.5,32.8,-86.8`.
+- La vista distrital consulta observaciones agregadas de 2024 independientemente del año histórico seleccionado, muestra cobertura y “Sin modelo 2027”, y no expone etiquetas de predicción/riesgo ni solicita el WFS municipal/estatal oculto. La acción indica “Ver observación distrital de …”.
+- Typecheck (`web-test`): pasa. ESLint (`web-test`): pasa. Build de producción (`web-test`): pasa; permanece la advertencia conocida del chunk MapLibre >500 kB.
+- Vitest (`web-test`): 10 archivos, 62 pruebas pasan; se añadió el fixture MSW del WFS estatal para la carga inicial de la shell.
+- Playwright real (`web-e2e`, `territory.spec.ts`): 12/12 pasan, incluyendo petición WFS acotada y respuesta de 32 entidades, resumen distrital 2024 y navegación municipal.
+- API real: resumen municipal 2024 HTTP 200 con 32 entidades; WFS estatal acotado HTTP 200 con 32 features. WMS verificado por Playwright HTTP 200 con `image/png`.
+- `git diff --check`: pasa.

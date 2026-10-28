@@ -37,16 +37,13 @@ function rate(value: number | null): string {
   return value === null ? "No disponible" : `${value.toFixed(1)} %`;
 }
 
-test("national summary has 32 entities and drills down without full-country WFS", async ({ page }) => {
+test("national summary has 32 entities and uses only the bounded 32-state choropleth WFS", async ({ page }) => {
   const summaries = await apiJson<StateSummary[]>(page, "/api/v1/participation/summary?level=municipality&year=2024");
   expect(summaries).toHaveLength(32);
   const jalisco = summaries.find((row) => row.state_code === "14");
   expect(jalisco).toBeTruthy();
 
-  const wfsRequests: string[] = [];
-  page.on("request", (request) => {
-    if (request.url().includes("/api/v1/gis/wfs")) wfsRequests.push(request.url());
-  });
+  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
   const wmsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wms") && response.status() === 200);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Panel ejecutivo" })).toBeVisible();
@@ -54,12 +51,34 @@ test("national summary has 32 entities and drills down without full-country WFS"
   await expect(table.getByRole("row")).toHaveCount(33);
   const wms = await wmsDone;
   expect(wms.headers()["content-type"]).toContain("image/png");
-  expect(wfsRequests).toHaveLength(0);
+  const wfs = await wfsDone;
+  const wfsUrl = new URL(wfs.url());
+  expect(wfsUrl.searchParams.get("typeNames")).toBe("participa_geo_national:states");
+  expect(wfsUrl.searchParams.get("count")).toBe("32");
+  expect(wfsUrl.searchParams.get("bbox")).toBe("14.5,-118.5,32.8,-86.8");
+  expect((await wfs.json()).features).toHaveLength(32);
+  await expect(page.getByRole("group", { name: "Leyenda de abstención observada 2024" })).toBeVisible();
+  await expect(table.getByRole("columnheader", { name: "Abstención observada" })).toBeVisible();
 
   await page.getByRole("button", { name: `Ver municipios de ${jalisco!.state_name}` }).click();
   await expect(page).toHaveURL(/state=14/);
   await expect(page.getByRole("table", { name: "Municipios de la entidad" })).toBeVisible();
-  await expect.poll(() => wfsRequests.length).toBe(0);
+});
+
+test("district national mode shows observed 2024 coverage without prediction or risk labels", async ({ page }) => {
+  const summaryDone = page.waitForResponse((response) => response.url().includes("/api/v1/participation/summary") && response.status() === 200);
+  await page.goto("/?level=federal_district&year=2018");
+  const summary = await summaryDone;
+  const summaryUrl = new URL(summary.url());
+  expect(summaryUrl.searchParams.get("level")).toBe("federal_district");
+  expect(summaryUrl.searchParams.get("year")).toBe("2024");
+  await expect(page.getByRole("status")).toContainText("Sin modelo 2027");
+  const table = page.getByRole("table", { name: "Resumen por entidad" });
+  await expect(table.getByRole("columnheader", { name: "Abstención observada" })).toBeVisible();
+  await expect(table.getByRole("columnheader", { name: "Cobertura" })).toBeVisible();
+  await expect(table.getByRole("columnheader", { name: "Riesgo alto" })).toHaveCount(0);
+  await expect(table.getByRole("button", { name: "Ver observación distrital de JALISCO" })).toBeVisible();
+  await expect(page.getByText(/Riesgo alto|unidades elegibles para predicción/i)).toHaveCount(0);
 });
 
 test("municipal profile combines observed history with its published 2027 prediction", async ({ page }) => {
