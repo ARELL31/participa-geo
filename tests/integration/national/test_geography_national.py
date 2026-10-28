@@ -132,3 +132,18 @@ def test_gateway_forwards_state_scoped_wfs_and_national_wms(api_client):
     )
     assert world_map.status_code == 200
     assert world_map.content.startswith(b"\x89PNG\r\n\x1a\n")
+
+    district_map = api_client.get(
+        "/api/v1/gis/wms",
+        params={
+            "request": "GetMap",
+            "layers": "participa_geo_national:districts_2023",
+            "bbox": "-118,-4,-86,34",
+            "width": "512",
+            "height": "512",
+            "srs": "EPSG:4326",
+            "format": "image/png",
+        },
+    )
+    assert district_map.status_code == 200
+    assert district_map.content.startswith(b"\x89PNG\r\n\x1a\n")

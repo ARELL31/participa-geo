@@ -166,8 +166,9 @@ def _gis_verify_national(args: argparse.Namespace) -> int:
     from gis.geoserver.national import verify_national_layers
     from participa_geo.settings import Settings
 
-    print(json.dumps(verify_national_layers(Settings()), indent=2, sort_keys=True))
-    return 0
+    report = verify_national_layers(Settings())
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if report.get("verification_passed") is True else 1
 
 
 def _train(args: argparse.Namespace) -> int:

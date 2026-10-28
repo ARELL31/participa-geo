@@ -20,6 +20,7 @@ from participa_geo.settings import Settings
 
 WORKSPACE = "participa_geo_national"
 DATASTORE = "participa_geo_national"
+WFS_FEATURE_LIMIT = 1000
 NATIONAL_LAYERS = {
     "states": {"native": "geo_state_national_view", "style": "national_states"},
     "municipalities": {
@@ -204,30 +205,46 @@ def verify_national_layers(settings: Settings) -> dict[str, object]:
     map_status, png = _http("GET", map_url, auth={})
     query = (
         f"service=WFS&version=2.0.0&request=GetFeature&typeNames={WORKSPACE}:municipalities&"
-        "srsName=EPSG:4326&outputFormat=application/json&count=1000&"
+        f"srsName=EPSG:4326&outputFormat=application/json&count={WFS_FEATURE_LIMIT}&"
         "CQL_FILTER=state_code%3D%2714%27"
     )
     feature_status, payload = _http("GET", f"{base}/wfs?{query}", auth={})
     feature_count = -1
     if feature_status == 200:
-        feature_count = len(json.loads(payload.decode("utf-8")).get("features", []))
+        try:
+            feature_count = len(json.loads(payload.decode("utf-8")).get("features", []))
+        except (ValueError, AttributeError):
+            feature_count = -1
     transaction_rejected = verify_transaction_rejected(base, {})
     # Public API has no REST route; the GeoServer REST endpoint itself must not
     # disclose administrative resources without credentials.
     rest_status, _ = _http("GET", f"{base}/rest/workspaces", auth={})
+    checks = {
+        "wms_capabilities": wms_status == 200,
+        "wfs_capabilities": wfs_status == 200,
+        "national_layers_advertised": all(
+            name.encode() in (capabilities or b"") for name in NATIONAL_LAYERS
+        ),
+        "national_getmap": map_status == 200 and png.startswith(b"\x89PNG\r\n\x1a\n"),
+        "state_scoped_wfs": feature_status == 200 and 0 < feature_count <= WFS_FEATURE_LIMIT,
+        "wfs_limit": 0 < WFS_FEATURE_LIMIT <= 1000,
+        "wfs_transaction_rejected": transaction_rejected,
+        "rest_requires_authentication": rest_status in {401, 403, 404},
+    }
     return {
         "wms_capabilities_status": wms_status,
         "wfs_capabilities_status": wfs_status,
-        "capabilities_have_national_layers": all(
-            name.encode() in (capabilities or b"") for name in NATIONAL_LAYERS
-        ),
+        "capabilities_have_national_layers": checks["national_layers_advertised"],
         "national_getmap_status": map_status,
         "national_getmap_png_bytes": len(png),
         "wfs_state_status": feature_status,
         "wfs_state_feature_count": feature_count,
-        "wfs_limit": 1000,
+        "wfs_limit": WFS_FEATURE_LIMIT,
         "wfs_transaction_rejected": transaction_rejected,
         "rest_anonymous_status": rest_status,
+        "verification_checks": checks,
+        "failed_checks": [name for name, passed in checks.items() if not passed],
+        "verification_passed": all(checks.values()),
     }
 
 
@@ -235,6 +252,7 @@ __all__ = [
     "DATASTORE",
     "NATIONAL_LAYERS",
     "PublicationAudit",
+    "WFS_FEATURE_LIMIT",
     "WORKSPACE",
     "publish_national_layers",
     "verify_national_layers",
