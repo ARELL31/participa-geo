@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, Field
 
+from participa_geo.territory import DistrictPlan, TerritoryLevel
+
 #: The fixed forecast horizon (Spec §7): only 2027 is a valid target.
 TargetYear = Literal[2027]
 
@@ -42,7 +44,10 @@ class PredictionDTO(BaseModel):
     """One municipality forecast (or ``insufficient`` status) for 2027."""
 
     territory_id: UUID
-    municipality_code: str
+    municipality_code: str | None = None
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
     municipality_name: str
     target_year: int
     estimated_abstention_pct: float | None = None
@@ -60,6 +65,8 @@ class ModelDTO(BaseModel):
 
     model_run_id: UUID
     family: str
+    level: TerritoryLevel = "municipality"
+    district_plan: DistrictPlan | None = None
     target_year: int
     reference_date: str
     features: list[str] = Field(default_factory=list)

@@ -35,6 +35,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import UserDefinedType
 
+from participa_geo.territory import DistrictPlan, TerritoryLevel
+
 #: The six CCPC election years accepted as a historical filter.
 ElectionYear = Literal[2009, 2012, 2015, 2018, 2021, 2024]
 
@@ -96,12 +98,23 @@ class TerritoryVersion(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     system: Mapped[str] = mapped_column(String(16), nullable=False, default="ine")
     state_code: Mapped[str] = mapped_column(String(2), nullable=False)
-    municipality_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    territory_code: Mapped[str] = mapped_column(
+        String(3),
+        nullable=False,
+        default=lambda context: context.get_current_parameters().get("municipality_code"),
+    )
+    municipality_code: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     #: Territorial cut date; only the INE 2025 reference carries ``2025-12-15``.
     reference_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     #: Election year for CCPC origin identities (NULL for the 2025 reference).
     origin_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     #: Geometry in EPSG:4326; NULL for historical origin identities.
     geometry: Mapped[object | None] = mapped_column(Geometry("GEOMETRY", 4326), nullable=True)
     #: Declared source SRID of the imported geometry (EPSG:32613 for the reference).
@@ -113,11 +126,35 @@ class TerritoryVersion(Base):
 
     __table_args__ = (
         CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL AND municipality_code IS NOT NULL) "
+            "OR (level = 'federal_district' AND district_plan IS NOT NULL "
+            "AND municipality_code IS NULL)",
+            name="ck_territory_version_level_plan",
+        ),
+        CheckConstraint(
+            "level IN ('municipality', 'federal_district')", name="ck_territory_version_level"
+        ),
+        CheckConstraint(
+            "district_plan IS NULL OR district_plan IN ('DERFE2021', 'DERFE2023')",
+            name="ck_territory_version_district_plan",
+        ),
+        CheckConstraint(
             "reference_date IS NOT NULL OR origin_year IS NOT NULL",
             name="ck_territory_version_cut",
         ),
         Index("ix_territory_version_reference_date", "reference_date"),
         Index("ix_territory_version_state_code", "state_code", "municipality_code"),
+        Index(
+            "ix_territory_version_national_key",
+            "level",
+            "state_code",
+            "territory_code",
+            "district_plan",
+        ),
+        CheckConstraint(
+            "valid_to IS NULL OR valid_from IS NULL OR valid_to >= valid_from",
+            name="ck_territory_version_validity",
+        ),
     )
 
 
@@ -167,6 +204,10 @@ class Observation(Base):
         Uuid, ForeignKey("dataset_version.id", ondelete="CASCADE"), nullable=False
     )
     year: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     election_type: Mapped[str] = mapped_column(String(16), nullable=False, default="federal")
     ln: Mapped[int] = mapped_column(Integer, nullable=False)
     sv: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -187,6 +228,11 @@ class Observation(Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL) OR "
+            "(level = 'federal_district' AND district_plan IN ('DERFE2021', 'DERFE2023'))",
+            name="ck_observation_level_plan",
+        ),
         UniqueConstraint(
             "origin_territory_id",
             "year",
@@ -199,6 +245,7 @@ class Observation(Base):
         ),
         CheckConstraint("ln = sv + nv + ns", name="ck_observation_accounting"),
         Index("ix_observation_year", "year"),
+        Index("ix_observation_level_plan_year", "level", "district_plan", "year"),
     )
 
 
@@ -207,6 +254,10 @@ class ModelRun(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     family: Mapped[str] = mapped_column(String(32), nullable=False)
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     parameters: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     features: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     cut_dates: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -216,6 +267,15 @@ class ModelRun(Base):
     exclusions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL) OR "
+            "(level = 'federal_district' AND district_plan IN ('DERFE2021', 'DERFE2023'))",
+            name="ck_model_run_level_plan",
+        ),
+        Index("ix_model_run_level_plan", "level", "district_plan"),
     )
 
 
@@ -230,6 +290,10 @@ class Prediction(Base):
         Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
     )
     target_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     estimated_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
     historical_error_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
     historical_error_upper_pct: Mapped[float | None] = mapped_column(nullable=True)
@@ -242,6 +306,11 @@ class Prediction(Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL) OR "
+            "(level = 'federal_district' AND district_plan IN ('DERFE2021', 'DERFE2023'))",
+            name="ck_prediction_level_plan",
+        ),
         UniqueConstraint(
             "model_run_id",
             "reference_territory_id",
@@ -249,6 +318,7 @@ class Prediction(Base):
             name="uq_prediction_run_territory_year",
         ),
         CheckConstraint("target_year >= 2000", name="ck_prediction_target_year"),
+        Index("ix_prediction_level_plan", "level", "district_plan"),
     )
 
 
@@ -260,6 +330,10 @@ class Scenario(Base):
         Uuid, ForeignKey("model_run.id", ondelete="CASCADE"), nullable=False
     )
     target_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     reduction_pp: Mapped[float] = mapped_column(nullable=False)
     assumption_code: Mapped[str] = mapped_column(String(32), nullable=False)
     assumption_version: Mapped[str] = mapped_column(
@@ -269,12 +343,8 @@ class Scenario(Base):
     rules_version: Mapped[str] = mapped_column(
         String(32), nullable=False, server_default="'scenario-rules-1.0.0'"
     )
-    input_sha256: Mapped[str] = mapped_column(
-        String(64), nullable=False, server_default="''"
-    )
-    model_sha256: Mapped[str] = mapped_column(
-        String(64), nullable=False, server_default="''"
-    )
+    input_sha256: Mapped[str] = mapped_column(String(64), nullable=False, server_default="''")
+    model_sha256: Mapped[str] = mapped_column(String(64), nullable=False, server_default="''")
     selection: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
@@ -282,12 +352,18 @@ class Scenario(Base):
 
     __table_args__ = (
         CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL) OR "
+            "(level = 'federal_district' AND district_plan IN ('DERFE2021', 'DERFE2023'))",
+            name="ck_scenario_level_plan",
+        ),
+        CheckConstraint(
             "reduction_pp >= 0 AND reduction_pp <= 10", name="ck_scenario_reduction_range"
         ),
         CheckConstraint(
             "assumption_code IN ('preventive_exploration', 'model_sensitivity')",
             name="ck_scenario_assumption_code",
         ),
+        Index("ix_scenario_level_plan", "level", "district_plan"),
     )
 
 
@@ -301,6 +377,10 @@ class ScenarioResult(Base):
     reference_territory_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
     )
+    level: Mapped[TerritoryLevel] = mapped_column(
+        String(32), nullable=False, default="municipality", server_default="municipality"
+    )
+    district_plan: Mapped[DistrictPlan | None] = mapped_column(String(16), nullable=True)
     baseline_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
     hypothetical_abstention_pct: Mapped[float | None] = mapped_column(nullable=True)
     baseline_error_lower_pct: Mapped[float | None] = mapped_column(nullable=True)
@@ -311,23 +391,25 @@ class ScenarioResult(Base):
     effective_reduction_pp: Mapped[float] = mapped_column(nullable=False)
     risk_a: Mapped[str | None] = mapped_column(String(16), nullable=True)
     risk_b: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    risk_a_unstable: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
-    risk_b_unstable: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    risk_a_unstable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    risk_b_unstable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default="now()"
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "(level = 'municipality' AND district_plan IS NULL) OR "
+            "(level = 'federal_district' AND district_plan IN ('DERFE2021', 'DERFE2023'))",
+            name="ck_scenario_result_level_plan",
+        ),
         UniqueConstraint(
             "scenario_id",
             "reference_territory_id",
             name="uq_scenario_result_scenario_territory",
         ),
+        Index("ix_scenario_result_level_plan", "level", "district_plan"),
     )
 
 

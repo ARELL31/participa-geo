@@ -14,13 +14,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from participa_geo.territory import TerritoryLevel
+
 AssumptionCode = Literal["preventive_exploration", "model_sensitivity"]
 RiskLevel = Literal["low", "medium", "high", "insufficient"]
 
 #: Never present the translated band as a causal interval.
 TRANSLATED_BAND_LABEL = (
-    "rango de error histórico de referencia trasladado condicionalmente; "
-    "no es un intervalo causal"
+    "rango de error histórico de referencia trasladado condicionalmente; no es un intervalo causal"
 )
 
 
@@ -31,6 +32,7 @@ class ScenarioRequest(BaseModel):
 
     model_run_id: UUID
     target_year: Literal[2027]
+    level: TerritoryLevel | None = None
     territory_ids: list[UUID] = Field(min_length=1, max_length=125)
     reduction_pp: float = Field(ge=0.0, le=10.0, allow_inf_nan=False)
     assumption_code: AssumptionCode

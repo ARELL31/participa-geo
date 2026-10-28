@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator
 
+from participa_geo.territory import DistrictPlan, TerritoryLevel
+
 #: The six CCPC election years accepted as a historical filter.
 ElectionYear = Literal[2009, 2012, 2015, 2018, 2021, 2024]
 
@@ -40,6 +42,9 @@ class HistoryDTO(BaseModel):
     year: int
     name: str | None = None
     municipality_code: str | None = None
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
     ln: int
     sv: int
     nv: int

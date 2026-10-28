@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from participa_geo.territory import DistrictPlan, TerritoryLevel
+
 T = TypeVar("T")
 
 
@@ -32,4 +34,4 @@ class Page(BaseModel, Generic[T]):  # noqa: UP046 - pydantic-compatible Generic 
     meta: DatasetMeta
 
 
-__all__ = ["DatasetMeta", "Page"]
+__all__ = ["DatasetMeta", "DistrictPlan", "Page", "TerritoryLevel"]
