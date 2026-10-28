@@ -145,6 +145,31 @@ def _gis_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _gis_import_national(args: argparse.Namespace) -> int:
+    from pipelines.validation.geography_national import import_national_cartography
+
+    audit = import_national_cartography(Path(args.archive_dir))
+    print(json.dumps(audit.__dict__, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+def _gis_publish_national(args: argparse.Namespace) -> int:
+    from gis.geoserver.national import publish_national_layers
+    from participa_geo.settings import Settings
+
+    audit = publish_national_layers(Settings())
+    print(json.dumps(audit.__dict__, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+def _gis_verify_national(args: argparse.Namespace) -> int:
+    from gis.geoserver.national import verify_national_layers
+    from participa_geo.settings import Settings
+
+    print(json.dumps(verify_national_layers(Settings()), indent=2, sort_keys=True))
+    return 0
+
+
 def _train(args: argparse.Namespace) -> int:
     from participa_geo.db.repository import read_processed_observations
     from participa_geo.db.session import session_scope, writer_engine
@@ -261,9 +286,7 @@ def run_delivery(
     executive = generate_executive(context)
     scenario_csv = export_scenario_csv(scenario, meta_csv, sources=sources)
     reference = repo_root() / "data" / "processed" / "gis" / "reference-2025-12-15.geojson"
-    scenario_geojson = export_scenario_geojson(
-        scenario, reference, meta_geojson, sources=sources
-    )
+    scenario_geojson = export_scenario_geojson(scenario, reference, meta_geojson, sources=sources)
     scenario_pdf = generate_scenario_pdf(scenario, meta_csv, context=context)
     gis_client = GeoServerClient(settings.gis_base_url, timeout=5.0)
     map_png = render_scenario_map(scenario, "png", client=gis_client)
@@ -324,9 +347,7 @@ def run_delivery(
     }
     _write_atomic(
         output_dir / "DELIVERY.json",
-        (
-            json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-        ).encode("utf-8"),
+        (json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
     )
 
     reports_root = Path(settings.reports_dir)
@@ -475,9 +496,7 @@ def build_parser() -> argparse.ArgumentParser:
             "entrenamiento, publicación GIS y generación de entregables."
         ),
     )
-    parser.add_argument(
-        "--version", action="version", version=f"%(prog)s {__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -534,9 +553,7 @@ def build_parser() -> argparse.ArgumentParser:
     db_migrate = db_sub.add_parser("migrate", help="Aplicar migraciones Alembic.")
     db_migrate.set_defaults(handler=_db_migrate)
 
-    db_load = db_sub.add_parser(
-        "load", help="Cargar observaciones procesadas en PostGIS."
-    )
+    db_load = db_sub.add_parser("load", help="Cargar observaciones procesadas en PostGIS.")
     db_load.add_argument(
         "--processed-dir",
         required=True,
@@ -602,6 +619,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     gis_verify = gis_sub.add_parser("verify", help="Verificar WMS/WFS de sólo lectura.")
     gis_verify.set_defaults(handler=_gis_verify)
+
+    gis_import_national = gis_sub.add_parser(
+        "import-national", help="Importar los 32 ZIP MGS y sus cuatro capas nacionales."
+    )
+    gis_import_national.add_argument("--archive-dir", default="data/raw/gis/national")
+    gis_import_national.set_defaults(handler=_gis_import_national)
+
+    gis_publish_national = gis_sub.add_parser(
+        "publish-national", help="Publicar entidades, municipios y distritos marco 2023."
+    )
+    gis_publish_national.set_defaults(handler=_gis_publish_national)
+
+    gis_verify_national = gis_sub.add_parser(
+        "verify-national", help="Verificar los servicios nacionales WMS/WFS reales."
+    )
+    gis_verify_national.set_defaults(handler=_gis_verify_national)
 
     train = subparsers.add_parser(
         "train",

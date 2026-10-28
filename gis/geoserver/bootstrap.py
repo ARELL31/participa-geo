@@ -288,7 +288,9 @@ def publish_layers(settings: Settings) -> PublicationAudit:
         _apply_style(base_url, auth, layer, spec["style"])
 
     set_wfs_read_only(base_url, auth)
-    removed = remove_foreign_workspaces(base_url, auth, keep={WORKSPACE})
+    removed = remove_foreign_workspaces(
+        base_url, auth, keep={WORKSPACE, "participa_geo_national"}
+    )
 
     wfs_settings = get_wfs_settings(base_url, auth)
     level = (wfs_settings or {}).get("serviceLevel", WFS_SERVICE_LEVEL)

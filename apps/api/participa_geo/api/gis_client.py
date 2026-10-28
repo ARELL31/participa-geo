@@ -21,10 +21,14 @@ from participa_geo.api.errors import ProblemException, problem
 from participa_geo.ingestion.schema import ELECTION_YEARS
 
 WORKSPACE = "participa_geo"
+NATIONAL_WORKSPACE = "participa_geo_national"
+NATIONAL_LAYERS = frozenset({"states", "municipalities", "districts_2023"})
 
 
 class AllowedLayer(StrEnum):
+    states = "states"
     municipalities = "municipalities"
+    districts_2023 = "districts_2023"
     participation_history = "participation_history"
     predictions = "predictions"
     scenario_results = "scenario_results"
@@ -43,20 +47,49 @@ WFS_OUTPUT_FORMATS = frozenset(
     {"application/json", "json", "application/gml+xml; version=3.2", "gml32", "GML3"}
 )
 MAX_WIDTH = MAX_HEIGHT = 1200
-MAX_COUNT = 125
+MAX_COUNT = 1000
 
 _WMS_ALLOWED_PARAMS = frozenset(
     {
-        "service", "version", "request", "layers", "styles", "bbox", "width",
-        "height", "srs", "crs", "format", "transparent", "bgcolor", "exceptions",
-        "query_layers", "info_format", "i", "j", "feature_count",
-        "scenario_id", "year",
+        "service",
+        "version",
+        "request",
+        "layers",
+        "styles",
+        "bbox",
+        "width",
+        "height",
+        "srs",
+        "crs",
+        "format",
+        "transparent",
+        "bgcolor",
+        "exceptions",
+        "query_layers",
+        "info_format",
+        "i",
+        "j",
+        "feature_count",
+        "scenario_id",
+        "year",
     }
 )
 _WFS_ALLOWED_PARAMS = frozenset(
     {
-        "service", "version", "request", "typename", "typenames", "count",
-        "startindex", "srsname", "outputformat", "bbox", "scenario_id", "year",
+        "service",
+        "version",
+        "request",
+        "typename",
+        "typenames",
+        "count",
+        "startindex",
+        "srsname",
+        "outputformat",
+        "bbox",
+        "scenario_id",
+        "year",
+        "state_code",
+        "level",
     }
 )
 
@@ -90,12 +123,20 @@ def _normalize_layer(name: str) -> str:
         raise _invalid("capa vacía")
     if ":" in stripped:
         workspace, layer = stripped.split(":", 1)
-        if workspace != WORKSPACE or layer not in PUBLISHED_LAYERS:
+        if layer not in PUBLISHED_LAYERS or workspace not in {WORKSPACE, NATIONAL_WORKSPACE}:
             raise _invalid(f"capa no publicada: {stripped}")
-        return f"{WORKSPACE}:{layer}"
+        if layer not in NATIONAL_LAYERS and workspace == NATIONAL_WORKSPACE:
+            raise _invalid(f"capa no publicada: {stripped}")
+        return f"{workspace}:{layer}"
     if stripped not in PUBLISHED_LAYERS:
         raise _invalid(f"capa no publicada: {stripped}")
-    return f"{WORKSPACE}:{stripped}"
+    workspace = NATIONAL_WORKSPACE if stripped in NATIONAL_LAYERS else WORKSPACE
+    return f"{workspace}:{stripped}"
+
+
+def _qualified_layer(layer: AllowedLayer) -> str:
+    workspace = NATIONAL_WORKSPACE if layer.value in NATIONAL_LAYERS else WORKSPACE
+    return f"{workspace}:{layer.value}"
 
 
 def _normalize_layers(value: str) -> str:
@@ -135,9 +176,7 @@ def _validate_size(width: str | None, height: str | None) -> None:
     _parse_size(width, height)
 
 
-def _validate_pixel(
-    i: str | None, j: str | None, width: str | None, height: str | None
-) -> None:
+def _validate_pixel(i: str | None, j: str | None, width: str | None, height: str | None) -> None:
     if i is None or j is None:
         raise _invalid("GetFeatureInfo requiere i y j")
     w, h = _parse_size(width, height)
@@ -227,12 +266,8 @@ def validate_wms_request(params: Mapping[str, str]) -> dict[str, str]:
                 raise _invalid("GetFeatureInfo requiere query_layers")
             normalized_query = _normalize_layers(query_layers)
             published = set(normalized_layers.split(","))
-            if any(
-                layer not in published for layer in normalized_query.split(",")
-            ):
-                raise _invalid(
-                    "query_layers debe referirse a capas incluidas en layers"
-                )
+            if any(layer not in published for layer in normalized_query.split(",")):
+                raise _invalid("query_layers debe referirse a capas incluidas en layers")
             out["query_layers"] = normalized_query
             _validate_pixel(
                 out.get("i"),
@@ -284,6 +319,21 @@ def validate_wfs_request(params: Mapping[str, str]) -> dict[str, str]:
             raise _invalid("GetFeature requiere typeNames")
         out["typeNames"] = _normalize_layers(type_names)
 
+        state_code = out.get("state_code")
+        if state_code is not None:
+            if not state_code.isdigit() or not 1 <= int(state_code) <= 32:
+                raise _invalid("state_code debe estar entre 01 y 32")
+            out["state_code"] = state_code.zfill(2)
+        level = out.get("level")
+        if level is not None and level not in {"municipality", "federal_district"}:
+            raise _invalid("level debe ser municipality o federal_district")
+        if level == "municipality" and "districts_2023" in type_names:
+            raise _invalid("level municipality no coincide con districts_2023")
+        if level == "federal_district" and "municipalities" in type_names:
+            raise _invalid("level federal_district no coincide con municipalities")
+        if state_code is None and "bbox" not in out:
+            raise _invalid("WFS GetFeature requiere state_code o bbox")
+
         count = out.get("count")
         if count is not None:
             try:
@@ -303,14 +353,16 @@ def validate_wfs_request(params: Mapping[str, str]) -> dict[str, str]:
         out["outputFormat"] = fmt
         if "bbox" in out:
             _validate_bbox(out["bbox"])
-
     cql = _build_cql(
         out.pop("scenario_id", None),
         out.pop("year", None),
         out.get("typeNames", ""),
     )
-    if cql:
-        out["cql_filter"] = cql
+    state_filter = f"state_code = '{out['state_code']}'" if out.get("state_code") else None
+    if cql and state_filter:
+        out["cql_filter"] = f"({cql}) AND ({state_filter})"
+    elif cql or state_filter:
+        out["cql_filter"] = cql or state_filter
     return out
 
 
@@ -357,7 +409,7 @@ class GeoServerClient:
             "service": "WMS",
             "version": "1.1.1",
             "request": "GetMap",
-            "layers": f"{WORKSPACE}:{layer.value}",
+            "layers": _qualified_layer(layer),
             "styles": styles,
             "bbox": f"{bbox.minx},{bbox.miny},{bbox.maxx},{bbox.maxy}",
             "width": str(width),
@@ -391,7 +443,7 @@ class GeoServerClient:
             "service": "WFS",
             "version": "2.0.0",
             "request": "GetFeature",
-            "typeNames": f"{WORKSPACE}:{layer.value}",
+            "typeNames": _qualified_layer(layer),
             "count": str(count),
             "srsName": "EPSG:4326",
             "outputFormat": "application/json",
