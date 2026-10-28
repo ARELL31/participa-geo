@@ -26,6 +26,7 @@ from participa_geo.api.routes import (
     gis,
     health,
     history,
+    municipality_districts,
     models,
     predictions,
     recommendations,
@@ -211,6 +212,7 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(health.router, prefix=f"{API_PREFIX}/health", tags=["health"])
     app.include_router(territories.router, prefix=API_PREFIX)
+    app.include_router(municipality_districts.router, prefix=API_PREFIX)
     app.include_router(history.router, prefix=API_PREFIX)
     app.include_router(summary.router, prefix=API_PREFIX)
     app.include_router(models.router, prefix=API_PREFIX)

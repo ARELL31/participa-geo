@@ -20,6 +20,8 @@ import {
 } from "../../lib/api";
 import { HistoryChart } from "./HistoryChart";
 import { MunicipalMap } from "./MunicipalMap";
+import { MunicipalityDistrictPanel } from "./MunicipalityDistrictPanel";
+import { DistrictProfile } from "../district/DistrictProfile";
 import {
   formatCount,
   formatRateOrInsufficient,
@@ -156,8 +158,9 @@ export function TerritoryPage() {
   if (level === "federal_district") {
     return (
       <div className="page territory-page">
-        <header className="page-heading"><p className="eyebrow">Observatorio · {stateCode === "all" ? "Nacional" : stateCode}</p><h1>Inteligencia territorial</h1></header>
-        <PageState variant="empty" title="Observado 2024 / perfil distrital pendiente" message="El nivel distrital sólo dispone de observación 2024 y cobertura. La ficha distrital y la relación municipio–distrito se incorporarán en la siguiente tarea; no hay predicción 2027 para distritos." />
+        <header className="page-heading"><p className="eyebrow">Observatorio · {stateCode === "all" ? "Nacional" : stateCode}</p><h1>Perfil distrital observado</h1><p className="page-heading__lead">Distritos del marco 2023 con abstención observada 2024 y cobertura explícita. Solo datos observados.</p></header>
+        <GeographyNotice />
+        <DistrictProfile />
       </div>
     );
   }
@@ -412,6 +415,15 @@ export function TerritoryPage() {
           if (match) setFilters({ territoryId: match.id });
         }}
       />
+      {territoryId ? <MunicipalityDistrictPanel territoryId={territoryId} kind="municipality" onSelectDistrict={(row) => {
+        void fetchTerritories({ stateCode, level: "federal_district", pageSize: 500 }).then((page) => {
+          const district = page.items.find((item) => item.territory_code === row.district_code);
+          if (district) {
+            setFilters({ level: "federal_district", territoryId: district.id });
+            navigate(pathWithCurrentFilters("/territory"));
+          }
+        });
+      }} /> : null}
     </div>
   );
 }

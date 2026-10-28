@@ -223,6 +223,7 @@ def test_openapi_matches_contract():
     for path in (
         "/api/v1/territories",
         "/api/v1/participation/history",
+        "/api/v1/territories/{territory_id}/municipal-districts",
         "/api/v1/participation/summary",
         "/api/v1/models",
         "/api/v1/predictions",
@@ -256,3 +257,31 @@ def test_openapi_matches_contract():
     assert "level" in _query_params(openapi, "/api/v1/models")
     assert "level" in _query_params(openapi, "/api/v1/recommendations")
     assert "level" in _query_params(openapi, "/api/v1/participation/summary")
+
+
+def test_municipality_district_bridge_returns_only_2024_intersection_aggregates(db_api_client, monkeypatch):
+    from participa_geo.db.repository import Repository
+
+    monkeypatch.setattr(Repository, "get_municipality_district_intersections", lambda self, territory_id: ([{
+        "state_code": "14", "municipality_code": "001", "municipality_name": "Acatic",
+        "district_code": "05", "district_name": "Distrito 05", "district_plan": "DERFE2023",
+        "is_split": False,
+        "year": 2024, "section_count": 3, "section_share": 1.0, "ln": 100,
+        "sv": 50, "nv": 45, "ns": 5, "ln_share": 1.0, "abstention_pct": 47.368,
+        "coverage_share": 0.95, "coverage_status": "insufficient",
+    }], 1))
+    territories = db_api_client.get(
+        "/api/v1/territories", params={"state_code": "14", "page_size": 500}
+    ).json()["items"]
+    response = db_api_client.get(
+        f"/api/v1/territories/{territories[0]['id']}/municipal-districts"
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items
+    assert all(item["district_plan"] == "DERFE2023" for item in items)
+    assert all(item["year"] == 2024 for item in items)
+    assert all(item["section_count"] > 0 for item in items)
+    assert all(item["ln"] == item["sv"] + item["nv"] + item["ns"] for item in items)
+    assert {"section_share", "ln_share", "abstention_pct", "coverage_share"} <= items[0].keys()
+    assert not any("section_id" in key or "personal" in key for key in items[0])

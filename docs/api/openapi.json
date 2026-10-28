@@ -145,6 +145,49 @@
         }
       }
     },
+    "/api/v1/territories/{territory_id}/municipal-districts": {
+      "get": {
+        "tags": [
+          "territories"
+        ],
+        "summary": "List Municipality District Intersections",
+        "operationId": "list_municipality_district_intersections_api_v1_territories__territory_id__municipal_districts_get",
+        "parameters": [
+          {
+            "name": "territory_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Territory Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MunicipalityDistrictDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/participation/history": {
       "get": {
         "tags": [
@@ -1428,6 +1471,164 @@
         "title": "ModelDTO",
         "description": "A persisted, already-trained model run (no training endpoint exists)."
       },
+      "MunicipalityDistrictDTO": {
+        "properties": {
+          "state_code": {
+            "type": "string",
+            "title": "State Code"
+          },
+          "municipality_code": {
+            "type": "string",
+            "title": "Municipality Code"
+          },
+          "municipality_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality Name"
+          },
+          "district_code": {
+            "type": "string",
+            "title": "District Code"
+          },
+          "district_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Name"
+          },
+          "district_plan": {
+            "type": "string",
+            "const": "DERFE2023",
+            "title": "District Plan"
+          },
+          "is_split": {
+            "type": "boolean",
+            "title": "Is Split"
+          },
+          "year": {
+            "type": "integer",
+            "const": 2024,
+            "title": "Year",
+            "default": 2024
+          },
+          "section_count": {
+            "type": "integer",
+            "title": "Section Count"
+          },
+          "section_share": {
+            "type": "number",
+            "title": "Section Share"
+          },
+          "ln": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ln"
+          },
+          "sv": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sv"
+          },
+          "nv": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nv"
+          },
+          "ns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ns"
+          },
+          "ln_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ln Share"
+          },
+          "abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Pct"
+          },
+          "coverage_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Share"
+          },
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "eligible",
+              "insufficient"
+            ],
+            "title": "Coverage Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state_code",
+          "municipality_code",
+          "district_code",
+          "district_plan",
+          "is_split",
+          "section_count",
+          "section_share",
+          "coverage_status"
+        ],
+        "title": "MunicipalityDistrictDTO"
+      },
       "Page_HistoryDTO_": {
         "properties": {
           "items": {
@@ -1497,6 +1698,41 @@
           "meta"
         ],
         "title": "Page[ModelDTO]"
+      },
+      "Page_MunicipalityDistrictDTO_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MunicipalityDistrictDTO"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/DatasetMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "meta"
+        ],
+        "title": "Page[MunicipalityDistrictDTO]"
       },
       "Page_PredictionDTO_": {
         "properties": {

@@ -121,7 +121,21 @@ describe("NationalPanel", () => {
     expect(within(table).getByText("Abstención observada")).toBeVisible();
     expect(within(table).getByText("Cobertura")).toBeVisible();
     expect(within(table).queryByText(/Riesgo|predicción|elegibles/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/Sin modelo 2027/);
+    expect(screen.getByText(/Distrito federal · Observado 2024 · Sin modelo 2027/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Ver observación distrital de Entidad 14" })).toBeVisible();
+  });
+
+  it("lists plan-2023 district profiles for the selected state without a pending placeholder", async () => {
+    server.use(
+      http.get("*/api/v1/participation/summary", () => HttpResponse.json(summaries)),
+      http.get("*/api/v1/territories", () => HttpResponse.json({ items: [{ id: "c1a1a5b4-0000-4000-8000-000000000001", name: "Distrito 05", state_code: "14", level: "federal_district", territory_code: "05", district_plan: "DERFE2023" }], page: 1, page_size: 500, total: 1, meta: {} })),
+      http.get("*/api/v1/participation/history", () => HttpResponse.json({ items: [{ territory_id: "c1a1a5b4-0000-4000-8000-000000000001", year: 2024, name: "Distrito 05", level: "federal_district", ln: 1000, sv: 500, nv: 450, ns: 50, abstention_pct: 47.4, coverage_share: 0.95, eligible: false }], page: 1, page_size: 500, total: 1, meta: {} })),
+    );
+    renderPanel("14", "federal_district");
+
+    expect(await screen.findByRole("table", { name: "Observación distrital por territorio" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Abrir ficha de Distrito 05/ })).toBeVisible();
+    expect(screen.queryByText(/perfil distrital pendiente/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Predicción 2027|banda de confianza/i)).not.toBeInTheDocument();
   });
 });

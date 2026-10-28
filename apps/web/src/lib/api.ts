@@ -18,6 +18,26 @@ export type ReportArtifactDTO = Schemas["ReportArtifactDTO"];
 export type ReportRequest = Schemas["ReportRequest"];
 export type ReportKind = ReportArtifactDTO["kind"];
 export type StateParticipationSummary = Schemas["StateParticipationSummary"];
+export type MunicipalityDistrictDTO = {
+  state_code: string;
+  municipality_code: string;
+  municipality_name: string | null;
+  district_code: string;
+  district_name: string | null;
+  district_plan: "DERFE2023";
+  is_split: boolean;
+  year: 2024;
+  section_count: number;
+  section_share: number;
+  ln: number | null;
+  sv: number | null;
+  nv: number | null;
+  ns: number | null;
+  ln_share: number | null;
+  abstention_pct: number | null;
+  coverage_share: number | null;
+  coverage_status: "eligible" | "insufficient";
+};
 
 /**
  * ``Page[T]`` is derived from the generated OpenAPI envelope; only the item
@@ -65,6 +85,15 @@ export type NationalStateFeatureCollection = FeatureCollection<
     id?: string | number;
     geometry: Geometry;
     properties: { state_code?: string; name?: string } | null;
+  }>;
+};
+
+export type DistrictFeatureCollection = FeatureCollection<Geometry, GeoJsonProperties> & {
+  features: Array<{
+    type: "Feature";
+    id?: string | number;
+    geometry: Geometry;
+    properties: { district_code?: string; district_plan?: string; name?: string } | null;
   }>;
 };
 
@@ -370,6 +399,34 @@ export async function fetchParticipationSummary(
   return getJson<StateParticipationSummary[]>(path, options.signal);
 }
 
+export async function fetchMunicipalityDistrictIntersections(
+  territoryId: string,
+  signal?: AbortSignal,
+): Promise<Page<MunicipalityDistrictDTO>> {
+  return getJson<Page<MunicipalityDistrictDTO>>(
+    `/api/v1/territories/${encodeURIComponent(territoryId)}/municipal-districts`,
+    signal,
+  );
+}
+
+export async function fetchDistrictFeatures(
+  stateCode: string,
+  signal?: AbortSignal,
+): Promise<DistrictFeatureCollection> {
+  const path = withQuery("/api/v1/gis/wfs", {
+    service: "WFS",
+    version: "2.0.0",
+    request: "GetFeature",
+    typeNames: "participa_geo_national:districts_2023",
+    outputFormat: "application/json",
+    srsName: "EPSG:4326",
+    count: 500,
+    level: "federal_district",
+    state_code: stateCode,
+  });
+  return getJson<DistrictFeatureCollection>(path, signal);
+}
+
 /** Bounded national outline request; the layer contains only 32 state features. */
 export async function fetchNationalStateFeatures(
   signal?: AbortSignal,
@@ -441,6 +498,8 @@ export const queryKeys = {
     ["history", "series", { territoryId, level, stateCode }] as const,
   municipalFeatures: (stateCode = "14") =>
     ["gis", "wfs", "municipalities", stateCode] as const,
+  districtFeatures: (stateCode = "14") => ["gis", "wfs", "districts_2023", stateCode] as const,
+  municipalityDistricts: (territoryId: string | null) => ["municipality-districts", territoryId] as const,
   summary: (level: TerritoryLevel, year: ElectionYear) => ["summary", level, year] as const,
   nationalStateFeatures: () => ["gis", "wfs", "national_states"] as const,
   models: (level: TerritoryLevel = "municipality") => ["models", level] as const,

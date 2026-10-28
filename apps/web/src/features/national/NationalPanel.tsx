@@ -7,6 +7,7 @@ import { DataTable } from "../../components/DataTable";
 import { PageState } from "../../components/PageState";
 import {
   fetchNationalStateFeatures,
+  fetchHistory,
   fetchParticipationSummary,
   fetchTerritories,
   queryKeys,
@@ -37,7 +38,13 @@ export function NationalPanel() {
     queryKey: queryKeys.territories(stateCode, level),
     queryFn: ({ signal }) =>
       fetchTerritories({ stateCode, level, pageSize: 500, signal }),
-    enabled: stateCode !== "all" && level === "municipality",
+    enabled: stateCode !== "all",
+    staleTime: 5 * 60_000,
+  });
+  const districtHistoryQuery = useQuery({
+    queryKey: ["district-list-history", stateCode, 2024],
+    queryFn: ({ signal }) => fetchHistory({ level: "federal_district", stateCode, year: 2024, pageSize: 500, signal }),
+    enabled: stateCode !== "all" && level === "federal_district",
     staleTime: 5 * 60_000,
   });
 
@@ -80,11 +87,6 @@ export function NationalPanel() {
           </div>
           <span className="status-pill status-pill--neutral">{level === "municipality" ? "Municipio" : "Distrito federal · Observado 2024 · Sin modelo 2027"}</span>
         </div>
-        {level === "federal_district" ? (
-          <p className="district-pending" role="status">
-            Observado 2024 / perfil distrital pendiente. Se muestran únicamente abstención observada y cobertura. Sin modelo 2027.
-          </p>
-        ) : null}
         {stateCode === "all" ? (
           <>
             {level === "municipality" ? (
@@ -120,7 +122,29 @@ export function NationalPanel() {
                 }} /> : null}
                 {!territoriesQuery.isPending && !territoriesQuery.isError && territories.length === 0 ? <p>No hay municipios disponibles para esta entidad.</p> : null}
               </>
-            ) : null}
+            ) : (
+              <>
+                <h3 className="national-subheading">Distritos federales · marco 2023</h3>
+                {territoriesQuery.isPending || districtHistoryQuery.isPending ? <p role="status">Cargando distritos y observación 2024…</p> : null}
+                {territoriesQuery.isError || districtHistoryQuery.isError ? <p role="alert">No se pudo cargar la lista distrital observada.</p> : null}
+                {!territoriesQuery.isPending && !territoriesQuery.isError && !districtHistoryQuery.isPending && !districtHistoryQuery.isError && territories.length > 0 ? (
+                  <DataTable
+                    caption="Observación distrital por territorio"
+                    rows={territories.map((territory) => ({ territory, record: districtHistoryQuery.data?.items.find((item) => item.territory_id === territory.id) }))}
+                    rowKey={(row) => row.territory.id}
+                    columns={[
+                      { key: "district", header: "Distrito · marco 2023", render: (row) => `${row.territory.name} · marco 2023` },
+                      { key: "observed", header: "Observado 2024 · abstención", align: "right", render: (row) => formatRateOrInsufficient(row.record?.abstention_pct) },
+                      { key: "coverage", header: "Cobertura", align: "right", render: (row) => formatShare(row.record?.coverage_share) },
+                      { key: "ln", header: "LN 2024", align: "right", render: (row) => formatCount(row.record?.ln) },
+                      { key: "coverage-status", header: "Estado de cobertura", render: (row) => row.record?.eligible ? "Suficiente" : "Información insuficiente" },
+                      { key: "action", header: "Ficha", render: (row) => <button type="button" className="button button--link" onClick={() => { setFilters({ territoryId: row.territory.id }); navigate(pathWithCurrentFilters("/territory")); }}>Abrir ficha de {row.territory.name}</button> },
+                    ]}
+                  />
+                ) : null}
+                {!territoriesQuery.isPending && !territoriesQuery.isError && territories.length === 0 ? <p role="status">No hay distritos publicados para esta entidad.</p> : null}
+              </>
+            )}
           </>
         )}
       </section>

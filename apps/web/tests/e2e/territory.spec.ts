@@ -12,6 +12,8 @@ const NOTICE =
 type Territory = { id: string; name: string; municipality_code: string };
 type History = { year: number; abstention_pct: number | null };
 type StateSummary = { state_code: string; state_name: string; observed_abstention_pct: number | null };
+type DistrictTerritory = { id: string; name: string; territory_code: string; district_plan: string };
+type DistrictObservation = { territory_id: string; year: number; abstention_pct: number | null; coverage_share: number | null };
 
 async function apiJson<T>(page: Page, path: string): Promise<T> {
   const response = await page.request.get(path);
@@ -79,6 +81,33 @@ test("district national mode shows observed 2024 coverage without prediction or 
   await expect(table.getByRole("columnheader", { name: "Riesgo alto" })).toHaveCount(0);
   await expect(table.getByRole("button", { name: "Ver observación distrital de JALISCO" })).toBeVisible();
   await expect(page.getByText(/Riesgo alto|unidades elegibles para predicción/i)).toHaveCount(0);
+});
+
+test("district profile is plan 2023, observed 2024 only, with bounded map and aggregate intersections", async ({ page }) => {
+  const districts = await apiJson<{ items: DistrictTerritory[] }>(page, "/api/v1/territories?state_code=14&level=federal_district&page=1&page_size=500");
+  const district = districts.items[0];
+  expect(district).toBeTruthy();
+  expect(district!.district_plan).toBe("DERFE2023");
+  const history = await apiJson<{ items: DistrictObservation[] }>(page, `/api/v1/participation/history?level=federal_district&state_code=14&territory_id=${district!.id}&year=2024&page=1&page_size=1`);
+  const intersections = await apiJson<{ items: Array<{ year: number; district_plan: string; section_count: number; section_share: number; ln: number | null; is_split: boolean }> }>(page, `/api/v1/territories/${district!.id}/municipal-districts`);
+  expect(intersections.items.length).toBeGreaterThan(0);
+  expect(intersections.items.every((row) => row.year === 2024 && row.district_plan === "DERFE2023" && row.section_count > 0 && row.section_share >= 0 && row.section_share <= 1)).toBeTruthy();
+
+  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
+  await page.goto(`/territory?level=federal_district&state=14&territory_id=${district!.id}`);
+  await expect(page.getByRole("heading", { name: `${district!.name} · marco 2023` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Observado 2024" })).toBeVisible();
+  await expect(page.getByText(history.items[0]?.abstention_pct === null ? "Información insuficiente" : `${history.items[0]!.abstention_pct!.toFixed(1)} %`)).toBeVisible();
+  await expect(page.getByText("Cobertura")).toBeVisible();
+  await expect(page.getByRole("table", { name: "Municipios que intersectan el distrito" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Predicción 2027|Escenario/i })).toHaveCount(0);
+  await expect(page.locator(".territory-page")).not.toContainText(/Predicción 2027|banda de confianza/i);
+  const wfs = await wfsDone;
+  const wfsParams = new URL(wfs.url()).searchParams;
+  expect(wfsParams.get("typeNames")).toBe("participa_geo_national:districts_2023");
+  expect(wfsParams.get("level")).toBe("federal_district");
+  expect(wfsParams.get("state_code")).toBe("14");
+  expect(wfsParams.get("count")).toBe("500");
 });
 
 test("municipal profile combines observed history with its published 2027 prediction", async ({ page }) => {

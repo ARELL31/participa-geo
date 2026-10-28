@@ -200,6 +200,63 @@ describe("TerritoryPage", () => {
     expect(within(table).getByRole("button", { name: "Seleccionar ACATIC" })).toBeInTheDocument();
   });
 
+  it("shows a 2024 observed district profile with plan and aggregate municipality intersections only", async () => {
+    const districtId = "c1a1a5b4-0000-4000-8000-000000000001";
+    const districtTerritory = {
+      ...territory(districtId, "05", "Distrito 05"),
+      level: "federal_district" as const,
+      district_plan: "DERFE2023" as const,
+    };
+    const wfsQueries: URLSearchParams[] = [];
+    server.use(
+      http.get("*/api/v1/territories", () => HttpResponse.json(page([districtTerritory]))),
+      historyHandler((params) => params.get("level") === "federal_district"
+        ? [historyYear(districtId, 2024, { level: "federal_district", name: "Distrito 05", territory_code: "05", district_plan: "DERFE2023", coverage_share: 0.9513, ln: 1000, sv: 500, nv: 450, ns: 50, abstention_pct: 47.368, eligible: false })]
+        : []),
+      http.get(/\/api\/v1\/territories\/[^/]+\/municipal-districts$/, () => HttpResponse.json(page([
+        { state_code: "14", municipality_code: "001", municipality_name: "Acatic", district_code: "05", district_name: "Distrito 05", district_plan: "DERFE2023", is_split: true, section_count: 3, section_share: 0.6, ln: 600, sv: 300, nv: 270, ns: 30, abstention_pct: 47.368, coverage_share: 0.95 },
+        { state_code: "14", municipality_code: "002", municipality_name: "Tepatitlán", district_code: "05", district_name: "Distrito 05", district_plan: "DERFE2023", is_split: false, section_count: 2, section_share: 0.4, ln: 400, sv: 200, nv: 180, ns: 20, abstention_pct: 47.368, coverage_share: 0.95 },
+      ]))),
+      http.get("*/api/v1/gis/wfs", ({ request }) => {
+        wfsQueries.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ type: "FeatureCollection", features: [] });
+      }),
+    );
+    renderAt(`?level=federal_district&territory_id=${districtId}&state=14`);
+
+    expect(await screen.findByRole("heading", { name: /Distrito 05 · marco 2023/i })).toBeVisible();
+    expect(screen.getByText("Observado 2024")).toBeVisible();
+    expect(screen.getByText("Cobertura")).toBeVisible();
+    expect(await screen.findByRole("table", { name: /Municipios que intersectan/i })).toBeVisible();
+    expect(within(screen.getByRole("table", { name: /Municipios que intersectan/i })).getByRole("button", { name: /Acatic/ })).toBeVisible();
+    expect(screen.queryByText(/Predicción 2027|Banda/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Escenario/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(wfsQueries).toHaveLength(1));
+    expect(wfsQueries[0]?.get("level")).toBe("federal_district");
+    expect(wfsQueries[0]?.get("count")).toBe("500");
+  });
+
+  it("lists every district intersection for a split municipality without a dominant-district label", async () => {
+    const municipalityId = TERRITORY_A;
+    const intersections = Array.from({ length: 3 }, (_, index) => ({
+      state_code: "14", municipality_code: "001", municipality_name: "Acatic",
+      district_code: `0${index + 1}`, district_name: `Distrito 0${index + 1}`,
+      district_plan: "DERFE2023", is_split: true, section_count: 1, section_share: 1 / 3,
+      ln: 100, sv: 50, nv: 45, ns: 5, abstention_pct: 47.368, coverage_share: 0.95,
+    }));
+    server.use(
+      territoriesHandler(TERRITORIES),
+      historyHandler((params) => [historyYear(params.get("territory_id"), 2024)]),
+      http.get(/\/api\/v1\/territories\/[^/]+\/municipal-districts$/, () => HttpResponse.json(page(intersections))),
+      wfsHandler([featureFor(TERRITORY_A), featureFor(TERRITORY_B)]),
+    );
+    renderAt(`?territory_id=${municipalityId}&state=14`);
+
+    const table = await screen.findByRole("table", { name: /Distritos que intersectan/i });
+    for (const district of intersections) expect(within(table).getByRole("button", { name: new RegExp(district.district_name) })).toBeVisible();
+    expect(screen.queryByText(/distrito dominante/i)).not.toBeInTheDocument();
+  });
+
   it("updates the URL when a municipality is selected from the map table", async () => {
     server.use(
       territoriesHandler(TERRITORIES),

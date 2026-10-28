@@ -389,6 +389,85 @@ class Repository:
         ]
         return records, total
 
+    def get_municipality_district_intersections(
+        self, territory_id: UUID
+    ) -> tuple[list[dict], int]:
+        """Return public 2024 municipality×district aggregates for one territory."""
+        municipality = self.session.execute(
+            text("""
+                SELECT state_code, municipality_code
+                FROM territory_version
+                WHERE id=:territory_id AND level='municipality'
+                  AND reference_date=:reference_date
+            """),
+            {"territory_id": territory_id, "reference_date": _REFERENCE_DATE},
+        ).mappings().first()
+        district = None
+        if municipality is None:
+            from participa_geo.territory import TerritoryKey, territory_id as make_id
+
+            for row in self.session.execute(
+                text("SELECT state_code, district_code FROM api_district_catalogue")
+            ).mappings():
+                candidate = make_id(
+                    TerritoryKey("federal_district", row["state_code"], row["district_code"], "DERFE2023")
+                )
+                if candidate == territory_id:
+                    district = row
+                    break
+            if district is None:
+                return [], 0
+
+        where = "b.district_plan='DERFE2023'"
+        params: dict = {"territory_id": territory_id}
+        if municipality is not None:
+            where += " AND b.state_code=:state_code AND b.municipality_code=:municipality_code"
+            params.update(state_code=municipality["state_code"], municipality_code=municipality["municipality_code"])
+        else:
+            where += " AND b.state_code=:state_code AND b.district_code=:district_code"
+            params.update(state_code=district["state_code"], district_code=district["district_code"])
+
+        total = int(self.session.scalar(text(f"""
+            SELECT count(*) FROM bridge_municipality_district b WHERE {where}
+        """), params))
+        rows = self.session.execute(text(f"""
+            WITH intersections AS (
+                SELECT b.state_code, b.municipality_code, b.district_code,
+                       b.district_plan, b.section_count,
+                       SUM(b.section_count) OVER (PARTITION BY b.state_code,b.municipality_code) AS municipality_sections,
+                       count(*) OVER (PARTITION BY b.state_code,b.municipality_code) > 1 AS is_split,
+                       a.ln, a.sv, a.nv, a.ns, a.coverage_status,
+                       SUM(a.ln) OVER (PARTITION BY b.state_code,b.municipality_code) AS municipality_ln
+                FROM bridge_municipality_district b
+                LEFT JOIN agg_municipality_district_year a
+                  ON a.state_code=b.state_code AND a.municipality_code=b.municipality_code
+                 AND a.district_code=b.district_code AND a.district_plan=b.district_plan
+                 AND a.year=2024
+                WHERE {where}
+            )
+            SELECT i.state_code, i.municipality_code, m.name AS municipality_name,
+                   i.district_code, d.label AS district_name, i.district_plan,
+                   i.section_count, i.is_split,
+                   i.section_count::float8/NULLIF(i.municipality_sections,0) AS section_share,
+                   i.ln, i.sv, i.nv, i.ns,
+                   i.ln::float8/NULLIF(i.municipality_ln,0) AS ln_share,
+                   CASE WHEN COALESCE(i.sv,0)+COALESCE(i.nv,0)>0
+                     THEN 100.0*i.nv/(i.sv+i.nv) END AS abstention_pct,
+                   c.coverage AS coverage_share,
+                   COALESCE(i.coverage_status, 'insufficient') AS coverage_status
+            FROM intersections i
+            LEFT JOIN territory_version m
+              ON m.state_code=i.state_code AND m.municipality_code=i.municipality_code
+             AND m.level='municipality' AND m.reference_date=:reference_date
+            LEFT JOIN api_district_catalogue d
+              ON d.state_code=i.state_code AND d.district_code=i.district_code
+            LEFT JOIN district_reconstruction_coverage c
+              ON c.state_code=i.state_code AND c.district_code=i.district_code
+             AND c.year=2024 AND c.district_plan=i.district_plan
+            ORDER BY i.municipality_code,i.district_code
+        """), {**params, "reference_date": _REFERENCE_DATE}).mappings().all()
+        return [dict(row) for row in rows], total
+
     def get_history(
         self,
         *,

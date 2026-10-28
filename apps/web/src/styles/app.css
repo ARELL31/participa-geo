@@ -1667,6 +1667,38 @@ button {
   border-left: 4px solid var(--color-text-secondary);
 }
 
+.district-map {
+  margin: 0;
+  border: 1px solid var(--color-border, #ded9d6);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #f7f6f5;
+}
+
+.district-map svg {
+  display: block;
+  width: 100%;
+  min-height: 14rem;
+  max-height: 34rem;
+}
+
+.district-map figcaption {
+  padding: 0.75rem 1rem;
+  color: var(--color-text-muted, #5e5654);
+  font-size: 0.875rem;
+}
+
+.intersection-panel,
+.district-list {
+  min-width: 0;
+  margin-top: 1.5rem;
+}
+
+.intersection-panel .table-scroll,
+.district-list .table-scroll {
+  max-width: 100%;
+}
+
 /* ------------------------------------------------------------ responsive */
 
 @media (max-width: 1200px) {
