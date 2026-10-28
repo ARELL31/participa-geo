@@ -102,6 +102,18 @@ def _record_dicts(records) -> list[dict]:
     return [asdict(record) for record in records]
 
 
+def _coverage_copy_rows(rows: list[dict]) -> list[dict]:
+    """Provide required DB columns explicitly for COPY, independent of defaults."""
+    return [
+        {
+            **row,
+            "district_code": "00" if row["district_code"] == "ALL" else row["district_code"],
+            "district_plan": "DERFE2023",
+        }
+        for row in rows
+    ]
+
+
 def _copy_rows(session: Session, table: str, columns: list[str], rows: list[dict]) -> None:
     """Use PostgreSQL COPY for national-scale Task 3 artifacts."""
     if not rows:
@@ -468,11 +480,9 @@ def build_national_continuity(
             "mgs_only_section_count",
             "mgs_only_ln",
             "section_universe_gap_count",
+            "district_plan",
         ],
-        [
-            dict(row, district_code="00") if row["district_code"] == "ALL" else row
-            for row in coverage_rows
-        ],
+        _coverage_copy_rows(coverage_rows),
     )
     _copy_rows(
         session,

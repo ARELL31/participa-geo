@@ -104,8 +104,12 @@ sg docker -c 'docker compose exec -T api python -m participa_geo.cli verify-deli
   --archive /workspace/dist/national/technical.zip'
 ```
 
-`--confirm-source-license` incorpora los seis ZIP CCPC y 32 ZIP MGS, junto con
-atribución, URL y SHA-256. La redistribución se confirma para esta entrega en
-`docs/hackathon/source-licenses.md`. El ZIP excluye `.env`, secretos, cartas,
-contactos y datos personales. `--skip-sources` genera una alternativa sólo con
-metadatos, sin los archivos originales.
+`--confirm-source-license` incorpora los seis ZIP CCPC, 32 ZIP MGS y los insumos
+de continuidad INE (ACCDB, CSV histórico derivado y catálogo de cabeceras), todos
+con atribución, URL y SHA-256. Para esta entrega se incluye el material autorizado;
+la licencia específica del histórico no está publicada y debe revisarse antes de
+redistribución pública. El paquete final ronda 440 MiB comprimido. Se excluyen `.env`,
+secretos, cartas, contactos y datos personales. `--skip-sources` omite todos los
+originales y conserva únicamente los inventarios de fuentes. El SHA-256 y tamaño
+exacto del ZIP están en el informe Task 11 y en el `DELIVERY.json` contiguo. El
+resultado cleanroom está en `docs/hackathon/verification-results.md`.

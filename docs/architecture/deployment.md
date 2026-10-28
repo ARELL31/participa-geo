@@ -262,10 +262,7 @@ predicción/escenario distrital; al finalizar se elimina sólo el proyecto
 cleanroom. El detalle y cualquier limitación verificable se registra en
 `docs/hackathon/verification-results.md`.
 
-**Límite conocido del paquete de Task 11:** el ZIP incluye los 6 CCPC y 32 MGS
-fuente, pero no el ACCDB/CSV de historia seccional ni el catálogo de cabeceras
-distritales. El ensayo 2026-10-28 ejecutó migración e ingestión completa, pero
-`district rebuild` y `gis import-national` se detuvieron por esos archivos
-ausentes; no se declaró una reproducción cleanroom integral. Hace falta autorizar
-y atribuir esos insumos o cambiar el contrato de rebuild antes de repetir la
-aceptación cleanroom completa.
+El ZIP confirmado incluye 6 CCPC, 32 MGS y los tres insumos de continuidad/catálogo
+con atribución y hashes. La prueba cleanroom más reciente, su alcance y cualquier
+limitación se documentan en `docs/hackathon/verification-results.md`; no debe
+inferirse aceptación completa únicamente de que el ZIP verifique sus checksums.

@@ -55,6 +55,7 @@ services:
       - ./apps/web:/workspace/apps/web:ro
       - ./tests:/workspace/tests
       - ./pipelines:/workspace/pipelines
+      - ./scripts:/workspace/scripts:ro
       - ./gis:/workspace/gis
       - ./alembic.ini:/workspace/alembic.ini:ro
       - ./alembic:/workspace/alembic:ro

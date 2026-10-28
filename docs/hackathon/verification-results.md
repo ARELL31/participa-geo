@@ -1,12 +1,10 @@
 # Resultados de verificación — PARTICIPA-GEO
 
-> **Aceptación nacional Task 11 (actualizada 2026-10-28):** estado
-> `DONE_WITH_CONCERNS`. El stack nacional real cumple los límites medidos de
-> rendimiento; backend y Playwright quedan verdes con pruebas Jalisco obsoletas
-> explícitamente superseded. El ZIP nacional está completo y hasheado. El ensayo
-> cleanroom se ejecutó desde el ZIP pero **se bloquea** al faltar en éste los
-> insumos de continuidad distrital requeridos por `district rebuild`/`gis import`
-> (detalle §12); no se declara reproducción completa.
+> **Continuación de aceptación Task 11 (2026-10-28):** paquete ampliado con
+> insumos INE autorizados, exportador reproducible y atribución/URL/SHA-256.
+> La secuencia cleanroom de continuidad, reconstrucción, GIS, identidad/modelo,
+> readiness/API/WMS/WFS y paridad `atol=1e-8` pasó. Suite final, ZIP regenerado,
+> limpieza aislada y commit se registran en §13 cuando concluyan.
 
 **Fecha de la corrida:** 2026-10-27 (UTC), rama `feat/participa-geo-mvp`.
 **Alcance:** aceptación técnica del MVP local. No es un despliegue público, no
@@ -355,7 +353,7 @@ entidad. Las pruebas automáticas de los umbrales están en
 `tests/integration/national/test_performance.py` (**4 passed**). Mediciones
 locales, no garantías generales.
 
-### ZIP nacional
+### ZIP nacional (corrida inicial, antes de agregar fuentes de continuidad)
 
 - CLI `deliver --output-dir dist/national --confirm-source-license` y
   `verify-delivery` completaron con `complete: true`, 311 miembros verificados,
@@ -367,7 +365,7 @@ locales, no garantías generales.
   cartas/credenciales o datos personales. Distrito es observado 2024; no hay
   artefacto de predicción distrital.
 
-### Ensayo cleanroom: bloqueado por insumos fuera del ZIP
+### Primer ensayo cleanroom (conclusión supersedida)
 
 Se extrajo el ZIP de aceptación al directorio nuevo
 `/tmp/opencode/participa-geo-national-cleanroom-20261028T190000Z`, con proyecto
@@ -400,4 +398,108 @@ participa_geo_national_cleanroom ... down --volumes`; no se tocó ni se eliminar
 volúmenes del proyecto nacional o MVP. La reproducción integral requiere que el
 responsable de fuentes decida si añadir y atribuir los insumos de continuidad al
 paquete o aprobar un contrato de rebuild que consuma evidencia derivada
-versionada. Hasta entonces: **DONE_WITH_CONCERNS**.
+versionada. Este resultado quedó **SUPERSEDIDO** al autorizarse e incluirse los
+insumos oficiales de continuidad; la repetición completa se registra en §13.
+
+### Auditoría de los 76 skips
+
+La salida `pytest -q -rs` permite reconciliar los 76 skips: 74 son módulos MVP
+Jalisco superseded por contratos/aceptación nacional; dos son pruebas opcionales
+del flujo legado de escenarios que requieren el GeoJSON MVP. No se omitió una
+prueba nacional-crítica.
+
+| Clase / módulo | Skips | Reemplazo nacional o razón |
+|---|---:|---|
+| `test_exports.py` | 21 | contratos nacionales de reportes y entrega |
+| `test_geography.py` | 6 | integración geográfica nacional y aceptación E2E |
+| `test_geoserver.py` | 3 | WMS/WFS nacional acotado, importación/verificación GIS |
+| `test_official_data.py` | 6 | auditoría de ingesta nacional por sección |
+| `test_postgis.py` | 10 | migraciones y contratos PostGIS nacionales |
+| `test_read_api_postgis.py` | 8 | contratos API y aceptación E2E nacional |
+| `test_repository.py` | 9 | contratos de catálogo/lectura nacionales |
+| `test_scenario_persistence.py` | 5 | contrato de escenarios y paridad de escenario municipal |
+| `test_training.py` | 6 | tests de modelo/identidad nacional y entrenamiento cleanroom |
+| `test_delivery.py` | 1 | requiere el GeoJSON de escenario Jalisco MVP, no se sustituye con geometría sintética |
+| `test_report_api.py` | 1 | requiere el GeoJSON de escenario Jalisco MVP, no se sustituye con geometría sintética |
+| **Total** | **76** | **74 superseded + 2 artefacto MVP condicional** |
+
+## 13. Continuación de aceptación cleanroom y ZIP (2026-10-28)
+
+### Paquete final
+
+- `deliver --confirm-source-license` y `verify-delivery` generaron/verificaron
+  el ZIP nacional: 315 miembros verificados y 317 entradas en el manifiesto de
+  entrega. Los bytes y SHA-256 exactos están en `DELIVERY.json` contiguo y el
+  informe Task 11; no se autoincrustan en miembros del ZIP. `complete: true`.
+- Incluye 6 archivos ZIP CCPC, 32 MGS ZIP, tres insumos de continuidad (ACCDB,
+  exportación histórica CSV y catálogo de cabeceras) y
+  `scripts/export_official_section_history.sh`. Los 3 hashes de continuidad
+  coinciden con sus bytes; ningún `.env`, clave privada, `.git`, cartas ni dato
+  personal aparece en el archivo.
+- Entrega `scope`: predicción municipal 2027 y distritos sólo observados 2024;
+  sin modelo ni predicción distrital.
+
+### Cleanroom desde paquete nacional con fuentes de continuidad
+
+- Cleanroom aislado: `/tmp/opencode/participa-geo-national-cleanroom-20261028T203500Z`,
+  Compose `participa_geo_national_cleanroom`, puerto web 8082 y volúmenes propios.
+  El DB migró desde cero hasta Alembic `0013`. El pipeline de continuidad en la
+  extracción recibió el fix probado de COPY (`district_plan=DERFE2023` explícito),
+  incluido en la entrega final. SHA-256 de `pipelines/validation/continuity.py`
+  coincidió en el ZIP final, el checkout y la extracción cleanroom:
+  `75cc4ca16c3cd3145dd581ffcf35c12b7e26f1fe6d54a0e0cf1403fcdb25032b`.
+- `ingest-national`: **54,872,712 hechos**, 192 CSV, 14,779 observaciones
+  municipales (2,477 de 2024), 300 distritos versionados y 44,154 `DEF` vacíos.
+  `continuity build` y `district rebuild` pasaron: histórico 75,895 filas, 73,268
+  secciones MGS, 2,581 pares municipio/distrito y 72 municipios divididos;
+  450 secciones CCPC 2024 sin MGS, 2,967 MGS sin CCPC 2024, cero discrepancias
+  de referencia CCPC/MGS y cobertura nacional 2024 de 0.9513343123732259
+  (estado `insufficient`, no se habilita modelo distrital).
+- `gis import-national` pasó: 32 archivos, 32 entidades, 2,477 municipios, 300
+  distritos y 73,268 secciones en EPSG:4326. `gis publish-national` pasó en el
+  reintento tras la disponibilidad de GeoServer; publicó `states`,
+  `municipalities` y `districts_2023`, WFS `BASIC`, transacciones deshabilitadas.
+  La primera llamada REST autenticada expiró por timeout; la lectura anónima
+  devolvió 401 y la autenticada posterior devolvió 200.
+- Identidad: 2,477 referencias, 14,779 orígenes y correspondencias verificadas,
+  cero ambiguas. `train-national-municipal` produjo M0, run
+  `0e288804-1c44-523e-a4a3-7a7db70e8c77`, 1,623 candidatos / 2,477 municipios;
+  `model load-national` pasó.
+- API/Web readiness en `http://127.0.0.1:8082`: **200 ready**, checks database,
+  migrations, dataset, model y GIS en `true`. Predicciones municipales 2027 para
+  state14: 200 / 125 filas. Proxy WMS y WFS capabilities: ambos 200 y anuncian
+  la capa nacional. `gis verify-national`: todos los checks pasan; GetMap 200
+  PNG de 8,137 bytes, WFS estatal 200 / 125 entidades, límite 1,000, transacción
+  rechazada y REST anónimo 401.
+- Comparación determinista baseline/rebuild: familia/run iguales, 2,477 filas de
+  predicción, CSV de exclusiones idéntico (162,546 bytes), máximo delta de
+  predicciones y escenarios 0.0, 2,477 resultados de escenario; tolerancia
+  absoluta `1e-8` (NaN coincidentes). El comparador verificó el JSON completo
+  del modelo, exclusiones, predicciones y escenario; los cuatro máximos delta
+  numéricos fueron 0.0.
+- Backend completo desde el API activo: **248 passed, 76 skipped, 1 warning**
+  en 236.67 s. Un primer intento con `docker compose run` aisló pytest del API
+  local usado por cuatro pruebas de latencia (ConnectionRefused a localhost:8000);
+  la repetición correcta con `docker compose exec -T api pytest -q -rs` pasó.
+- Web: ESLint y TypeScript pasan; Vitest **10 archivos / 67 tests** pasan; build
+  de producción pasa (aviso informativo de chunks MapLibre >500 kB y requests
+  MSW no manejadas en tests que aprobaron). Playwright real: **16 passed, 2
+  skipped superseded** en 41.7 s. Se limpiaron contenedores, red y volúmenes
+  exclusivamente del proyecto `participa_geo_national_cleanroom`; el stack
+  nacional de trabajo permanece separado e intacto y conserva readiness 200.
+
+### Suite y checks locales
+
+- Backend completo dentro del servicio API: **248 passed, 76 skipped, 1 warning**
+  (236.67 s); ver explicación de la primera invocación mal aislada arriba.
+- Los 76 skips quedan auditados en §12: 74 pruebas Jalisco reemplazadas por
+  contratos nacionales; 2 flujos legacy opcionales requieren GeoJSON MVP.
+- Playwright **16 passed, 2 superseded skips** (41.7 s). Web lint/typecheck/build
+  y Vitest **10 archivos / 67 tests** pasan; el aviso MSW es conocido y los
+  tests aprobaron. Se conserva el aviso informativo de chunk MapLibre >500 kB.
+- El ZIP se regeneró/verificó con esta documentación. Limpieza del proyecto
+  cleanroom comprobada (sin contenedores ni volúmenes); sólo queda registrar el
+  commit de esta continuación.
+- Ruff `check .`, `docker compose config --quiet` y `git diff --check` pasan.
+- GitHub Actions no se ejecutó. El stack nacional conserva sus volúmenes y su
+  readiness 200 tras Playwright y después del teardown cleanroom.

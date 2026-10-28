@@ -37,16 +37,37 @@ publicación abierta, el usuario debe confirmar las condiciones aplicables.
 - Atribución obligatoria en mapas y documentos: INE, cartografía nacional plan
   DERFE2023.
 
-## 3. Tamaño y modalidad de entrega
+## 3. Continuidad seccional y catálogo distrital INE
 
-Los 38 ZIP originales nacionales suman aproximadamente **439 MiB** en disco antes
-de empaquetar (seis CCPC y 32 paquetes cartográficos). No se impone un límite de
-carga HTTP al ZIP técnico: `deliver` lo construye localmente de forma temporal y
-publica el archivo completo; el tamaño final se registra en `DELIVERY.json` y en
-el manifiesto. Considere el tamaño al distribuirlo por correo o repositorios con
-cuotas.
+- ACCDB: *HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb*, URL
+  oficial <https://storage.googleapis.com/mapoteca/historicos/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb>.
+- `official-section-history.csv` es una exportación derivada de ese ACCDB mediante
+  `scripts/export_official_section_history.sh`; el ZIP incluye ambos y el script
+  para que la exportación y reconstrucción sean reproducibles.
+- `district-headquarters.txt` es el catálogo de cabeceras asociado al MGS INE,
+  corte 15-DIC-2025, con URL de referencia
+  <https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/>.
+- SHA-256, bytes y nombres de miembro están en el inventario `sources/` del ZIP.
+  El histórico no publica una licencia específica de redistribución. El usuario
+  autorizó incluir estos materiales en esta entrega con atribución; esto no se
+  presenta como licencia general para redistribución posterior.
 
-## 4. Tipografía
+## 4. Tamaño y modalidad de entrega
+
+Además de los 38 ZIP originales nacionales (seis CCPC y 32 paquetes MGS, unos
+**439 MiB** antes de empaquetar), el modo confirmado incluye el ACCDB histórico
+(10,797,056 bytes), el CSV derivado (6,067,765 bytes) y el catálogo de cabeceras
+(15,096 bytes). Los tres miembros y sus hashes/URLs se registran en
+`sources/SOURCES.md`, `sources/sources.json`, `MANIFEST.json` y
+`CHECKSUMS.sha256`. El ZIP técnico es de aproximadamente **440 MiB**; los bytes
+y SHA-256 exactos se registran fuera del ZIP en `DELIVERY.json` y el informe Task
+11, no se autoincrustan. El CSV se reproduce con
+`scripts/export_official_section_history.sh`; las fuentes
+originales permanecen fuera de Git. No se impone un límite de carga HTTP: el
+tamaño final se registra en `DELIVERY.json` y el manifiesto. Considere el tamaño
+al distribuirlo por correo o repositorios con cuotas.
+
+## 5. Tipografía
 
 - Inter (Regular/SemiBold), © The Inter Project Authors.
 - Licencia SIL Open Font License 1.1; el texto completo está en
@@ -54,7 +75,7 @@ cuotas.
 - Se carga desde un TTF local; no se instala en el host ni se descarga en tiempo
   de ejecución.
 
-## 5. Bibliotecas y herramientas
+## 6. Bibliotecas y herramientas
 
 | Componente | Licencia | Uso |
 |---|---|---|
@@ -74,7 +95,7 @@ No se atribuye al equipo la propiedad intelectual de INE, cartografía, fuentes 
 bibliotecas. Las aportaciones originales del equipo se ceden según la carta que
 firma el usuario; el alcance de esa cesión debe revisarse humanamente.
 
-## 6. Qué no se incluye nunca
+## 7. Qué no se incluye nunca
 
 - Cartas firmadas, contactos, credenciales, `.env`, secretos, datos personales,
   listas nominales o cualquier identificador individual.

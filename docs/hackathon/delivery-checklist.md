@@ -6,7 +6,8 @@ verificarse con comandos; la segunda no se automatiza.
 ## A. Confirmación técnica (verificable)
 
 - [x] `docker compose config --quiet` sale 0.
-- [x] Backend: `docker compose run --rm api pytest -q` termina sin fallos.
+- [x] Backend completo dentro del API activo (las pruebas de rendimiento
+      apuntan a localhost:8000): `docker compose exec -T api pytest -q -rs`.
 - [x] Web: `docker compose run --rm --no-deps web-test npm run test -- --run`.
 - [x] E2E nacional real: `docker compose --profile test run --rm e2e npx playwright test --config tests/e2e/playwright.config.ts` (accesibilidad incluida; dos journeys MVP Jalisco explícitamente superseded).
 - [x] `deliver` se ejecutó con **un** modo explícito de fuentes:
@@ -19,8 +20,10 @@ verificarse con comandos; la segunda no se automatiza.
       todos los checksums coinciden; un paquete incompleto sale con código
       distinto de cero.
 - [x] En modo `--confirm-source-license`, el ZIP incluye los seis ZIP CCPC
-      nacionales y los 32 ZIP cartográficos por entidad. En modo `--skip-sources`,
-      omite originales e incluye `sources/SOURCES.md` + `sources/sources.json`.
+      nacionales, los 32 ZIP cartográficos por entidad y ACCDB/CSV histórico/
+      catálogo de cabeceras; fuentes/SHA-256 están en los inventarios. En modo
+      `--skip-sources`, omite originales e incluye `sources/SOURCES.md` +
+      `sources/sources.json`.
 - [x] El ZIP incluye diccionarios, agregados, artefactos/métricas del modelo,
       código, docs, `docs/api/openapi.json`, reportes/mapas condicionados al
       escenario, `MANIFEST.json` y `CHECKSUMS.sha256`.
@@ -38,11 +41,11 @@ verificarse con comandos; la segunda no se automatiza.
       leyenda/corte y no hay placeholder si GIS falla.
 - [x] El reporte y la presentación se generan desde artefactos/BD; una fecha de
       generación distinta no cambia los resultados.
-- [x] Los checksums del paquete pasan y la ingesta nacional (54,872,712 facts)
-      se reproduce desde el ZIP en cleanroom.
-- [ ] Rebuild cleanroom integral pendiente: faltan en el ZIP ACCDB/CSV de historia
-      seccional y `district-headquarters.txt`; el bloqueo está documentado, no se
-      declara aceptación cleanroom completa.
+- [x] Ingesta nacional desde el ZIP en cleanroom aislado: 54,872,712 facts,
+       192 CSV; carga PostGIS completa.
+- [x] Rebuild cleanroom integral: continuidad, distritos, GIS, identidad/modelo,
+       `readiness=200`, API/WMS/WFS y paridad de modelo/predicción/exclusiones/
+       escenario a `atol=1e-8`; evidencia completa en §13.
 - [x] WMS/WFS/page500/resumen 32 medidos bajo umbrales; cifras exactas en el
       informe de verificación.
 
@@ -61,7 +64,8 @@ Comando de verificación:
 - [ ] Revisar la redacción metodológica completa (no sólo el número de páginas).
 - [x] Confirmar las condiciones de uso/redistribución de INE y cartografía
       (ver `source-licenses.md`). El usuario confirmó el 2026-10-27 incluir los
-      originales con atribución, URLs y checksums en el ZIP técnico; revisar el
+      originales con atribución, URLs y checksums en el ZIP técnico (confirmado
+      nuevamente el 2026-10-28); revisar el
       alcance antes de una publicación abierta.
 - [ ] Firmar cartas de cesión/declaratoria y revisar el alcance de la cesión.
 - [ ] Integrar las cartas en un espacio privado, **fuera** de Git, API,

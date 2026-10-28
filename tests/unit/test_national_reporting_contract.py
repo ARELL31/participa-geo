@@ -12,6 +12,7 @@ from pypdf import PdfReader
 from participa_geo.api.schemas.common import DatasetMeta
 from participa_geo.api.schemas.history import HistoryDTO
 from participa_geo.api.schemas.reports import ReportRequest
+from participa_geo.cli import build_parser
 from participa_geo.reporting.delivery import (
     _sources_json,
     _sources_markdown,
@@ -25,6 +26,17 @@ from participa_geo.reporting.national import (
 )
 from participa_geo.reporting.pdf import generate_executive, generate_methodology
 from participa_geo.reporting.tables import ModelEvidenceLimitError, export_model_evidence
+
+
+def test_delivery_confirmation_help_names_authorized_continuity_sources(capsys):
+    with pytest.raises(SystemExit) as result:
+        build_parser().parse_args(["deliver", "--help"])
+
+    assert result.value.code == 0
+    help_text = capsys.readouterr().out
+    assert "ACCDB" in help_text
+    assert "histórico seccional" in help_text
+    assert "catálogo de cabeceras" in help_text
 
 
 def test_report_request_carries_level_and_plan_metadata():
@@ -230,7 +242,32 @@ def test_model_evidence_over_limit_fails_without_truncating(tmp_path):
 def test_delivery_attribution_includes_all_mgs_sources_and_checksums():
     context = load_delivery_context()
     source_doc = json.loads(_sources_json(context, include_raw_sources=False))
-    sources_markdown = _sources_markdown(context, include_raw_sources=False).decode()
+    sources_markdown = _sources_markdown(context, include_raw_sources=True).decode()
+
+    continuity_sources = source_doc["continuity_sources"]
+    expected_checksums = {
+        "data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb": (
+            "f88804f66fa0bcfc855159a1c2332be06f283bd697e2a037e8a70db3fc5934aa"
+        ),
+        "data/raw/continuity/official-section-history.csv": (
+            "e91f0f6199a8efeaf755fcc9a4c08e705bc15508d060398b627876582af6f5cb"
+        ),
+        "data/raw/continuity/district-headquarters.txt": (
+            "c244b4ed3e55c668a4a8fde4a8f5999fa95d8974b6a45a5ef91660a5c1a4fb47"
+        ),
+    }
+    assert {item["member"]: item["sha256"] for item in continuity_sources} == expected_checksums
+    assert all(item["source_url"] for item in continuity_sources)
+    assert all(item["member"] in sources_markdown for item in continuity_sources)
+    assert all(item["sha256"] in sources_markdown for item in continuity_sources)
+    csv_source = next(
+        item
+        for item in continuity_sources
+        if item["member"].endswith("official-section-history.csv")
+    )
+    assert csv_source["derived_from"].endswith(".accdb")
+    assert csv_source["derived_using"] == "scripts/export_official_section_history.sh"
+    assert "se incluyen los originales de fuentes con atribución" in sources_markdown
 
     geography_sources = source_doc["geography_sources"]
     assert len(geography_sources) == 32
@@ -240,7 +277,7 @@ def test_delivery_attribution_includes_all_mgs_sources_and_checksums():
         for item in geography_sources
     )
     assert all(len(item["sha256"]) == 64 and item["attribution"] for item in geography_sources)
-    assert sources_markdown.count("https://storage.googleapis.com/mapoteca/MGS_") == 32
+    assert sum(item["source_url"] in sources_markdown for item in geography_sources) == 32
     assert sources_markdown.count("`" + "0" * 64 + "`") == 0
     assert "15-DIC-2025" in sources_markdown
     manifest = context_manifest(context)

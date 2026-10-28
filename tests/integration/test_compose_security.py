@@ -114,6 +114,11 @@ def test_web_can_start_before_data_model_and_gis_are_ready():
     assert depends["api"]["condition"] == "service_started"
 
 
+def test_api_mounts_national_source_export_scripts_read_only():
+    volumes = SERVICES["api"]["volumes"]
+    assert "./scripts:/workspace/scripts:ro" in volumes
+
+
 def test_services_rotate_logs_and_web_is_healthchecked():
     for name in ("api", "web", "db", "geoserver"):
         logging = SERVICES[name]["logging"]

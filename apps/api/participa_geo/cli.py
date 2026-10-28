@@ -852,7 +852,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Confirmar que se revisaron las condiciones de redistribución y que "
-            "se incluyen las seis fuentes CCPC y los 32 ZIP cartográficos nacionales."
+            "se incluyen las seis fuentes CCPC, 32 ZIP MGS y las fuentes de "
+            "continuidad (ACCDB, histórico seccional y catálogo de cabeceras)."
         ),
     )
     source_group.add_argument(

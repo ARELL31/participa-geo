@@ -9,6 +9,7 @@ from participa_geo.ingestion.continuity import (
     reconstruct_district_2023,
     validate_2023_reference,
 )
+from pipelines.validation.continuity import _coverage_copy_rows
 
 
 def _history(section, **overrides):
@@ -50,6 +51,18 @@ def _fact(
         nv=ln // 4,
         ns=ln - ln // 2 - ln // 4,
     )
+
+
+def test_coverage_rows_explicitly_assign_plan_before_postgres_copy():
+    rows = [
+        {"district_code": "ALL", "year": 2024},
+        {"district_code": "01", "year": 2024},
+    ]
+
+    copied = _coverage_copy_rows(rows)
+
+    assert [row["district_code"] for row in copied] == ["00", "01"]
+    assert {row["district_plan"] for row in copied} == {"DERFE2023"}
 
 
 def test_2024_reference_uses_official_plan_column_and_matches_ccpc_and_mgs():

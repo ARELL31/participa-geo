@@ -15,17 +15,65 @@ from uuid import UUID
 import pytest
 
 from participa_geo.reporting.delivery import (
+    NATIONAL_RAW_SOURCE_MEMBERS,
     REQUIRED_NATIONAL_MEMBERS,
     SCENARIO_REPORT_MEMBERS,
     DeliveryContext,
     DeliveryError,
     ScenarioFacts,
+    _candidate_files,
     build_technical_zip,
     load_delivery_context,
     verify_archive,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_national_raw_allowlist_includes_continuity_reconstruction_sources(tmp_path):
+    root = tmp_path / "repo"
+    members = (
+        "data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+        "data/raw/continuity/official-section-history.csv",
+        "data/raw/continuity/district-headquarters.txt",
+    )
+    for member in members:
+        _write(root / member, "source\n")
+
+    included = {
+        path.relative_to(root).as_posix()
+        for path in _candidate_files(root, include_raw_sources=True, national=True)
+    }
+    omitted = {
+        path.relative_to(root).as_posix()
+        for path in _candidate_files(root, include_raw_sources=False, national=True)
+    }
+
+    assert set(members) <= set(NATIONAL_RAW_SOURCE_MEMBERS)
+    assert set(members) <= included
+    assert not (set(members) & omitted)
+
+
+def test_national_delivery_includes_official_history_export_script(tmp_path):
+    root = _complete_fixture_root(tmp_path)
+    script = "scripts/export_official_section_history.sh"
+    _write(root / script, "#!/bin/sh\nprintf 'fixture\\n'\n")
+    archive = tmp_path / "complete.zip"
+
+    build_technical_zip(
+        load_delivery_context(),
+        archive,
+        root=root,
+        strict=True,
+        reports={
+            "reports/methodology.pdf": b"%PDF-1.4\n",
+            "reports/executive.pdf": b"%PDF-1.4\n",
+            "reports/district-observations.csv": b"district,observed_year\n01,2024\n",
+        },
+    )
+
+    with zipfile.ZipFile(archive) as package:
+        assert script in package.namelist()
 
 
 def _write(path: Path, text: str = "x") -> None:

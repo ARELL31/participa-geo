@@ -739,6 +739,7 @@ REQUIRED_NATIONAL_MEMBERS = (
     "infrastructure/docker/api.Dockerfile",
     "infrastructure/docker/web.Dockerfile",
     "data/sources-national.json",
+    "scripts/export_official_section_history.sh",
     "data/processed/national/national-ingest.json",
     "data/processed/national/municipal-observations.csv",
     "data/processed/national/model/model.json",
@@ -772,6 +773,50 @@ RAW_SOURCE_MEMBERS = (
 NATIONAL_RAW_SOURCE_MEMBERS = tuple(
     [f"data/raw/ccpc-national/ccpc-{year}.zip" for year in (2009, 2012, 2015, 2018, 2021, 2024)]
     + [f"data/raw/gis/national/{state_code:02d}.zip" for state_code in range(1, 33)]
+    + [
+        "data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+        "data/raw/continuity/official-section-history.csv",
+        "data/raw/continuity/district-headquarters.txt",
+    ]
+)
+
+CONTINUITY_SOURCES = (
+    {
+        "source": "INE, Histórico de secciones electorales PEF 1994–2024, corte diciembre 2025",
+        "source_url": "https://storage.googleapis.com/mapoteca/historicos/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+        "member": (
+            "data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb"
+        ),
+        "sha256": "f88804f66fa0bcfc855159a1c2332be06f283bd697e2a037e8a70db3fc5934aa",
+        "bytes": 10797056,
+        "attribution": (
+            "Instituto Nacional Electoral (INE), histórico oficial de secciones electorales."
+        ),
+    },
+    {
+        "source": "INE, exportación reproducible del histórico oficial de secciones",
+        "source_url": "https://storage.googleapis.com/mapoteca/historicos/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+        "member": "data/raw/continuity/official-section-history.csv",
+        "sha256": "e91f0f6199a8efeaf755fcc9a4c08e705bc15508d060398b627876582af6f5cb",
+        "bytes": 6067765,
+        "attribution": (
+            "INE; derivado local del ACCDB mediante scripts/export_official_section_history.sh."
+        ),
+        "derived_from": (
+            "data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb"
+        ),
+        "derived_using": "scripts/export_official_section_history.sh",
+    },
+    {
+        "source": "INE, Marco Geográfico Seccional nacional, plan DERFE2023",
+        "source_url": "https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/",
+        "member": "data/raw/continuity/district-headquarters.txt",
+        "sha256": "c244b4ed3e55c668a4a8fde4a8f5999fa95d8974b6a45a5ef91660a5c1a4fb47",
+        "bytes": 15096,
+        "attribution": (
+            "INE, cartografía nacional MGS corte 15-DIC-2025; catálogo de cabeceras distritales."
+        ),
+    },
 )
 
 SCENARIO_REPORT_MEMBERS = (
@@ -800,6 +845,7 @@ def _candidate_files(
     allowed_explicit = set(ALLOWLIST_EXPLICIT) | set(ALLOWLIST_FILES)
     allowed_explicit.update(NATIONAL_RAW_SOURCE_MEMBERS if include_raw_sources else ())
     if national:
+        allowed_explicit.add("scripts/export_official_section_history.sh")
         allowed_explicit = {
             item
             for item in allowed_explicit
@@ -878,7 +924,7 @@ def _add_path(
 
 def _sources_markdown(context: DeliveryContext, *, include_raw_sources: bool) -> bytes:
     mode = (
-        "confirmado: se incluyen los CSV/ZIP originales con atribución"
+        "confirmado: se incluyen los originales de fuentes con atribución"
         if include_raw_sources
         else "sólo checksums/URL: no se incluyen los originales"
     )
@@ -915,6 +961,26 @@ def _sources_markdown(context: DeliveryContext, *, include_raw_sources: bool) ->
             lines.append(
                 f"| {source.state_code} | {source.source_url} | {source.member} | "
                 f"`{source.sha256}` |"
+            )
+    if context.national:
+        lines.extend(
+            [
+                "",
+                "## Continuidad seccional y catálogo distrital INE",
+                "",
+                "Los originales se incluyen sólo en modo confirmado; el CSV es una "
+                "exportación derivada del ACCDB mediante el script reproducible indicado.",
+                "La fuente oficial no publica una licencia específica de redistribución; "
+                "confirmar condiciones antes de compartir públicamente.",
+                "",
+                "| Fuente / atribución | URL | Miembro | Bytes | SHA-256 |",
+                "|---|---|---|---:|---|",
+            ]
+        )
+        for source in CONTINUITY_SOURCES:
+            lines.append(
+                f"| {source['attribution']} | {source['source_url']} | "
+                f"{source['member']} | {source['bytes']} | `{source['sha256']}` |"
             )
     lines.extend(
         [
@@ -957,6 +1023,7 @@ def _sources_json(context: DeliveryContext, *, include_raw_sources: bool) -> byt
             }
             for source in context.geography_sources
         ],
+        "continuity_sources": list(CONTINUITY_SOURCES) if context.national else [],
     }
     return (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(
         "utf-8"
@@ -987,7 +1054,7 @@ def build_technical_zip(
 
     ``include_raw_sources`` is only true after an explicit human confirmation
     (CLI ``--confirm-source-license``). The default (and ``--skip-sources``)
-    omits the original CSVs/GIS ZIP and ships ``sources/SOURCES.md`` +
+    omits the original CSVs/GIS/continuity sources and ships ``sources/SOURCES.md`` +
     ``sources/sources.json`` with URLs and SHA-256 values instead.
     """
     source_root = Path(root) if root is not None else repo_root()
