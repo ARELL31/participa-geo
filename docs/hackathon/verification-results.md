@@ -414,7 +414,7 @@ prueba nacional-crítica.
 | `test_geography.py` | 6 | integración geográfica nacional y aceptación E2E |
 | `test_geoserver.py` | 3 | WMS/WFS nacional acotado, importación/verificación GIS |
 | `test_official_data.py` | 6 | auditoría de ingesta nacional por sección |
-| `test_postgis.py` | 10 | migraciones y contratos PostGIS nacionales |
+| `test_postgis.py` | 10 | aserciones de datos PostGIS ligadas a Jalisco sustituidas por contratos nacionales; permisos de roles nacionales cubiertos por `tests/integration/national/test_national_roles.py` |
 | `test_read_api_postgis.py` | 8 | contratos API y aceptación E2E nacional |
 | `test_repository.py` | 9 | contratos de catálogo/lectura nacionales |
 | `test_scenario_persistence.py` | 5 | contrato de escenarios y paridad de escenario municipal |
@@ -503,3 +503,39 @@ prueba nacional-crítica.
 - Ruff `check .`, `docker compose config --quiet` y `git diff --check` pasan.
 - GitHub Actions no se ejecutó. El stack nacional conserva sus volúmenes y su
   readiness 200 tras Playwright y después del teardown cleanroom.
+
+### Fix round 1 — revisión Task 11 (2026-10-28)
+
+- Se añadieron cinco contratos nacionales para los roles DB en
+  `tests/integration/national/test_national_roles.py`: `api` carece de INSERT y
+  UPDATE sobre tablas fuente/resultados y puede leer agregados; `gis_reader` es
+  SELECT-only en tablas/capas GIS y su UPDATE de `territory_version` se rechaza;
+  `writer` puede escribir agregados, pero no modificar `alembic_version`, crear
+  objetos/esquemas ni administrar roles o bases. Se mantiene el skip de las diez
+  pruebas de datos Jalisco en `test_postgis.py`; la cobertura nacional de roles
+  ahora tiene reemplazo ejecutado.
+- El p95 utiliza nearest-rank `ceil(0.95*n)-1`; dos pruebas cubren los valores
+  1–100 (p95=95) y 1–10 (p95=10, que diferencia el cálculo anterior).
+- README documenta el orden `ingest-national` → `continuity build` →
+  `district rebuild` → `gis import-national` → entrenamiento y carga del modelo,
+  con comandos exactos y enlace a la metodología de reconstrucción.
+- Verificación de esta ronda: Ruff pasó; backend **255 passed, 76 skipped, 1
+  warning**; Web **10 archivos / 67 tests**, ESLint, TypeScript y build pasaron;
+  Playwright **16 passed, 2 skipped** (dos journeys legacy reemplazados). Los
+  avisos conocidos de Starlette, handlers MSW y tamaño de bundle MapLibre no
+  causaron fallos. GitHub Actions no se ejecutó.
+- El ZIP se regeneró y se verificó después de los cambios. Ver §14 para el
+  número de miembros, `complete` y SHA-256 finales.
+
+## 14. ZIP posterior a Fix round 1
+
+- `deliver --output-dir dist/national --confirm-source-license` regeneró el
+  paquete después de actualizar README, tests, skip audit y esta documentación.
+  La verificación independiente (`verify-delivery`) reportó **complete: true**,
+  **316 miembros**, modo `confirm`, sin escenario requerido. El tamaño y
+  SHA-256 exactos se conservan en `dist/national/DELIVERY.json` y en el informe
+  Task 11 (el hash no se autoincluye dentro del ZIP).
+- El archivo incluye `tests/integration/national/test_national_roles.py`, las
+  pruebas p95 actualizadas y la secuencia vigente de README. No se repitió
+  cleanroom por ser un cambio de pruebas/documentación; la aceptación cleanroom
+  previa de §13 no se presenta como corrida nueva de esta revisión.

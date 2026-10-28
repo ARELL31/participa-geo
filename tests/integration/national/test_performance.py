@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 from urllib.request import urlopen
@@ -35,9 +36,23 @@ def _get(path: str) -> tuple[float, str, bytes]:
     return time.perf_counter() - started, content_type, body
 
 
+def _nearest_rank_p95(samples: list[float]) -> float:
+    if not samples:
+        raise ValueError("p95 requires at least one sample")
+    return sorted(samples)[math.ceil(0.95 * len(samples)) - 1]
+
+
+def test_nearest_rank_p95_for_values_one_through_one_hundred() -> None:
+    assert _nearest_rank_p95(list(range(1, 101))) == 95
+
+
+def test_nearest_rank_p95_rounds_up_for_ten_samples() -> None:
+    assert _nearest_rank_p95(list(range(1, 11))) == 10
+
+
 def _warm_p95(path: str, sample_count: int = 30) -> float:
     samples = [_get(path)[0] for _ in range(sample_count)]
-    return sorted(samples)[int(0.95 * (sample_count - 1))]
+    return _nearest_rank_p95(samples)
 
 
 def test_national_wms_cold_and_warm_latency() -> None:

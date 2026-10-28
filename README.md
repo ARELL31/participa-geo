@@ -54,6 +54,18 @@ con proyecto Compose propio, no sobre volúmenes con otros datos.
 sg docker -c 'docker compose exec -T api python -m participa_geo.cli ingest-national \
   --source-dir data/raw/ccpc-national \
   --output-dir data/processed/national'
+sg docker -c 'docker compose exec -T api python -m participa_geo.cli continuity build \
+  --history-csv data/raw/continuity/official-section-history.csv \
+  --source-accdb data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb \
+  --mgs-dir data/raw/gis/national \
+  --district-catalogue data/raw/continuity/district-headquarters.txt \
+  --output-dir data/processed/national/continuity'
+sg docker -c 'docker compose exec -T api python -m participa_geo.cli district rebuild \
+  --history-csv data/raw/continuity/official-section-history.csv \
+  --source-accdb data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb \
+  --mgs-dir data/raw/gis/national \
+  --district-catalogue data/raw/continuity/district-headquarters.txt \
+  --output-dir data/processed/national/continuity'
 sg docker -c 'docker compose exec -T api python -m participa_geo.cli gis import-national \
   --archive-dir data/raw/gis/national'
 sg docker -c 'docker compose exec -T api python -m participa_geo.cli train-national-municipal \
@@ -65,8 +77,10 @@ sg docker -c 'docker compose exec -T api python -m participa_geo.cli gis publish
 sg docker -c 'docker compose exec -T api python -m participa_geo.cli gis verify-national'
 ```
 
-Continuity/reconstruction uses the separately validated INE section-history
-inputs described in `docs/methodology/national-district-reconstruction.md`.
+After ingestion, run `continuity build` and `district rebuild` before GIS import
+or model training. They require the separately validated INE section-history,
+ACCDB, MGS and district-catalogue inputs described in
+[`docs/methodology/national-district-reconstruction.md`](docs/methodology/national-district-reconstruction.md).
 `ingest-national` streams and loads all 54,872,712 section facts into PostGIS;
 the legacy `db load` command consumes the MVP `provenance.json` format and is
 not the loader for national ingestion.

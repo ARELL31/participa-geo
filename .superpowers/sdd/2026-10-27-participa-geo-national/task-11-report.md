@@ -130,3 +130,32 @@ pasan. El stack nacional mantiene readiness 200.
   únicamente del proyecto cleanroom. Sigue pendiente la revisión humana
   metodológica/cartas; este resultado se registra en el commit solicitado (sin
   push). Detalle: §13 de `docs/hackathon/verification-results.md`.
+
+## Fix round 1 — revisión Task 11 (2026-10-28)
+
+- Se reemplazó la parte de permisos del módulo Jalisco saltado con
+  `tests/integration/national/test_national_roles.py`: cinco pruebas contra la
+  base de integración con esquema/datos nacionales. Verifican que `api` no
+  inserta/actualiza tablas de origen/resultados y sí consulta agregados;
+  `gis_reader` sólo tiene lectura en objetos GIS y no puede actualizar
+  `territory_version`; `writer` puede escribir agregados, pero no migrar ni
+  administrar el servidor. El skip legacy sigue aplicándose a las diez
+  aserciones de datos Jalisco.
+- El p95 se corrigió a nearest-rank `ceil(0.95*n)-1`, con pruebas esperadas 95
+  para `1..100` y 10 para `1..10`.
+- README ahora enumera comandos exactos en el orden ingest → continuity build →
+  district rebuild → GIS import → entrenamiento/carga, y enlaza a la metodología.
+- Verificación completa: Ruff pasó; backend **255 passed, 76 skipped, 1
+  warning**; web ESLint/typecheck/build pasaron y Vitest fue **67/67 en 10
+  archivos**; Playwright **16 passed, 2 skipped** (journeys legacy reemplazados).
+  GitHub Actions no se ejecutó. Permanecen avisos no bloqueantes de
+  Starlette/TestClient, requests MSW no manejadas en tests aprobados, y chunk
+  MapLibre mayor a 500 kB.
+- ZIP de entrega regenerado y verificado tras incluir README/tests/docs. Sus
+  detalles: `dist/national/technical.zip`, **461,135,945 bytes**, **316 miembros
+  verificados**, `complete: true`, modo `confirm`, sin escenario requerido;
+  SHA-256 `c52b4710602f5667974260788a60402226f60d74c168e2e0dd5e4ec2ab203274`.
+  Se confirmó en el inventario la presencia de los tests nacionales y del README
+  actualizado. Cleanroom no se repitió por ser cambios de pruebas/documentación;
+  la verificación cleanroom previa sigue en §13 de resultados y no es evidencia
+  de una nueva corrida en esta ronda.

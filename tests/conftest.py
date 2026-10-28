@@ -48,7 +48,9 @@ SUPERSEDED_JALISCO_MODULES = {
         "Jalisco-only 2,999,641-row CCPC baseline superseded by national ingestion audits."
     ),
     "test_postgis.py": (
-        "Jalisco-only 125-territory PostGIS fixture superseded by national PostGIS contracts."
+        "Legacy Jalisco PostGIS data assertions are superseded by national PostGIS tests; "
+        "national DB-role permission regressions run in "
+        "tests/integration/national/test_national_roles.py."
     ),
     "test_read_api_postgis.py": (
         "Jalisco-only API/GIS fixtures superseded by national contracts and E2E."
