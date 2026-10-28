@@ -404,13 +404,19 @@ class Repository:
         ).mappings().first()
         district = None
         if municipality is None:
-            from participa_geo.territory import TerritoryKey, territory_id as make_id
+            from participa_geo.territory import TerritoryKey
+            from participa_geo.territory import territory_id as make_id
 
             for row in self.session.execute(
                 text("SELECT state_code, district_code FROM api_district_catalogue")
             ).mappings():
                 candidate = make_id(
-                    TerritoryKey("federal_district", row["state_code"], row["district_code"], "DERFE2023")
+                    TerritoryKey(
+                        "federal_district",
+                        row["state_code"],
+                        row["district_code"],
+                        "DERFE2023",
+                    )
                 )
                 if candidate == territory_id:
                     district = row
@@ -422,10 +428,15 @@ class Repository:
         params: dict = {"territory_id": territory_id}
         if municipality is not None:
             where += " AND b.state_code=:state_code AND b.municipality_code=:municipality_code"
-            params.update(state_code=municipality["state_code"], municipality_code=municipality["municipality_code"])
+            params.update(
+                state_code=municipality["state_code"],
+                municipality_code=municipality["municipality_code"],
+            )
         else:
             where += " AND b.state_code=:state_code AND b.district_code=:district_code"
-            params.update(state_code=district["state_code"], district_code=district["district_code"])
+            params.update(
+                state_code=district["state_code"], district_code=district["district_code"]
+            )
 
         total = int(self.session.scalar(text(f"""
             SELECT count(*) FROM bridge_municipality_district b WHERE {where}
@@ -434,10 +445,16 @@ class Repository:
             WITH intersections AS (
                 SELECT b.state_code, b.municipality_code, b.district_code,
                        b.district_plan, b.section_count,
-                       SUM(b.section_count) OVER (PARTITION BY b.state_code,b.municipality_code) AS municipality_sections,
-                       count(*) OVER (PARTITION BY b.state_code,b.municipality_code) > 1 AS is_split,
+                       SUM(b.section_count) OVER (
+                         PARTITION BY b.state_code,b.municipality_code
+                       ) AS municipality_sections,
+                       count(*) OVER (
+                         PARTITION BY b.state_code,b.municipality_code
+                       ) > 1 AS is_split,
                        a.ln, a.sv, a.nv, a.ns, a.coverage_status,
-                       SUM(a.ln) OVER (PARTITION BY b.state_code,b.municipality_code) AS municipality_ln
+                       SUM(a.ln) OVER (
+                         PARTITION BY b.state_code,b.municipality_code
+                       ) AS municipality_ln
                 FROM bridge_municipality_district b
                 LEFT JOIN agg_municipality_district_year a
                   ON a.state_code=b.state_code AND a.municipality_code=b.municipality_code
@@ -490,6 +507,67 @@ class Repository:
         if territory_id is not None:
             return self._get_history_territory(territory_id, year, page, page_size, level=level)
         return self._get_history_state(year, page, page_size, level=level, state_code=state_code)
+
+    def get_history_territories(
+        self,
+        *,
+        year: int | None,
+        page: int,
+        page_size: int,
+        level: str = "municipality",
+        state_code: str = "14",
+    ) -> tuple[list[models.HistoryRecord], int]:
+        """Return one observed history row per territory and election year.
+
+        Unlike ``get_history`` without a territory id, this export query never
+        aggregates territories into state totals. District rows are observations
+        for 2024 only and use the published DERFE2023 reconstruction.
+        """
+        if level == "federal_district":
+            return self._get_district_history(
+                None, year, page, page_size, state_code=state_code
+            )
+
+        where = ["o.level = 'municipality'", "t_ref.level = 'municipality'"]
+        params: dict = {"state_code": state_code}
+        if state_code != "all":
+            where.append("t_ref.state_code = :state_code")
+        if year is not None:
+            where.append("o.year = :year")
+            params["year"] = year
+        latest = _LATEST_VERSION_FOR_YEAR
+        predicate = " AND ".join([*where, latest])
+        from_sql = """
+            FROM observation o
+            JOIN dataset_version dv ON dv.id = o.dataset_version_id
+            JOIN territory_correspondence c ON c.origin_territory_id = o.origin_territory_id
+            JOIN territory_version t_ref ON t_ref.id = c.reference_territory_id
+        """
+        total = int(
+            self.session.scalar(
+                text(f"SELECT count(*) {from_sql} WHERE {predicate}"), params
+            )
+        )
+        rows = (
+            self.session.execute(
+                text(f"""
+                    SELECT t_ref.id AS territory_id, o.year, t_ref.name,
+                           t_ref.municipality_code, t_ref.territory_code,
+                           o.ln, o.sv, o.nv, o.ns, o.participation_pct,
+                           o.abstention_pct, o.unknown_share, o.ns_lower_pct,
+                           o.ns_upper_pct, o.eligible, c.identity_status,
+                           c.footprint_status
+                    {from_sql}
+                    WHERE {predicate}
+                    ORDER BY t_ref.state_code, t_ref.municipality_code, o.year
+                    LIMIT :limit OFFSET :offset
+                """),
+                {**params, "limit": page_size, "offset": (page - 1) * page_size},
+            )
+            .mappings()
+            .all()
+        )
+        return [self._history_record(row) for row in rows], total
 
     def _get_district_history(
         self,
@@ -665,7 +743,12 @@ class Repository:
         """
         total = int(self.session.scalar(text(count_sql), params))
         sql = f"""
-            SELECT NULL AS territory_id, o.year, NULL AS name, NULL AS municipality_code,
+            SELECT NULL AS territory_id, o.year,
+                   CASE WHEN :state_code <> 'all' THEN
+                     (SELECT state.name FROM api_state_catalogue state
+                      WHERE state.state_code = :state_code)
+                   END AS name,
+                   NULL AS municipality_code,
                    SUM(o.ln) AS ln, SUM(o.sv) AS sv, SUM(o.nv) AS nv, SUM(o.ns) AS ns,
                    CASE WHEN SUM(o.sv) + SUM(o.nv) > 0
                         THEN (100.0 * SUM(o.sv) / (SUM(o.sv) + SUM(o.nv)))::float8

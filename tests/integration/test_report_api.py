@@ -62,7 +62,7 @@ def test_history_csv_export_and_download(db_api_client, tmp_path):
     db_api_client.app.state.report_store = store
     response = db_api_client.post(
         "/api/v1/reports",
-        json={"kind": "history_csv"},
+        json={"kind": "history_csv", "level": "municipality", "state_code": "14", "year": 2024},
     )
     assert response.status_code == 201, response.text
     artifact = response.json()
@@ -79,11 +79,168 @@ def test_history_csv_export_and_download(db_api_client, tmp_path):
     assert "# model_run_id=" in text
     data_lines = [line for line in text.splitlines() if line and not line.startswith("#")]
     rows = list(csv.DictReader(io.StringIO("\n".join(data_lines))))
-    # Without a territory filter the API contract returns state totals (one row
-    # per election year), never an average of municipal rates.
-    assert len(rows) == 6
-    assert {row["year"] for row in rows} == {"2009", "2012", "2015", "2018", "2021", "2024"}
-    assert all(row["territory_id"] == "" for row in rows)
+    assert len(rows) == 125
+    assert {row["year"] for row in rows} == {"2024"}
+    assert len({row["territory_id"] for row in rows}) == 125
+    assert len({row["municipality_code"] for row in rows}) == 125
+    first = rows[0]
+    observation = db_api_client.get(
+        "/api/v1/participation/history",
+        params={"territory_id": first["territory_id"], "year": 2024},
+    )
+    assert observation.status_code == 200
+    expected = observation.json()["items"][0]
+    assert first["municipality_code"] == expected["municipality_code"]
+    assert int(first["ln"]) == expected["ln"]
+    assert int(first["sv"]) == expected["sv"]
+    assert int(first["nv"]) == expected["nv"]
+
+
+def test_history_xlsx_export_contains_per_municipality_rows(db_api_client, tmp_path):
+    from openpyxl import load_workbook
+
+    db_api_client.app.state.report_store = _store(tmp_path)
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": "history_xlsx",
+            "level": "municipality",
+            "state_code": "14",
+            "year": 2024,
+        },
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    assert download.status_code == 200
+    sheet = load_workbook(io.BytesIO(download.content), read_only=True).active
+    rows = list(sheet.iter_rows(values_only=True))
+    assert len(rows) == 126
+    assert rows[0][0] == "territory_id"
+    assert all(row[0] for row in rows[1:])
+    assert len({row[3] for row in rows[1:]}) == 125
+
+
+def test_district_history_export_contains_observed_2024_rows(
+    db_api_client, tmp_path, monkeypatch
+):
+    from participa_geo.db.models import HistoryRecord
+    from participa_geo.db.repository import Repository
+
+    def observed_history(self, *, year, page, page_size, level, state_code):
+        assert year == 2024 and level == "federal_district" and state_code == "14"
+        records = [
+            HistoryRecord(
+                territory_id=uuid4(),
+                year=2024,
+                name=f"Distrito {code:02}",
+                municipality_code=None,
+                ln=1_000 + code,
+                sv=600,
+                nv=400,
+                ns=0,
+                participation_pct=60,
+                abstention_pct=40,
+                unknown_share=0,
+                ns_lower_pct=40,
+                ns_upper_pct=40,
+                eligible=False,
+                identity_status=None,
+                footprint_status=None,
+                coverage_share=0.96,
+                level="federal_district",
+                territory_code=f"{code:02}",
+                district_plan="DERFE2023",
+            )
+            for code in range(1, 21)
+        ]
+        return records, len(records)
+
+    monkeypatch.setattr(Repository, "get_history_territories", observed_history)
+    db_api_client.app.state.report_store = _store(tmp_path)
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": "history_csv",
+            "level": "federal_district",
+            "district_plan": "DERFE2023",
+            "state_code": "14",
+            "year": 2024,
+        },
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    rows = list(
+        csv.DictReader(
+            line
+            for line in download.content.decode("utf-8-sig").splitlines()
+            if line and not line.startswith("#")
+        )
+    )
+    assert download.status_code == 200
+    assert len(rows) == 20
+    assert {row["year"] for row in rows} == {"2024"}
+    assert {row["district_plan"] for row in rows} == {"DERFE2023"}
+    assert all(row["territory_id"] and row["ln"] for row in rows)
+    assert rows[0]["territory_code"] == "01"
+    assert rows[0]["ln"] == "1001"
+    assert rows[0]["coverage_share"] == "0.96"
+
+
+def test_state_observed_fiche_uses_catalogued_state_name(
+    db_api_client, tmp_path, monkeypatch
+):
+    from pypdf import PdfReader
+
+    from participa_geo.db.models import HistoryRecord
+    from participa_geo.db.repository import Repository
+
+    def state_history(self, *, territory_id, year, page, page_size, level, state_code):
+        assert territory_id is None and year == 2024
+        assert level == "municipality" and state_code == "14"
+        return [
+            HistoryRecord(
+                territory_id=None,
+                year=2024,
+                name="JALISCO",
+                municipality_code=None,
+                ln=100,
+                sv=60,
+                nv=40,
+                ns=0,
+                participation_pct=60,
+                abstention_pct=40,
+                unknown_share=0,
+                ns_lower_pct=40,
+                ns_upper_pct=40,
+                eligible=False,
+                identity_status=None,
+                footprint_status=None,
+                level="municipality",
+            )
+        ], 1
+
+    monkeypatch.setattr(Repository, "get_history", state_history)
+
+    db_api_client.app.state.report_store = _store(tmp_path)
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": "territory_fiche_pdf",
+            "level": "municipality",
+            "state_code": "14",
+            "year": 2024,
+        },
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    assert download.status_code == 200
+    text = " ".join(
+        page.extract_text() or ""
+        for page in PdfReader(io.BytesIO(download.content)).pages
+    )
+    assert "Ficha entidad" in text
+    assert "Entidad" in text
+    assert "JALISCO" in text
 
 
 def test_model_evidence_export_is_user_facing(db_api_client, tmp_path):
@@ -106,7 +263,9 @@ def test_model_evidence_export_is_user_facing(db_api_client, tmp_path):
     record_types = {row["record_type"] for row in rows}
     assert "feature" in record_types
     assert "exclusion" in record_types
-    assert "contribution_candidate_m1" in record_types
+    assert "contribution_selected" in record_types
+    assert "contribution_candidate_m1" not in record_types
+    assert all(row["state_code"] and row["state_name"] for row in rows)
 
 
 def test_scenario_csv_matches_persisted_api(db_api_client, tmp_path):
@@ -122,7 +281,7 @@ def test_scenario_csv_matches_persisted_api(db_api_client, tmp_path):
     text = download.content.decode("utf-8-sig")
     lines = [line for line in text.splitlines() if line and not line.startswith("#")]
     rows = list(csv.DictReader(io.StringIO("\n".join(lines))))
-    assert len(rows) == 125
+    assert len(rows) == len(scenario["results"])
     by_id = {row["territory_id"]: row for row in rows}
     for result in scenario["results"]:
         row = by_id[result["territory_id"]]
@@ -140,6 +299,16 @@ def test_scenario_csv_matches_persisted_api(db_api_client, tmp_path):
             )
 
 
+@pytest.mark.skipif(
+    not (
+        Path(__file__).resolve().parents[2]
+        / "data/processed/gis/reference-2025-12-15.geojson"
+    ).is_file(),
+    reason=(
+        "legacy scenario GeoJSON requires the MVP reference geometry artifact; "
+        "no synthetic geometry is substituted"
+    ),
+)
 def test_scenario_geojson_has_125_4326_reference_geometries(db_api_client, tmp_path):
     scenario = _create_scenario(db_api_client)
     db_api_client.app.state.report_store = _store(tmp_path)

@@ -46,6 +46,16 @@ class SourceFact:
 
 
 @dataclass(frozen=True)
+class GeographySourceFact:
+    state_code: str
+    member: str
+    source_url: str
+    sha256: str
+    attribution: str
+    cut: str
+
+
+@dataclass(frozen=True)
 class ModelFacts:
     family: str
     model_run_id: UUID
@@ -136,10 +146,19 @@ class DeliveryContext:
     team_slug: str = "participa-geo"
     eje: str = "Participación y territorio"
     national: bool = False
+    geography_sources: tuple[GeographySourceFact, ...] = ()
 
 
 def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _float(value: Any) -> float:
@@ -367,6 +386,41 @@ def load_delivery_context(
             )
         )
 
+    geography_sources: tuple[GeographySourceFact, ...] = ()
+    if is_national:
+        geography_inventory = _read_json(root / "data" / "sources-national.json").get(
+            "geography", {}
+        )
+        attribution = str(geography_inventory.get("attribution", ""))
+        cut = str(geography_inventory.get("cut", ""))
+        facts = []
+        for item in geography_inventory.get("sources", []):
+            state_code = str(item["state_code"]).zfill(2)
+            archive = root / "data" / "raw" / "gis" / "national" / item["member"]
+            declared_sha256 = str(item.get("sha256", ""))
+            if len(declared_sha256) != 64:
+                raise ValueError(f"invalid MGS SHA-256 for entity {state_code}")
+            actual_sha256 = _sha256_file(archive) if archive.is_file() else declared_sha256
+            if actual_sha256 != declared_sha256:
+                raise ValueError(
+                    f"MGS checksum mismatch for entity {state_code}: {archive}"
+                )
+            facts.append(
+                GeographySourceFact(
+                    state_code=state_code,
+                    member=str(item["member"]),
+                    source_url=str(item["source_url"]),
+                    sha256=actual_sha256,
+                    attribution=attribution,
+                    cut=cut,
+                )
+            )
+        if len(facts) != 32 or {fact.state_code for fact in facts} != {
+            f"{code:02d}" for code in range(1, 33)
+        }:
+            raise ValueError("national MGS inventory must contain all 32 state archives")
+        geography_sources = tuple(facts)
+
     limitations = tuple(
         dict.fromkeys(
             list(manifest.get("limitations", []))
@@ -449,6 +503,7 @@ def load_delivery_context(
         limitations=limitations,
         scenario=_scenario_facts(scenario) if scenario is not None else None,
         national=is_national,
+        geography_sources=geography_sources,
     )
 
 
@@ -507,6 +562,17 @@ def context_manifest(context: DeliveryContext) -> dict:
                 "ln": source.ln,
             }
             for source in context.sources
+        ],
+        "geography_sources": [
+            {
+                "state_code": source.state_code,
+                "member": source.member,
+                "source_url": source.source_url,
+                "sha256": source.sha256,
+                "attribution": source.attribution,
+                "cut": source.cut,
+            }
+            for source in context.geography_sources
         ],
         "limitations": list(context.limitations),
     }
@@ -833,6 +899,23 @@ def _sources_markdown(context: DeliveryContext, *, include_raw_sources: bool) ->
         lines.append(
             f"| {source.year} | {source.source_url} | {source.member} | `{source.sha256}` |"
         )
+    if context.geography_sources:
+        lines.extend(
+            [
+                "",
+                "## Cartografía MGS INE · entidades 01–32",
+                "",
+                context.geography_sources[0].attribution,
+                "",
+                "| Entidad | URL | Miembro | SHA-256 |",
+                "|---|---|---|---|",
+            ]
+        )
+        for source in context.geography_sources:
+            lines.append(
+                f"| {source.state_code} | {source.source_url} | {source.member} | "
+                f"`{source.sha256}` |"
+            )
     lines.extend(
         [
             "",
@@ -862,6 +945,17 @@ def _sources_json(context: DeliveryContext, *, include_raw_sources: bool) -> byt
                 "ln": source.ln,
             }
             for source in context.sources
+        ],
+        "geography_sources": [
+            {
+                "state_code": source.state_code,
+                "member": source.member,
+                "source_url": source.source_url,
+                "sha256": source.sha256,
+                "attribution": source.attribution,
+                "cut": source.cut,
+            }
+            for source in context.geography_sources
         ],
     }
     return (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(
@@ -984,6 +1078,7 @@ def build_technical_zip(
                 "cohort": context_manifest(context)["cohort"],
                 "scenario": context_manifest(context).get("scenario"),
                 "sources": context_manifest(context)["sources"],
+                "geography_sources": context_manifest(context)["geography_sources"],
                 "assumptions": (context.scenario.rationale_text if context.scenario else None),
                 "error_band_label": (
                     context.scenario.error_band_label if context.scenario else None

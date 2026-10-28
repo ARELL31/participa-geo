@@ -70,5 +70,45 @@
       "member_prefix": "datosabiertos_deceyec_conteoscensales2024_",
       "member_suffix_overrides": {"tamps.csv": "tam.csv"}
     }
-  ]
+  ],
+  "geography": {
+    "source": "Instituto Nacional Electoral (INE), Marco Geográfico Seccional (MGS)",
+    "attribution": "INE, Marco Geográfico Seccional nacional; corte 15-DIC-2025. Uso cartográfico, plan DERFE2023 para distritos federales.",
+    "cut": "2025-12-15",
+    "source_url_template": "https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/{state_code}.zip",
+    "sources": [
+      {"state_code":"01","member":"01.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/01.zip","sha256":"7a37aaf55b0158043516a1eb8639b6007a89e1905c58a6586c8cd0e270fed348"},
+      {"state_code":"02","member":"02.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/02.zip","sha256":"db86e210728609d328ff5854ae01f8b9fa91ba93b889ae4901c1a76bac30be8c"},
+      {"state_code":"03","member":"03.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/03.zip","sha256":"272afe0fdce66d83be99444dd3d7d0f565b73077e189ea3ec1f40ca901281531"},
+      {"state_code":"04","member":"04.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/04.zip","sha256":"1a6acad5957a082d927e43c9e5d2ec0848bf5c6e91dcbdb840700ec76a7b4f6d"},
+      {"state_code":"05","member":"05.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/05.zip","sha256":"beea7fa38bc17f2ab5881978c5a2c9e6c6617c3f85bd513fa4de0dd02d680a46"},
+      {"state_code":"06","member":"06.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/06.zip","sha256":"697fc3a5895d964a3754c0f9243dbc24d5e0cdc58392361129ab71b05c617e2b"},
+      {"state_code":"07","member":"07.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/07.zip","sha256":"d2ad0dc9d971992bb3d92f15986a822664bfa066e45658547cfbc0914c2fbb27"},
+      {"state_code":"08","member":"08.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/08.zip","sha256":"7844208ef07716e100999e48a286763e3d67ceac143e2d4f4f3f9a8cefdd0075"},
+      {"state_code":"09","member":"09.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/09.zip","sha256":"19681b405035280b1efdf88aa860fd7a89e6f125a02c1ae067fe57ef7a633f9a"},
+      {"state_code":"10","member":"10.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/10.zip","sha256":"bb7eecec07f086794a0b947ef35a2d1d350235028fa3f9bcc66577a06fc0d553"},
+      {"state_code":"11","member":"11.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/11.zip","sha256":"623ab0f7e00ab6778cb3a16b65871ac6aae8f363fc43786d3de533f98c44c61e"},
+      {"state_code":"12","member":"12.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/12.zip","sha256":"85d922cd38f342c069919ae21040a1f10271ec40ec8d893799fe9ae45ad2aad5"},
+      {"state_code":"13","member":"13.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/13.zip","sha256":"9823c537348916462f91be63dafcfc0df60d1f269dd0503e0f028e7e4a612cb4"},
+      {"state_code":"14","member":"14.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/14.zip","sha256":"7b252438a67d904a42a7b912ff29bef74a2ed79675a609143e74a592ef872a50"},
+      {"state_code":"15","member":"15.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/15.zip","sha256":"021e43a904bd8839bd25ef550174bfb29f9afdf526db1fad91c8c995dcc321da"},
+      {"state_code":"16","member":"16.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/16.zip","sha256":"da0bf28187e4ad4aaece88f96f42fc1130aa209dbb8a23be3ca39ae6d7405edc"},
+      {"state_code":"17","member":"17.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/17.zip","sha256":"8043a9c9dbbbcd9d0590762b5890da4ffcff51180db3a468965c5f13bfd94dd8"},
+      {"state_code":"18","member":"18.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/18.zip","sha256":"7c6654f6335bb252c73ea0fe2cb7825c78ffcaed4a92779fd912b793d848ab4b"},
+      {"state_code":"19","member":"19.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/19.zip","sha256":"60bae601324cc08d1de7a36f08d5f6d3ad657ee2100f4e0d96e1a111e40a794f"},
+      {"state_code":"20","member":"20.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/20.zip","sha256":"d176e1a5a022f51014f3a7580913486224586e2044a35eac37deb38de72a475e"},
+      {"state_code":"21","member":"21.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/21.zip","sha256":"49b7edb8c6eda41721db3f627d05be52e534e500ee9b5a548e232bb6bbbe02e0"},
+      {"state_code":"22","member":"22.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/22.zip","sha256":"7d74fbb3b3c36c20366569f2c2737bf7465ff93cdcde0a421c62066a33a711a0"},
+      {"state_code":"23","member":"23.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/23.zip","sha256":"0b18d62d205ca952e8cea5219a558ce167b0b7ec7d0115ff7cac7c624a56a93f"},
+      {"state_code":"24","member":"24.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/24.zip","sha256":"933228e0cc9acc5545f40f8c645362f58c156ed3945217d0d962a9213c558ab4"},
+      {"state_code":"25","member":"25.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/25.zip","sha256":"2ceb9afc34e66e568f46866039ab396725b59e594ab453a83dcfddcc4505a1fc"},
+      {"state_code":"26","member":"26.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/26.zip","sha256":"c5dccbeb1815077e06a31670afa601c76b928f47d22be49a367334a99bf54dce"},
+      {"state_code":"27","member":"27.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/27.zip","sha256":"86be2dafcddf91f8c53910b537a06d206685ba70e9f418aa7e75331ada11ea79"},
+      {"state_code":"28","member":"28.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/28.zip","sha256":"c1cbba69b5bb4a580ac274df37d15f46c0c9c7089cf4d3c507f3d02bf41b46ca"},
+      {"state_code":"29","member":"29.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/29.zip","sha256":"5ed10104e38b64b297713db7609cd2a9a5127356dcc0560a38c4d479ccdc086f"},
+      {"state_code":"30","member":"30.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/30.zip","sha256":"6d9b812daeca3461e345e6b569a5e9b2deb8538b79b552e17c0e36027a3e4294"},
+      {"state_code":"31","member":"31.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/31.zip","sha256":"55feb35fbfbab196d9713c53314c26c209a6169f5d8c73702842c7b25db48162"},
+      {"state_code":"32","member":"32.zip","source_url":"https://storage.googleapis.com/mapoteca/MGS_UTM_SHAPEFILE_15DIC2025/32.zip","sha256":"a0f579b286a87ab1fb38ed44bf047f59acd00109d4fe897d3fb586d8e793cb5c"}
+    ]
+  }
 }

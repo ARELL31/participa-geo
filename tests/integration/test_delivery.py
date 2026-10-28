@@ -379,6 +379,16 @@ def _geoserver_database(settings):
         _point_geoserver_at(Settings())
 
 
+@pytest.mark.skipif(
+    not (
+        Path(__file__).resolve().parents[2]
+        / "data/processed/gis/reference-2025-12-15.geojson"
+    ).is_file(),
+    reason=(
+        "legacy scenario delivery requires the MVP reference GeoJSON; "
+        "no synthetic geometry is substituted"
+    ),
+)
 def test_cli_delivery_builds_verified_package_with_real_scenario(
     db_api_client, db_config, tmp_path
 ):

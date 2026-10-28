@@ -252,6 +252,8 @@ MODEL_EVIDENCE_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
         "feature, exclusion, contribution_selected o contribution_candidate_m1.",
     ),
     ("cut_year", "corte", "entero/año", "Año del corte; 2027 para features y contribuciones."),
+    ("state_code", "clave de entidad", "texto", "Clave INE de entidad de dos dígitos."),
+    ("state_name", "entidad", "texto", "Nombre oficial de la entidad."),
     ("municipality_code", "código municipal", "texto", "Código INE de tres dígitos."),
     ("municipality_name", "municipio", "texto", "Nombre publicado."),
     ("field", "campo", "texto", "Variable o motivo de exclusión."),
@@ -273,6 +275,11 @@ MODEL_EVIDENCE_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 MODEL_EVIDENCE_FIELDS: tuple[str, ...] = tuple(column[0] for column in MODEL_EVIDENCE_COLUMNS)
+MAX_MODEL_EVIDENCE_ROWS = 20_000
+
+
+class ModelEvidenceLimitError(RuntimeError):
+    """Model evidence exceeds the documented maximum; no rows were truncated."""
 
 _FEATURE_UNITS: dict[str, str] = {
     "same_type_abstention_pct": "porcentaje",
@@ -465,6 +472,8 @@ def _model_evidence_rows(
                 {
                     "record_type": "feature",
                     "cut_year": int(model.get("target_year", 2027)),
+                    "state_code": item.get("state_code", ""),
+                    "state_name": item.get("state_name", ""),
                     "municipality_code": code,
                     "municipality_name": item.get("municipality_name", ""),
                     "field": field,
@@ -485,6 +494,8 @@ def _model_evidence_rows(
                 {
                     "record_type": "exclusion",
                     "cut_year": int(year),
+                    "state_code": exclusion.get("state_code", ""),
+                    "state_name": exclusion.get("state_name", ""),
                     "municipality_code": code,
                     "municipality_name": names.get(code, ""),
                     "field": "",
@@ -501,6 +512,8 @@ def _model_evidence_rows(
                 {
                     "record_type": "contribution_selected",
                     "cut_year": int(model.get("target_year", 2027)),
+                    "state_code": item.get("state_code", ""),
+                    "state_name": item.get("state_name", ""),
                     "municipality_code": item.get("municipality_code", ""),
                     "municipality_name": names.get(item.get("municipality_code", ""), ""),
                     "field": field,
@@ -517,6 +530,8 @@ def _model_evidence_rows(
                 {
                     "record_type": "contribution_candidate_m1",
                     "cut_year": int(model.get("target_year", 2027)),
+                    "state_code": item.get("state_code", ""),
+                    "state_name": item.get("state_name", ""),
                     "municipality_code": item.get("municipality_code", ""),
                     "municipality_name": names.get(item.get("municipality_code", ""), ""),
                     "field": field,
@@ -548,13 +563,11 @@ def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str
         (str(row.state_code).zfill(2), str(row.municipality_code).zfill(3)): row.municipality_name
         for row in observations.itertuples()
     }
+    state_names = {
+        str(row.state_code).zfill(2): str(row.state_name)
+        for row in observations.itertuples()
+    }
     rows: list[dict[str, Any]] = []
-    feature_order = list(model.get("feature_order", []))
-    candidate = model.get("candidate_m1_2021") or {}
-    scaler = candidate.get("scaler") or {}
-    means = scaler.get("mean", [])
-    scales = scaler.get("scale", [])
-    coefficients = candidate.get("coefficients", [])
     for prediction in predictions.itertuples():
         key = (prediction.state_code, prediction.municipality_code)
         if not bool(prediction.eligible):
@@ -581,6 +594,8 @@ def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str
                 {
                     "record_type": "feature",
                     "cut_year": 2027,
+                    "state_code": prediction.state_code,
+                    "state_name": state_names.get(prediction.state_code, ""),
                     "municipality_code": prediction.municipality_code,
                     "municipality_name": prediction.municipality_name,
                     "field": field,
@@ -599,6 +614,8 @@ def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str
             {
                 "record_type": "contribution_selected",
                 "cut_year": 2027,
+                "state_code": prediction.state_code,
+                "state_name": state_names.get(prediction.state_code, ""),
                 "municipality_code": prediction.municipality_code,
                 "municipality_name": prediction.municipality_name,
                 "field": "same_type_abstention_pct",
@@ -609,29 +626,6 @@ def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str
                 "model_run_id": model_run_id,
             }
         )
-        if (
-            len(coefficients) >= len(feature_order)
-            and len(means) >= len(feature_order)
-            and len(scales) >= len(feature_order)
-        ):
-            for position, field in enumerate(feature_order):
-                rows.append(
-                    {
-                        "record_type": "contribution_candidate_m1",
-                        "cut_year": 2027,
-                        "municipality_code": prediction.municipality_code,
-                        "municipality_name": prediction.municipality_name,
-                        "field": field,
-                        "value": (feature_values[field] - float(means[position]))
-                        / (float(scales[position]) or 1.0)
-                        * float(coefficients[position]),
-                        "unit": "puntos porcentuales (componente lineal)",
-                        "source_year": "",
-                        "reason": "",
-                        "model_run_id": model_run_id,
-                    }
-                )
-
     exclusions_path = model_dir / "exclusions-by-cut.csv"
     if exclusions_path.is_file():
         for exclusion in pd.read_csv(exclusions_path).itertuples():
@@ -640,6 +634,8 @@ def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str
                 {
                     "record_type": "exclusion",
                     "cut_year": int(exclusion.year),
+                    "state_code": key[0],
+                    "state_name": state_names.get(key[0], ""),
                     "municipality_code": key[1],
                     "municipality_name": names.get(key, ""),
                     "field": "",
@@ -664,12 +660,29 @@ def export_model_evidence(
     fmt = _resolve_kind(kind)
     model, evaluation = _load_model_evidence(model_dir)
     rows = _model_evidence_rows(model, evaluation, Path(model_dir))
+    if len(rows) > MAX_MODEL_EVIDENCE_ROWS:
+        raise ModelEvidenceLimitError(
+            f"La evidencia del modelo supera el límite de {MAX_MODEL_EVIDENCE_ROWS:,} filas; "
+            "no se generó una exportación truncada."
+        )
+    national_model = model.get("level") == "municipality" and not model.get("features_2027")
     evidence_meta = meta.model_copy(
         update={
             "filters": {
                 **meta.filters,
                 "report_kind": f"model_evidence_{fmt}",
                 "model_family": model.get("family"),
+                **(
+                    {
+                        "candidate_m1_detail_omitted": (
+                            "Per-municipality candidate M1 contributions are omitted to keep "
+                            "the national evidence export bounded; model coefficients remain "
+                            "in the technical model artifact."
+                        )
+                    }
+                    if national_model
+                    else {}
+                ),
             }
         }
     )

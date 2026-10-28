@@ -50,6 +50,7 @@ from participa_geo.reporting.store import (
     ReportStoreError,
 )
 from participa_geo.reporting.tables import (
+    ModelEvidenceLimitError,
     export_history,
     export_model_evidence,
     export_scenario_csv,
@@ -223,6 +224,25 @@ def _history_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
         raise ReportValidationError(
             "La exportación supera el límite nacional de 20,000 filas; aplique un filtro."
         )
+    return _history_dtos(records)
+
+
+def _history_export_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
+    records, total = repo.get_history_territories(
+        year=body.year,
+        page=1,
+        page_size=20_001,
+        level=body.level,
+        state_code=body.state_code,
+    )
+    if total > 20_000:
+        raise ReportValidationError(
+            "La exportación supera el límite nacional de 20,000 filas; aplique un filtro."
+        )
+    return _history_dtos(records)
+
+
+def _history_dtos(records) -> list[HistoryDTO]:
     return [
         HistoryDTO(
             territory_id=record.territory_id,
@@ -501,7 +521,7 @@ def create_report(
 
         if body.kind in {"history_csv", "history_xlsx"}:
             meta = _history_meta(repo, body, kind=body.kind)
-            rows = _history_rows(repo, body)
+            rows = _history_export_rows(repo, body)
             fmt = "csv" if body.kind == "history_csv" else "xlsx"
 
             def builder() -> bytes:
@@ -614,6 +634,14 @@ def create_report(
             status_code=422,
             code="validation_error",
             title="Validación fallida",
+            detail=str(exc),
+        ) from None
+    except ModelEvidenceLimitError as exc:
+        raise _problem(
+            request,
+            status_code=422,
+            code="export_row_limit_exceeded",
+            title="La exportación supera el límite",
             detail=str(exc),
         ) from None
     except (GeoJSONExportError, ReportStoreError) as exc:

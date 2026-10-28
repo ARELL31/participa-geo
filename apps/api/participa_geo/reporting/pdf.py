@@ -255,9 +255,15 @@ def _table(
     highlight_first_col: bool = False,
 ) -> Table:
     styles = _styles()
+    cell_style = ParagraphStyle(
+        "TableCellSized", parent=styles["table_cell"], fontSize=font_size, leading=font_size + 2
+    )
+    header_style = ParagraphStyle(
+        "TableHeaderSized", parent=styles["table_header"], fontSize=font_size, leading=font_size + 2
+    )
     data = [
         [
-            Paragraph(str(cell), styles["table_header" if header and index == 0 else "table_cell"])
+            Paragraph(str(cell), header_style if header and index == 0 else cell_style)
             for cell in row
         ]
         for index, row in enumerate(rows)
@@ -574,6 +580,28 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 f"{source.ln:,}" if source.ln else "—",
             ]
         )
+    geography_section: list[Any] = []
+    if context.geography_sources:
+        geography_source_rows: list[list[Any]] = [["Entidad", "URL MGS", "SHA-256"]]
+        for source in context.geography_sources:
+            geography_source_rows.append(
+                [source.state_code, source.source_url, source.sha256]
+            )
+        geography_section = [
+            Spacer(1, 2 * mm),
+            Paragraph(
+                "Cartografía: Instituto Nacional Electoral (INE), Marco Geográfico "
+                "Seccional (MGS), corte 15-DIC-2025. Se usan los archivos por entidad; "
+                "el plan de distritos federales es DERFE2023. La atribución, URL y "
+                "checksum SHA-256 de cada uno de los 32 ZIP se incluyen a continuación.",
+                styles["small"],
+            ),
+            _table(
+                geography_source_rows,
+                widths=[14 * mm, 94 * mm, 62 * mm],
+                font_size=5.5,
+            ),
+        ]
     story.extend(
         [
             Paragraph("3. Fuentes, universo y granularidad", styles["h1"]),
@@ -590,6 +618,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 source_rows,
                 widths=[13 * mm, 87 * mm, 38 * mm, 32 * mm],
             ),
+            *geography_section,
             Spacer(1, 3 * mm),
             Paragraph(
                 "Los archivos fuente son públicos y se incorporan al paquete técnico en su "

@@ -27,10 +27,15 @@ def generate_observed_territory_fiche(record: HistoryDTO) -> bytes:
     """Build a state/municipality/district observed-2024 profile without forecasts."""
     if record.year != 2024:
         raise ValueError("la ficha sólo acepta observaciones de 2024")
-    level_name = {
-        "municipality": "municipio / agregado estatal",
-        "federal_district": "distrito federal",
-    }[record.level]
+    is_state = record.level == "municipality" and record.territory_id is None
+    level_name = (
+        "entidad"
+        if is_state
+        else {
+            "municipality": "municipio",
+            "federal_district": "distrito federal",
+        }[record.level]
+    )
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -61,7 +66,14 @@ def generate_observed_territory_fiche(record: HistoryDTO) -> bytes:
         Table(
             [
                 ["Indicador", "Valor"],
-                ["Distrito", record.name or record.territory_code or ""],
+                [
+                    "Entidad"
+                    if is_state
+                    else "Municipio"
+                    if record.level == "municipality"
+                    else "Distrito",
+                    record.name or record.territory_code or "",
+                ],
                 ["Año observado", "2024"],
                 ["Plan", record.district_plan or "DERFE2023"],
                 ["Lista nominal (LN)", f"{record.ln:,}"],
