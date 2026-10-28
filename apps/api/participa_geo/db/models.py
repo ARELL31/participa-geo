@@ -93,6 +93,126 @@ class DatasetVersion(Base):
     )
 
 
+class SectionContinuity(Base):
+    __tablename__ = "section_continuity"
+
+    source_year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    state_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    source_section: Mapped[str] = mapped_column(String(8), primary_key=True)
+    target_section: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    target_district: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    evidence: Mapped[str] = mapped_column(Text, nullable=False)
+    source_catalog_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "source_year IN (2009,2012,2015,2018,2021,2024)", name="ck_section_continuity_year"
+        ),
+        CheckConstraint("status IN ('matched','unmatched')", name="ck_section_continuity_status"),
+        CheckConstraint(
+            "(status='matched' AND target_section IS NOT NULL AND target_district IS NOT NULL) "
+            "OR (status='unmatched' AND target_section IS NULL AND target_district IS NULL)",
+            name="ck_section_continuity_target",
+        ),
+        Index("ix_section_continuity_target", "source_year", "state_code", "target_section"),
+    )
+
+
+class BridgeSectionDistrict(Base):
+    __tablename__ = "bridge_section_district"
+
+    state_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    section: Mapped[str] = mapped_column(String(8), primary_key=True)
+    district_plan: Mapped[str] = mapped_column(String(16), primary_key=True, default="DERFE2023")
+    municipality_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    district_code: Mapped[str] = mapped_column(String(2), nullable=False)
+    district_label: Mapped[str] = mapped_column(Text, nullable=False)
+    provenance: Mapped[str] = mapped_column(Text, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("district_plan = 'DERFE2023'", name="ck_bridge_section_district_plan"),
+        Index(
+            "ix_bridge_section_district_municipality",
+            "state_code",
+            "municipality_code",
+            "district_code",
+        ),
+    )
+
+
+class BridgeMunicipalityDistrict(Base):
+    __tablename__ = "bridge_municipality_district"
+
+    state_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    municipality_code: Mapped[str] = mapped_column(String(3), primary_key=True)
+    district_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    district_plan: Mapped[str] = mapped_column(String(16), primary_key=True, default="DERFE2023")
+    section_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_split: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("district_plan = 'DERFE2023'", name="ck_bridge_municipality_district_plan"),
+        CheckConstraint("section_count > 0", name="ck_bridge_municipality_district_sections"),
+    )
+
+
+class DistrictReconstructionCoverage(Base):
+    __tablename__ = "district_reconstruction_coverage"
+
+    year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    state_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    district_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    matched_ln: Mapped[int] = mapped_column(Integer, nullable=False)
+    reference_ln: Mapped[int] = mapped_column(Integer, nullable=False)
+    coverage: Mapped[float] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    district_plan: Mapped[str] = mapped_column(String(16), nullable=False, default="DERFE2023")
+
+    __table_args__ = (
+        CheckConstraint(
+            "year IN (2009,2012,2015,2018,2021,2024)", name="ck_district_coverage_year"
+        ),
+        CheckConstraint(
+            "matched_ln >= 0 AND reference_ln >= matched_ln", name="ck_district_coverage_ln"
+        ),
+        CheckConstraint("coverage >= 0 AND coverage <= 1", name="ck_district_coverage_share"),
+        CheckConstraint(
+            "status IN ('eligible','insufficient')", name="ck_district_coverage_status"
+        ),
+        CheckConstraint("district_plan = 'DERFE2023'", name="ck_district_coverage_plan"),
+    )
+
+
+class MunicipalityDistrictYearAggregate(Base):
+    __tablename__ = "agg_municipality_district_year"
+
+    year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    state_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    municipality_code: Mapped[str] = mapped_column(String(3), primary_key=True)
+    district_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    district_plan: Mapped[str] = mapped_column(String(16), primary_key=True, default="DERFE2023")
+    section_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    ln: Mapped[int] = mapped_column(Integer, nullable=False)
+    sv: Mapped[int] = mapped_column(Integer, nullable=False)
+    nv: Mapped[int] = mapped_column(Integer, nullable=False)
+    ns: Mapped[int] = mapped_column(Integer, nullable=False)
+    coverage_status: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "year IN (2009,2012,2015,2018,2021,2024)", name="ck_agg_municipality_district_year"
+        ),
+        CheckConstraint("district_plan = 'DERFE2023'", name="ck_agg_municipality_district_plan"),
+        CheckConstraint("section_count > 0", name="ck_agg_municipality_district_sections"),
+        CheckConstraint("ln = sv + nv + ns", name="ck_agg_municipality_district_accounting"),
+        CheckConstraint(
+            "coverage_status IN ('eligible','insufficient')",
+            name="ck_agg_municipality_district_status",
+        ),
+    )
+
+
 class TerritoryVersion(Base):
     __tablename__ = "territory_version"
 
@@ -557,13 +677,17 @@ class ScenarioResultRecord:
 
 __all__ = [
     "Base",
+    "BridgeMunicipalityDistrict",
+    "BridgeSectionDistrict",
     "DatasetVersion",
+    "DistrictReconstructionCoverage",
     "ElectionYear",
     "Geometry",
     "HistoryRecord",
     "ModelRecord",
     "ModelRun",
     "Observation",
+    "MunicipalityDistrictYearAggregate",
     "PredictionRecord",
     "Prediction",
     "ReportArtifact",
@@ -571,6 +695,7 @@ __all__ = [
     "ScenarioRecord",
     "ScenarioResult",
     "ScenarioResultRecord",
+    "SectionContinuity",
     "TerritoryCorrespondence",
     "TerritoryRecord",
     "TerritoryVersion",

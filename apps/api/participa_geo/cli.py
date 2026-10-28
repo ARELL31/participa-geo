@@ -81,6 +81,25 @@ def _db_load(args: argparse.Namespace) -> int:
     return 0
 
 
+def _national_continuity(args: argparse.Namespace) -> int:
+    from participa_geo.db.session import session_scope, writer_engine
+    from participa_geo.settings import Settings
+    from pipelines.validation.continuity import build_national_continuity
+
+    settings = Settings()
+    with session_scope(writer_engine(settings)) as session:
+        audit = build_national_continuity(
+            session,
+            historical_csv=Path(args.history_csv),
+            source_accdb=Path(args.source_accdb),
+            mgs_archive_dir=Path(args.mgs_dir),
+            district_catalogue=Path(args.district_catalogue),
+            output_dir=Path(args.output_dir),
+        )
+    print(json.dumps(audit.__dict__, indent=2, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
 def _gis_import(args: argparse.Namespace) -> int:
     from participa_geo.db.session import session_scope, writer_engine
     from participa_geo.settings import Settings
@@ -524,6 +543,48 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directorio de artefactos procesados (p. ej. data/processed).",
     )
     db_load.set_defaults(handler=_db_load)
+
+    continuity = subparsers.add_parser(
+        "continuity", help="Construir continuidad histórica oficial de secciones."
+    )
+    continuity_sub = continuity.add_subparsers(dest="continuity_command")
+    continuity_build = continuity_sub.add_parser(
+        "build", help="Validar ACCDB exportado, MGS, CCPC 2024 y crear puentes."
+    )
+    continuity_build.add_argument(
+        "--history-csv", default="data/raw/continuity/official-section-history.csv"
+    )
+    continuity_build.add_argument(
+        "--source-accdb",
+        default="data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+    )
+    continuity_build.add_argument("--mgs-dir", default="data/raw/gis/national")
+    continuity_build.add_argument(
+        "--district-catalogue", default="data/raw/continuity/district-headquarters.txt"
+    )
+    continuity_build.add_argument("--output-dir", default="data/processed/national/continuity")
+    continuity_build.set_defaults(handler=_national_continuity)
+
+    district = subparsers.add_parser(
+        "district", help="Reconstruir agregados del plan federal 2023."
+    )
+    district_sub = district.add_subparsers(dest="district_command")
+    district_rebuild = district_sub.add_parser(
+        "rebuild", help="Reconstruir agregados y calcular compuertas de cobertura."
+    )
+    district_rebuild.add_argument(
+        "--history-csv", default="data/raw/continuity/official-section-history.csv"
+    )
+    district_rebuild.add_argument(
+        "--source-accdb",
+        default="data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb",
+    )
+    district_rebuild.add_argument("--mgs-dir", default="data/raw/gis/national")
+    district_rebuild.add_argument(
+        "--district-catalogue", default="data/raw/continuity/district-headquarters.txt"
+    )
+    district_rebuild.add_argument("--output-dir", default="data/processed/national/continuity")
+    district_rebuild.set_defaults(handler=_national_continuity)
 
     gis = subparsers.add_parser("gis", help="Publicación y verificación GIS.")
     gis_sub = gis.add_subparsers(dest="gis_command")

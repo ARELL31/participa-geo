@@ -1,6 +1,40 @@
 # Reconstrucción distrital federal 2023 — estado de evidencia
 
-**Estado: BLOCKED.** No se publica ni se calcula la serie distrital reconstruida. La única asignación sección→DERFE2023 verificada corresponde a CCPC 2024/MGS 2025; no demuestra continuidad de las secciones de 2009–2021.
+**Estado: implementado con limitación de cobertura histórica.** La continuidad oficial, los puentes y los agregados se construyeron y validaron. Los años 2009–2021 no son publicables como reconstrucciones distritales: ninguno pasa la compuerta nacional de 98%, y por ello todas sus filas distritales quedan `insufficient`, aunque algunas superen localmente 95%. 2024 pasa con cobertura exacta.
+
+## Fuente oficial incorporada y decisión de plan
+
+- ACCDB: `data/raw/continuity/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb`, descargado del URL oficial `https://storage.googleapis.com/mapoteca/historicos/HISTORICO_SECC_ELECT_PEF_1994-PEF2024_Corte_diciembre2025.accdb`; tamaño 10,797,056 bytes; SHA-256 `f88804f66fa0bcfc855159a1c2332be06f283bd697e2a037e8a70db3fc5934aa`.
+- Tabla inspeccionada dentro de Debian temporal con `mdbtools`: `HISTORICO_SECC_ELECT_PEF1994-PEF2024_CORTE_diciembre2025`. Exportación reproducible: `scripts/export_official_section_history.sh`; CSV `data/raw/continuity/official-section-history.csv`, 75,895 registros y SHA-256 `e91f0f6199a8efeaf755fcc9a4c08e705bc15508d060398b627876582af6f5cb`. El runtime usa este CSV validado, no requiere Access ni mdbtools.
+- Se seleccionó `Nueva_Dttacion_2023` como referencia DERFE2023: en las 70,301 secciones comunes a historia, CCPC 2024 y MGS 2025 no hay discrepancias con CCPC `DEF` ni con `SECCION.distrito_f`. También concuerda con `Distrito_PEF2024` en sus 73,716 registros poblados, pero el nombre seleccionado identifica explícitamente el plan 2023. Los campos de julio 2024/PEPJF2025 y diciembre 2025 no son intercambiables (1,060 y 3,413 diferencias contra el campo elegido, respectivamente, entre sus registros poblados).
+- MGS conserva 73,268 secciones, 2,581 pares municipio–distrito, 72 municipios divididos y máximo cinco distritos por municipio. Catálogo oficial de cabeceras: `data/raw/continuity/district-headquarters.txt`, SHA-256 `c244b4ed3e55c668a4a8fde4a8f5999fa95d8974b6a45a5ef91660a5c1a4fb47`.
+- El objeto no incluye una declaración de licencia específica. El ACCDB y el CSV permanecen fuera de Git; antes de redistribuir los archivos fuente debe confirmarse su licencia/uso con INE. Este trabajo registra hashes y deriva resultados auditables, no publica esos archivos.
+
+## Regla de continuidad y cobertura
+
+Cada vínculo histórico exige sección fuente presente en la columna oficial de su año (`Distrito_PEF2009/2012/2015/2018/2021`), destino oficial DERFE2023, acuerdo del distrito objetivo con MGS y ausencia de baja/reseccionamiento parcial. Se acepta además una fusión completa sólo si la nota oficial especifica un destino singular existente y coherente con el catálogo/MGS. Altas, bajas, movimientos parciales y destinos ambiguos no se completan por número: quedan `unmatched`. En el material histórico CCPC, `DEF` es el campo de plan 2021, no se reasigna como una identidad de los planes anteriores.
+
+El denominador es LN agregado por sección del CCPC 2024; el numerador es LN de secciones con continuidad validada hacia el plan DERFE2023. Para reconstrucción publicable se requiere ≥98% nacional y ≥95% en cada distrito. El gate nacional se aplica también al estado efectivo distrital; se informan aparte los distritos que localmente llegan a 95%.
+
+| Año origen | Vínculos matched / unmatched | Cobertura LN2024 | Gate nacional | Distritos ≥95% localmente | Distritos efectivos elegibles |
+|---|---:|---:|---|---:|---:|
+| 2009 | 62,590 / 2,344 | 82.5931% | insuficiente | 83 | 0 |
+| 2012 | 63,326 / 2,273 | 83.8598% | insuficiente | 71 | 0 |
+| 2015 | 66,282 / 2,080 | 86.5857% | insuficiente | 90 | 0 |
+| 2018 | 66,313 / 2,095 | 86.6237% | insuficiente | 90 | 0 |
+| 2021 | 66,959 / 1,853 | 89.0089% | insuficiente | 110 | 0 |
+| 2024 | 70,751 / 0 | 100.0000% | elegible | 300 | 300 |
+
+El catálogo/MGS no contiene CCPC 2024 para 2,967 secciones MGS; 450 secciones CCPC 2024 no tienen geometría MGS. Las listas quedan exportadas como `mgs-sections-without-2024-ccpc.csv` y `ccpc-2024-sections-without-mgs.csv`. Las 450 se conservan en el chequeo de referencia por acuerdo entre catálogo oficial y CCPC, pero no se inventa su intersección municipal-geométrica MGS.
+
+Los siete distritos con números entrantes (BC09, Coahuila08, NL13/14, Puebla16, Querétaro06 y Yucatán06) se evalúan en el plan DERFE2023, sin heredar identidades por semejanza numérica. Ninguno se vuelve históricamente elegible: cada año 2009–2021 falla el gate nacional. Puebla16 alcanza 96.9523% local en 2021, pero su estatus efectivo sigue siendo `insufficient` por el gate nacional; los demás casos no alcanzan 95% local en esos años.
+
+## Implementación y artefactos
+
+- Migración aditiva `alembic/versions/0006_continuity.py`; no se editaron `0001`–`0005`. Tablas: `section_continuity`, `bridge_section_district`, `bridge_municipality_district`, `district_reconstruction_coverage` y `agg_municipality_district_year`.
+- Comandos `continuity build` y `district rebuild`; validación en `apps/api/participa_geo/ingestion/continuity.py` y `pipelines/validation/continuity.py`.
+- Artefactos reproducibles bajo `data/processed/national/continuity/`: continuidad por año, reporte de cobertura, ambos puentes, observaciones distritales, agregados municipio×distrito×año, listas unmatched/no-geometry y `continuity-build.json`.
+- Base real: 73,268 filas puente sección-distrito, 2,581 intersecciones municipio-distrito, 15,428 agregados; todos los agregados reconcilian `LN = SV + NV + NS` y se etiquetan `DERFE2023`. Los estatus históricos permanecen insuficientes; no hay modelo/API/UI distrital.
 
 ## Evidencia comprobada
 
