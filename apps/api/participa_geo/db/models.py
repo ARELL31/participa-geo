@@ -295,8 +295,8 @@ class TerritoryCorrespondence(Base):
     origin_territory_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
     )
-    reference_territory_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=False
+    reference_territory_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("territory_version.id", ondelete="CASCADE"), nullable=True
     )
     relation_type: Mapped[str] = mapped_column(String(32), nullable=False)
     evidence: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

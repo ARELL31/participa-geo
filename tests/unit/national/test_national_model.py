@@ -138,3 +138,45 @@ def test_national_training_uses_state_fixed_effects_and_emits_insufficient_rows(
 def test_national_training_rejects_district_level():
     with pytest.raises(ValueError, match="municipality only"):
         train_national([], level="federal_district", identity_statuses={})
+
+
+def test_national_training_builds_and_consumes_mgs_identity_statuses(monkeypatch):
+    from pipelines.training import national as pipeline
+
+    observations = []
+    identities = {}
+    for number in range(40):
+        state, code = f"{number % 32 + 1:02d}", f"{number + 1:03d}"
+        identities[(state, code)] = _identity()
+        for year in (2009, 2012, 2015, 2018, 2021, 2024):
+            nv = 250 + number % 20
+            observations.append(
+                MunicipalObservation(
+                    key=MunicipalityKey(state, code),
+                    year=year,
+                    ln=1250,
+                    sv=950 - number % 20,
+                    nv=nv,
+                    ns=50,
+                    municipality_name=f"{state}-{code}",
+                    young_share=0.2,
+                    senior_share=0.1,
+                    rural_share=0.4,
+                )
+            )
+    build_calls = []
+    monkeypatch.setattr(pipeline, "read_national_municipal_observations", lambda _: observations)
+    monkeypatch.setattr(
+        pipeline,
+        "build_national_municipal_identity",
+        lambda session, rows: (
+            build_calls.append((session, rows)) or type("Audit", (), {"reference_count": 2477})()
+        ),
+    )
+    monkeypatch.setattr(pipeline, "read_national_identity_statuses", lambda _: identities)
+
+    bundle = pipeline.train_national_municipal("ignored", "ignored", session="session")
+
+    assert build_calls == [("session", observations)]
+    assert bundle.total_count == 40
+    assert all(pred.identity_status == "verified_catalogue" for pred in bundle.predictions)

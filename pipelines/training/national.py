@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from uuid import UUID
 
 import pandas as pd
 from sqlalchemy import text
@@ -18,6 +19,7 @@ from participa_geo.ingestion.schema import (
 )
 from participa_geo.prediction.cohorts import IncompleteIdentityError, TerritoryIdentity
 from participa_geo.prediction.national import NationalModelBundle, train_national
+from pipelines.validation.identity_national import build_national_municipal_identity
 
 EXPECTED_MUNICIPALITIES = 2477
 EXPECTED_STATES = 32
@@ -44,6 +46,7 @@ def read_national_municipal_observations(processed_dir: Path) -> list[MunicipalO
         "young_share",
         "senior_share",
         "rural_share",
+        "source_version_ids",
     }
     if not expected.issubset(frame.columns):
         raise ValueError(
@@ -61,6 +64,7 @@ def read_national_municipal_observations(processed_dir: Path) -> list[MunicipalO
             young_share=_float_or_none(r.young_share),
             senior_share=_float_or_none(r.senior_share),
             rural_share=_float_or_none(r.rural_share),
+            source_version_id=_source_version_id(r.source_version_ids),
         )
         for r in frame.itertuples(index=False)
     ]
@@ -74,6 +78,7 @@ def read_national_identity_statuses(session: Session) -> dict[tuple[str, str], T
     rows = session.execute(
         text("""
         SELECT t.state_code, t.municipality_code,
+               count(DISTINCT t.id) AS reference_count,
                count(c.origin_territory_id) AS correspondence_count,
                count(DISTINCT (c.identity_status, c.footprint_status)) AS status_pairs,
                min(c.identity_status) AS identity_status,
@@ -91,11 +96,12 @@ def read_national_identity_statuses(session: Session) -> dict[tuple[str, str], T
     result: dict[tuple[str, str], TerritoryIdentity] = {}
     bad = []
     states: set[str] = set()
-    for state, code, count, status_pairs, identity, footprint in rows:
+    for state, code, reference_count, count, status_pairs, identity, footprint in rows:
         key = (str(state), str(code))
         states.add(key[0])
         if (
-            count < MIN_CORRESPONDENCES
+            reference_count != 1
+            or count < MIN_CORRESPONDENCES
             or status_pairs != 1
             or identity is None
             or footprint is None
@@ -116,6 +122,12 @@ def train_national_municipal(
     processed_dir: Path, output_dir: Path, session: Session
 ) -> NationalModelBundle:
     observations = read_national_municipal_observations(processed_dir)
+    audit = build_national_municipal_identity(session, observations)
+    if audit.reference_count != EXPECTED_MUNICIPALITIES:
+        raise IncompleteIdentityError(
+            f"national identity builder created {audit.reference_count}/"
+            f"{EXPECTED_MUNICIPALITIES} references"
+        )
     identities = read_national_identity_statuses(session)
     return train_national(
         observations,
@@ -130,6 +142,13 @@ def _float_or_none(value) -> float | None:
     if pd.isna(value):
         return None
     return float(value)
+
+
+def _source_version_id(values) -> UUID:
+    ids = [UUID(str(value)) for value in values]
+    if len(ids) != 1:
+        raise ValueError(f"expected one source dataset version per state/year aggregate, got {ids}")
+    return ids[0]
 
 
 __all__ = [
