@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GeographyNotice } from "../../components/GeographyNotice";
 import { PageState } from "../../components/PageState";
+import { useGlobalFilters } from "../../app/filters";
 import {
   createScenario,
   fetchModels,
@@ -31,8 +32,6 @@ const EMPTY_FORM: ScenarioFormValues = {
 };
 
 /** Scenario geometry is the latest reference layer; the 2027 target is fixed. */
-const MAP_REFERENCE_YEAR = 2024 as const;
-
 function readScenarioId(): string | null {
   return new URLSearchParams(window.location.search).get("scenario_id");
 }
@@ -75,6 +74,7 @@ function replaceScenarioIdInUrl(scenarioId: string): void {
 }
 
 export function ScenarioPage() {
+  const { level, stateCode } = useGlobalFilters();
   const queryClient = useQueryClient();
   const [scenarioId, setScenarioId] = useState<string | null>(readScenarioId);
   const [values, setValues] = useState<ScenarioFormValues>(EMPTY_FORM);
@@ -84,20 +84,24 @@ export function ScenarioPage() {
   const resultHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
   const modelsQuery = useQuery({
-    queryKey: queryKeys.models(),
-    queryFn: ({ signal }) => fetchModels({ signal }),
+    queryKey: queryKeys.models(level),
+    queryFn: ({ signal }) => fetchModels({ level, signal }),
+    enabled: level === "municipality",
     staleTime: 5 * 60_000,
   });
   const model = modelsQuery.data?.items[0];
 
   const predictionsQuery = useQuery({
-    queryKey: queryKeys.predictions(model?.model_run_id ?? null),
+    queryKey: queryKeys.predictions(model?.model_run_id ?? null, level, stateCode),
     queryFn: ({ signal }) =>
       fetchPredictions({
         modelRunId: model?.model_run_id ?? null,
+        level,
+        stateCode,
+        pageSize: 500,
         signal,
       }),
-    enabled: Boolean(model),
+    enabled: level === "municipality" && Boolean(model),
     staleTime: 60_000,
   });
 
@@ -137,10 +141,10 @@ export function ScenarioPage() {
   const insufficientCount = predictions.length - eligible.length;
 
   const featuresQuery = useQuery({
-    queryKey: queryKeys.municipalFeatures(MAP_REFERENCE_YEAR),
+    queryKey: queryKeys.municipalFeatures(stateCode),
     queryFn: ({ signal }) =>
-      fetchMunicipalityFeatures(MAP_REFERENCE_YEAR, signal),
-    enabled: Boolean(scenario),
+      fetchMunicipalityFeatures(stateCode, signal),
+    enabled: level === "municipality" && stateCode !== "all" && Boolean(scenario),
     staleTime: 60_000,
   });
 
@@ -197,6 +201,15 @@ export function ScenarioPage() {
   const selectedRows = values.selectedTerritoryIds
     .map((id) => predictions.find((item) => item.territory_id === id))
     .filter((item): item is PredictionDTO => Boolean(item));
+
+  if (level === "federal_district") {
+    return (
+      <div className="page scenario-page">
+        <ScenarioHeading />
+        <PageState variant="empty" title="Escenarios distritales no disponibles" message="Los distritos sólo tienen observación 2024. No se publican escenarios hipotéticos ni predicciones 2027 para este nivel." />
+      </div>
+    );
+  }
 
   if (modelsQuery.isPending) {
     return (

@@ -52,13 +52,14 @@ function filterPredictions(
 }
 
 export function PredictionPage() {
-  const { territoryId } = useGlobalFilters();
+  const { level, stateCode, territoryId } = useGlobalFilters();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
 
   const modelsQuery = useQuery({
-    queryKey: queryKeys.models(),
-    queryFn: ({ signal }) => fetchModels({ signal }),
+    queryKey: queryKeys.models(level),
+    queryFn: ({ signal }) => fetchModels({ level, signal }),
+    enabled: level === "municipality",
     staleTime: 5 * 60_000,
   });
 
@@ -67,13 +68,17 @@ export function PredictionPage() {
     models.find((model) => model.model_run_id === selectedModelId) ?? models[0];
 
   const predictionsQuery = useQuery({
-    queryKey: queryKeys.predictions(selectedModel?.model_run_id ?? null),
+    queryKey: queryKeys.predictions(selectedModel?.model_run_id ?? null, level, stateCode, territoryId),
     queryFn: ({ signal }) =>
       fetchPredictions({
         modelRunId: selectedModel?.model_run_id ?? null,
+        level,
+        stateCode,
+        territoryId,
+        pageSize: 500,
         signal,
       }),
-    enabled: Boolean(selectedModel),
+    enabled: level === "municipality" && Boolean(selectedModel),
     staleTime: 60_000,
   });
 
@@ -107,6 +112,15 @@ export function PredictionPage() {
   const selectedPrediction = territoryId
     ? predictions.find((item) => item.territory_id === territoryId)
     : undefined;
+
+  if (level === "federal_district") {
+    return (
+      <div className="page prediction-page">
+        <div className="page-heading"><p className="eyebrow">Observación distrital · marco 2023</p><h1>Perfil distrital pendiente</h1></div>
+        <PageState variant="empty" title="Observado 2024 / perfil distrital pendiente" message="No existe un modelo distrital publicado. No hay predicción 2027, banda de error ni clasificación de riesgo para este nivel." />
+      </div>
+    );
+  }
 
   if (modelsQuery.isPending) {
     return (

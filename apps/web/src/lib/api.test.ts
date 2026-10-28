@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { ElectionYear } from "../app/filters";
-import { ApiProblem, fetchHistory, fetchPredictions } from "./api";
+import { ApiProblem, fetchHistory, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
 import {
   historyYear,
   page,
@@ -70,5 +70,45 @@ describe("fetchPredictions target year contract", () => {
     const response = await fetchPredictions();
     expect(seen).toEqual(["2027"]);
     expect(response.items[0]?.target_year).toBe(2027);
+  });
+});
+
+describe("national API requests", () => {
+  it("loads the 32-state summary and limits municipality geometry to a selected state", async () => {
+    const seen: Array<{ path: string; params: URLSearchParams }> = [];
+    server.use(
+      http.get("*/api/v1/participation/summary", ({ request }) => {
+        const url = new URL(request.url);
+        seen.push({ path: url.pathname, params: url.searchParams });
+        return HttpResponse.json([]);
+      }),
+      http.get("*/api/v1/territories", ({ request }) => {
+        const url = new URL(request.url);
+        seen.push({ path: url.pathname, params: url.searchParams });
+        return HttpResponse.json(page([]));
+      }),
+      http.get("*/api/v1/gis/wfs", ({ request }) => {
+        const url = new URL(request.url);
+        seen.push({ path: url.pathname, params: url.searchParams });
+        return HttpResponse.json({ type: "FeatureCollection", features: [] });
+      }),
+    );
+
+    await fetchParticipationSummary({ level: "municipality", year: 2024 });
+    await fetchTerritories({ stateCode: "14", level: "municipality", pageSize: 500 });
+    await fetchMunicipalityFeatures("14");
+
+    expect(seen[0]?.params.get("level")).toBe("municipality");
+    expect(seen[0]?.params.get("year")).toBe("2024");
+    expect(seen[1]?.params.get("state_code")).toBe("14");
+    expect(seen[1]?.params.get("page_size")).toBe("500");
+    expect(seen[2]?.params.get("state_code")).toBe("14");
+    expect(seen[2]?.params.get("typeNames")).toBe(
+      "participa_geo_national:municipalities",
+    );
+    expect(seen[2]?.params.has("year")).toBe(false);
+    expect(seen[2]?.params.get("count")).toBe("500");
+    expect(seen[2]?.params.get("state_code")).not.toBe("all");
+    expect(wmsTerritoryUrl()).toContain("participa_geo_national%3Astates");
   });
 });

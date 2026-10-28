@@ -12,6 +12,8 @@ import {
 import { useRef, useState, type ReactNode } from "react";
 
 import type { ModuleId } from "../app/navigation";
+import { useGlobalFilters } from "../app/filters";
+import { LevelSwitcher } from "./LevelSwitcher";
 import {
   isActivePath,
   NAVIGATION,
@@ -98,6 +100,7 @@ type ApplicationShellProps = {
 };
 
 export function ApplicationShell({ pathname, children }: ApplicationShellProps) {
+  const { stateCode, level } = useGlobalFilters();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -111,7 +114,7 @@ export function ApplicationShell({ pathname, children }: ApplicationShellProps) 
         <Brand />
         <NavigationList pathname={pathname} />
         <div className="sidebar__footer">
-          <p>Cobertura: Jalisco</p>
+          <p>Cobertura: 32 entidades</p>
           <p>Fuente: INE · CCPC</p>
         </div>
       </aside>
@@ -132,12 +135,13 @@ export function ApplicationShell({ pathname, children }: ApplicationShellProps) 
           <div className="app-header__identity">
             <span className="app-header__product">PARTICIPA-GEO</span>
             <span className="app-header__context">
-              Inteligencia territorial · Jalisco
+              Inteligencia territorial · {stateCode === "all" ? "Nacional" : "México"}
             </span>
           </div>
+          <LevelSwitcher />
           <div className="app-header__meta" aria-label="Corte de datos y objetivo">
             <span>Corte de referencia: 15 dic 2025</span>
-            <span className="app-header__target">Predicción 2027 · año fijo</span>
+            {level === "municipality" ? <span className="app-header__target">Predicción 2027 · año fijo</span> : <span className="app-header__target">Observado 2024 · marco 2023</span>}
           </div>
         </header>
 

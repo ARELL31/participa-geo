@@ -335,7 +335,7 @@ export function MunicipalMap({
             </p>
           ) : null}
           <DataTable
-            caption="Municipios de Jalisco"
+            caption="Municipios de la entidad seleccionada"
             rows={rows}
             rowKey={(row) => row.code}
             emptyMessage={

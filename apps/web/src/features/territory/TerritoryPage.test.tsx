@@ -5,11 +5,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { App } from "../../app/App";
+import { prediction } from "../../test/fixtures";
 import {
   historyHandler,
   historyYear,
+  modelsHandler,
   municipalityFeature,
   page,
+  predictionsHandler,
   TERRITORY_A,
   TERRITORY_B,
   territoriesErrorHandler,
@@ -24,8 +27,12 @@ const TERRITORIES = [
   territory(TERRITORY_B, "002", "TEPATITLAN"),
 ];
 
-function renderAt(search: string) {
-  window.history.replaceState({}, "", `/territory${search}`);
+function renderAt(search: string, setup?: () => void) {
+  const query = new URLSearchParams(search);
+  if (!query.has("state") && !query.has("state_code")) query.set("state", "14");
+  window.history.replaceState({}, "", `/territory?${query.toString()}`);
+  server.use(modelsHandler(), predictionsHandler());
+  setup?.();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -47,6 +54,33 @@ function featureFor(id: string) {
 }
 
 describe("TerritoryPage", () => {
+  it("shows an insufficient municipal prediction without zero or green treatment and scopes WFS to state", async () => {
+    const wfsQueries: URLSearchParams[] = [];
+    renderAt(`?territory_id=${TERRITORY_A}&state=14&year=2024`, () => server.use(
+      territoriesHandler(TERRITORIES),
+      historyHandler((params) => [historyYear(params.get("territory_id"), 2024)]),
+      http.get("*/api/v1/gis/wfs", ({ request }) => {
+        wfsQueries.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ type: "FeatureCollection", features: [] });
+      }),
+      http.get("*/api/v1/predictions", () => HttpResponse.json(page([
+        prediction({ territory_id: TERRITORY_A, municipality_code: "001", territory_code: "001", municipality_name: "ACATIC", estimated_abstention_pct: null, risk: "insufficient", eligible: false }),
+      ]))),
+    ));
+
+    await screen.findByRole(
+      "heading",
+      { name: "ACATIC · 001" },
+      { timeout: 5_000 },
+    );
+    expect(await screen.findByText(/Información insuficiente para publicar una predicción 2027/)).toBeVisible();
+    expect(screen.queryByText("0.0 %")).not.toBeInTheDocument();
+    await waitFor(() => expect(wfsQueries).toHaveLength(1));
+    expect(wfsQueries[0]?.get("state_code")).toBe("14");
+    expect(wfsQueries[0]?.get("count")).toBe("500");
+    expect(wfsQueries[0]?.get("state_code")).not.toBe("all");
+  });
+
   it("always shows the geography notice", () => {
     server.use(
       territoriesHandler(TERRITORIES),
@@ -161,7 +195,7 @@ describe("TerritoryPage", () => {
       ),
     ).toBeInTheDocument();
     const table = await screen.findByRole("table", {
-      name: "Municipios de Jalisco",
+      name: "Municipios de la entidad seleccionada",
     });
     expect(within(table).getByRole("button", { name: "Seleccionar ACATIC" })).toBeInTheDocument();
   });
@@ -178,7 +212,7 @@ describe("TerritoryPage", () => {
     renderAt("?year=2024");
 
     const table = await screen.findByRole("table", {
-      name: "Municipios de Jalisco",
+      name: "Municipios de la entidad seleccionada",
     });
     await user.click(
       await within(table).findByRole("button", {

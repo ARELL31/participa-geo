@@ -8,6 +8,7 @@ import {
   emptyWfsHandler,
   historyHandler,
   historyYear,
+  summaryHandler,
   reportsHandler,
   TERRITORY_A,
   territoriesHandler,
@@ -17,6 +18,7 @@ import { server } from "../test/server";
 
 function renderApp(path = "/") {
   window.history.replaceState({}, "", path);
+  server.use(summaryHandler([]));
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },
@@ -46,7 +48,7 @@ describe("ApplicationShell", () => {
         screen.getByRole("link", { name: new RegExp(`^${name}`) }),
       ).toHaveAttribute("href", href);
     }
-    expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(document.querySelector(".app-header")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
 

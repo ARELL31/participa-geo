@@ -1,7 +1,7 @@
 import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
 
 import type { components } from "./api.generated";
-import type { ElectionYear, GlobalFilters } from "../app/filters";
+import type { ElectionYear, GlobalFilters, TerritoryLevel } from "../app/filters";
 
 type Schemas = components["schemas"];
 
@@ -17,6 +17,7 @@ export type RecommendationDTO = Schemas["RecommendationDTO"];
 export type ReportArtifactDTO = Schemas["ReportArtifactDTO"];
 export type ReportRequest = Schemas["ReportRequest"];
 export type ReportKind = ReportArtifactDTO["kind"];
+export type StateParticipationSummary = Schemas["StateParticipationSummary"];
 
 /**
  * ``Page[T]`` is derived from the generated OpenAPI envelope; only the item
@@ -121,6 +122,7 @@ function withQuery(path: string, params: Record<string, string | number | null |
 export async function fetchTerritories(
   options: {
     stateCode?: string;
+    level?: TerritoryLevel;
     page?: number;
     pageSize?: number;
     signal?: AbortSignal;
@@ -128,7 +130,7 @@ export async function fetchTerritories(
 ): Promise<TerritoryPage> {
   const path = withQuery("/api/v1/territories", {
     state_code: options.stateCode ?? "14",
-    level: "municipality",
+    level: options.level ?? "municipality",
     page: options.page ?? 1,
     page_size: options.pageSize ?? 125,
   });
@@ -137,6 +139,8 @@ export async function fetchTerritories(
 
 export async function fetchHistory(
   options: {
+    level?: TerritoryLevel;
+    stateCode?: string;
     territoryId?: string | null;
     year?: ElectionYear | null;
     page?: number;
@@ -146,6 +150,8 @@ export async function fetchHistory(
 ): Promise<HistoryPage> {
   const path = withQuery("/api/v1/participation/history", {
     territory_id: options.territoryId ?? null,
+    level: options.level ?? "municipality",
+    state_code: options.stateCode ?? null,
     year: options.year ?? null,
     page: options.page ?? 1,
     page_size: options.pageSize ?? 125,
@@ -154,11 +160,12 @@ export async function fetchHistory(
 }
 
 export async function fetchModels(
-  options: { pageSize?: number; signal?: AbortSignal } = {},
+  options: { level?: TerritoryLevel; pageSize?: number; signal?: AbortSignal } = {},
 ): Promise<ModelPage> {
   const path = withQuery("/api/v1/models", {
     page: 1,
     page_size: options.pageSize ?? 25,
+    level: options.level ?? "municipality",
   });
   return getJson<ModelPage>(path, options.signal);
 }
@@ -180,6 +187,9 @@ export async function fetchModel(
  */
 export async function fetchPredictions(
   options: {
+    level?: TerritoryLevel;
+    stateCode?: string;
+    territoryId?: string | null;
     modelRunId?: string | null;
     pageSize?: number;
     signal?: AbortSignal;
@@ -187,6 +197,9 @@ export async function fetchPredictions(
 ): Promise<PredictionPage> {
   const path = withQuery("/api/v1/predictions", {
     model_run_id: options.modelRunId ?? null,
+    level: options.level ?? "municipality",
+    state_code: options.stateCode ?? null,
+    territory_id: options.territoryId ?? null,
     target_year: 2027,
     page: 1,
     page_size: options.pageSize ?? 125,
@@ -196,6 +209,8 @@ export async function fetchPredictions(
 
 export async function fetchRecommendations(
   options: {
+    level?: TerritoryLevel;
+    stateCode?: string;
     modelRunId?: string | null;
     pageSize?: number;
     signal?: AbortSignal;
@@ -203,6 +218,8 @@ export async function fetchRecommendations(
 ): Promise<RecommendationPage> {
   const path = withQuery("/api/v1/recommendations", {
     model_run_id: options.modelRunId ?? null,
+    level: options.level ?? "municipality",
+    state_code: options.stateCode ?? null,
     page: 1,
     page_size: options.pageSize ?? 125,
   });
@@ -309,20 +326,58 @@ export async function downloadReport(
 }
 
 export async function fetchMunicipalityFeatures(
-  year: ElectionYear,
+  stateCode: string,
   signal?: AbortSignal,
 ): Promise<MunicipalityFeatureCollection> {
   const path = withQuery("/api/v1/gis/wfs", {
     service: "WFS",
     version: "2.0.0",
     request: "GetFeature",
-    typeNames: "participa_geo:participation_history",
+    typeNames: "participa_geo_national:municipalities",
     outputFormat: "application/json",
     srsName: "EPSG:4326",
-    count: 125,
-    year,
+    count: 500,
+    level: "municipality",
+    state_code: stateCode,
   });
   return getJson<MunicipalityFeatureCollection>(path, signal);
+}
+
+/** Summary over all 32 entities; this endpoint is national by contract. */
+export async function fetchParticipationSummary(
+  options: {
+    level?: TerritoryLevel;
+    year?: ElectionYear;
+    signal?: AbortSignal;
+  } = {},
+): Promise<StateParticipationSummary[]> {
+  const path = withQuery("/api/v1/participation/summary", {
+    level: options.level ?? "municipality",
+    year: options.year ?? 2024,
+  });
+  return getJson<StateParticipationSummary[]>(path, options.signal);
+}
+
+/** National/state WMS layer. It is raster-only; the country is never fetched as WFS. */
+export function wmsTerritoryUrl(): string {
+  // The state layer is a light national WMS overview; municipality/district
+  // features are requested only after narrowing the view to one territory.
+  const layer = "states";
+  const params = new URLSearchParams({
+    service: "WMS",
+    version: "1.3.0",
+    request: "GetMap",
+    layers: `participa_geo_national:${layer}`,
+    styles: "",
+    format: "image/png",
+    transparent: "true",
+    crs: "EPSG:4326",
+    width: "1200",
+    height: "700",
+  });
+  // WMS 1.3.0 EPSG:4326 uses latitude,longitude axis order.
+  params.set("bbox", "14.5,-118.5,32.8,-86.8");
+  return `/api/v1/gis/wms?${params.toString()}`;
 }
 
 /**
@@ -347,19 +402,20 @@ export function wmsAbstentionTileUrl(year: ElectionYear): string {
 }
 
 export const queryKeys = {
-  territories: (stateCode = "14") => ["territories", stateCode] as const,
+  territories: (stateCode = "14", level: TerritoryLevel = "municipality") => ["territories", stateCode, level] as const,
   history: (filters: GlobalFilters) =>
     [
       "history",
-      { territoryId: filters.territoryId, year: filters.historicalYear },
+       { territoryId: filters.territoryId, year: filters.historicalYear, level: filters.level, stateCode: filters.stateCode },
     ] as const,
-  historySeries: (territoryId: string | null) =>
-    ["history", "series", { territoryId }] as const,
-  municipalFeatures: (year: ElectionYear) =>
-    ["gis", "wfs", "participation_history", year] as const,
-  models: () => ["models"] as const,
-  predictions: (modelRunId: string | null) =>
-    ["predictions", { modelRunId, targetYear: 2027 }] as const,
+  historySeries: (territoryId: string | null, level: TerritoryLevel = "municipality", stateCode = "all") =>
+    ["history", "series", { territoryId, level, stateCode }] as const,
+  municipalFeatures: (stateCode = "14") =>
+    ["gis", "wfs", "municipalities", stateCode] as const,
+  summary: (level: TerritoryLevel, year: ElectionYear) => ["summary", level, year] as const,
+  models: (level: TerritoryLevel = "municipality") => ["models", level] as const,
+  predictions: (modelRunId: string | null, level: TerritoryLevel = "municipality", stateCode = "all", territoryId: string | null = null) =>
+    ["predictions", { modelRunId, level, stateCode, territoryId, targetYear: 2027 }] as const,
   recommendations: (modelRunId: string | null) =>
     ["recommendations", { modelRunId, targetYear: 2027 }] as const,
   scenario: (scenarioId: string | null) =>

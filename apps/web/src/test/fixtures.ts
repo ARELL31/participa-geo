@@ -9,6 +9,7 @@ import type {
   ReportArtifactDTO,
   ScenarioDTO,
   ScenarioResultDTO,
+  StateParticipationSummary,
   TerritoryDTO,
 } from "../lib/api";
 
@@ -86,6 +87,12 @@ export function page<T>(
 export function territoriesHandler(items: TerritoryDTO[]) {
   return http.get("*/api/v1/territories", () =>
     HttpResponse.json(page(items)),
+  );
+}
+
+export function summaryHandler(items: StateParticipationSummary[] = []) {
+  return http.get("*/api/v1/participation/summary", () =>
+    HttpResponse.json(items),
   );
 }
 

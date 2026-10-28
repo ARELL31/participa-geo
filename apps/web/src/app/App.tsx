@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { TerritoryPage } from "../features/territory/TerritoryPage";
-import { ExecutivePage } from "../features/executive/ExecutivePage";
+import { NationalPanel } from "../features/national/NationalPanel";
 import { PredictionPage } from "../features/prediction/PredictionPage";
 import { ScenarioPage } from "../features/scenarios/ScenarioPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
@@ -94,7 +94,7 @@ export function App() {
       </div>
     );
   } else if (moduleId === "executive") {
-    content = <ExecutivePage />;
+    content = <NationalPanel />;
   } else if (moduleId === "territory") {
     content = <TerritoryPage />;
   } else if (moduleId === "prediction") {

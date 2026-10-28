@@ -25,6 +25,8 @@ function renderPage() {
     <QueryClientProvider client={client}>
       <GlobalFiltersContext.Provider
         value={{
+          level: "municipality",
+          stateCode: "14",
           territoryId: TERRITORY_ID,
           historicalYear: 2024,
           setFilters: () => {},

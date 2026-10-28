@@ -35,7 +35,7 @@ function renderPage(path = "/scenarios") {
   return render(
     <QueryClientProvider client={client}>
       <GlobalFiltersContext.Provider
-        value={{ territoryId: null, historicalYear: 2024, setFilters: () => {} }}
+        value={{ level: "municipality", stateCode: "14", territoryId: null, historicalYear: 2024, setFilters: () => {} }}
       >
         <ScenarioPage />
       </GlobalFiltersContext.Provider>

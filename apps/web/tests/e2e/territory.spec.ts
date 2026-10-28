@@ -11,6 +11,7 @@ const NOTICE =
 
 type Territory = { id: string; name: string; municipality_code: string };
 type History = { year: number; abstention_pct: number | null };
+type StateSummary = { state_code: string; state_name: string; observed_abstention_pct: number | null };
 
 async function apiJson<T>(page: Page, path: string): Promise<T> {
   const response = await page.request.get(path);
@@ -36,6 +37,50 @@ function rate(value: number | null): string {
   return value === null ? "No disponible" : `${value.toFixed(1)} %`;
 }
 
+test("national summary has 32 entities and drills down without full-country WFS", async ({ page }) => {
+  const summaries = await apiJson<StateSummary[]>(page, "/api/v1/participation/summary?level=municipality&year=2024");
+  expect(summaries).toHaveLength(32);
+  const jalisco = summaries.find((row) => row.state_code === "14");
+  expect(jalisco).toBeTruthy();
+
+  const wfsRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/v1/gis/wfs")) wfsRequests.push(request.url());
+  });
+  const wmsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wms") && response.status() === 200);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Panel ejecutivo" })).toBeVisible();
+  const table = page.getByRole("table", { name: "Resumen por entidad" });
+  await expect(table.getByRole("row")).toHaveCount(33);
+  const wms = await wmsDone;
+  expect(wms.headers()["content-type"]).toContain("image/png");
+  expect(wfsRequests).toHaveLength(0);
+
+  await page.getByRole("button", { name: `Ver municipios de ${jalisco!.state_name}` }).click();
+  await expect(page).toHaveURL(/state=14/);
+  await expect(page.getByRole("table", { name: "Municipios de la entidad" })).toBeVisible();
+  await expect.poll(() => wfsRequests.length).toBe(0);
+});
+
+test("municipal profile combines observed history with its published 2027 prediction", async ({ page }) => {
+  const territories = await apiJson<{ items: Territory[] }>(page, "/api/v1/territories?level=municipality&state_code=14&page=1&page_size=500");
+  const acatic = territories.items.find((item) => item.name === "ACATIC");
+  expect(acatic).toBeTruthy();
+  const history = await apiJson<{ items: History[] }>(page, `/api/v1/participation/history?level=municipality&state_code=14&territory_id=${acatic!.id}&page=1&page_size=500`);
+  const observed = history.items.find((row) => row.year === 2024)?.abstention_pct;
+  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
+
+  await page.goto(`/territory?level=municipality&state=14&territory_id=${acatic!.id}&year=2024`);
+  await expect(page.getByRole("heading", { name: `${acatic!.name} · ${acatic!.municipality_code}` })).toBeVisible();
+  await expect(page.getByTestId("kpi-abstention")).toHaveText(rate(observed ?? null));
+  await expect(page.getByRole("heading", { name: "Predicción municipal 2027" })).toBeVisible();
+  const wfs = await wfsDone;
+  expect(new URL(wfs.url()).searchParams.get("typeNames")).toBe("participa_geo_national:municipalities");
+  expect(new URL(wfs.url()).searchParams.get("state_code")).toBe("14");
+  expect(new URL(wfs.url()).searchParams.get("count")).toBe("500");
+  expect(new URL(wfs.url()).searchParams.has("year")).toBe(false);
+});
+
 test("territory selection and year update the KPI and the accessible table", async ({
   page,
 }) => {
@@ -43,7 +88,7 @@ test("territory selection and year update the KPI and the accessible table", asy
   const expected2024 = history.find((row) => row.year === 2024)?.abstention_pct;
   expect(expected2024).not.toBeNull();
 
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
   await expect(page.getByRole("heading", { level: 1, name: "Inteligencia territorial" })).toBeVisible();
   await expect(page.getByText(NOTICE)).toBeVisible();
 
@@ -111,7 +156,7 @@ test("keyboard navigation reaches the module link and activates it with Enter", 
   await expect(page.getByRole("heading", { level: 1, name: "Inteligencia territorial" })).toBeVisible();
 });
 
-test("MapLibre renders the WMS map and loads all WFS municipalities", async ({
+test("MapLibre renders the WMS map and loads only selected-state WFS municipalities", async ({
   page,
 }) => {
   const wfsDone = page.waitForResponse(
@@ -122,7 +167,7 @@ test("MapLibre renders the WMS map and loads all WFS municipalities", async ({
     (response) =>
       response.url().includes("/api/v1/gis/wms") && response.status() === 200,
   );
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
 
   const wfsResponse = await wfsDone;
   const wfsBody = (await wfsResponse.json()) as { features: unknown[] };
@@ -145,7 +190,7 @@ test("the mobile sidebar opens as a dialog at 375px and returns focus", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
 
   const trigger = page.getByRole("button", { name: "Abrir menú de navegación" });
   await expect(trigger).toBeVisible();
@@ -166,7 +211,7 @@ test("1440px keeps the persistent sidebar and the 64px header", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
   await expect(
     page.getByRole("navigation", { name: "Navegación principal" }),
   ).toBeVisible();
@@ -180,7 +225,7 @@ test("1440px keeps the persistent sidebar and the 64px header", async ({
 
 test("320px layout reflows without horizontal page overflow", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -193,7 +238,7 @@ test("200% zoom approximation keeps the page usable without page overflow", asyn
   // Browser zoom is not exposed by Playwright; 640 CSS px with body zoom 2
   // approximates a 320 CSS px layout at 200%, catching reflow regressions.
   await page.setViewportSize({ width: 640, height: 900 });
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
   await page.evaluate(() => {
     document.body.style.zoom = "2";
   });
@@ -207,7 +252,7 @@ test("a failed WMS keeps the map error and the tabular alternative", async ({
   page,
 }) => {
   await page.route("**/api/v1/gis/wms**", (route) => route.abort());
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?state=14&year=2024");
 
   await expect(
     page.getByText(
@@ -215,6 +260,6 @@ test("a failed WMS keeps the map error and the tabular alternative", async ({
     ),
   ).toBeVisible({ timeout: 20_000 });
   await expect(
-    page.getByRole("table", { name: "Municipios de Jalisco" }),
+    page.getByRole("table", { name: "Municipios de la entidad seleccionada" }),
   ).toBeVisible();
 });
