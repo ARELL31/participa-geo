@@ -87,7 +87,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 
 ---
 
-## Task N1: Dominio, esquema y migración de niveles
+## Task 1: Dominio, esquema y migración de niveles
 
 **Files:** `territory.py`; `db/models.py`; `alembic/versions/0004_national_levels.py`; `api/schemas/{common,territories,history,models}.py`; `tests/unit/national/test_territory.py`; `tests/integration/national/test_migration_levels.py`.
 
@@ -101,7 +101,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** migrar una base limpia y ejecutar tests unitarios/contract; una fila Jalisco conserva su UUID e historia.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: add national territory levels and plan-aware identities'`.
 
-## Task N2: Ingestión nacional de sección y agregado municipal
+## Task 2: Ingestión nacional de sección y agregado municipal
 
 **Files:** `ingestion/national.py`, `ingestion/section_fact.py`; `pipelines/ingestion/national.py`; `cli.py`; `alembic/versions/0005_section_fact.py`; `data/sources.json`; `docs/methodology/national-ingestion.md`; tests.
 
@@ -116,7 +116,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN y datos reales:** ingestión completa; comparar con `national-audit` (54,872,712 filas, 2,477 municipios, 300 distritos, 0 descuadres, 44,154 `DEF` vacíos); repetir hash/idempotencia.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: ingest national CCPC section facts and municipal aggregates'`.
 
-## Task N3: Continuidad seccional y reconstrucción distrital 2023
+## Task 3: Continuidad seccional y reconstrucción distrital 2023
 
 **Files:** `ingestion/continuity.py`; `pipelines/validation/continuity.py`; `alembic/versions/0006_continuity.py`; `cli.py`; `docs/methodology/national-district-reconstruction.md`; tests.
 
@@ -134,7 +134,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 
 **Nota de bloqueo:** si no se obtiene continuidad seccional defendible, N3 termina BLOCKED y N6/N9 no se implementan. No se sustituye por un join de números.
 
-## Task N4: Cartografía nacional y GeoServer
+## Task 4: Cartografía nacional y GeoServer
 
 **Files:** `pipelines/validation/geography_national.py`; `gis/geoserver/national.py`; `gis/styles/national_*.sld`; `cli.py`; tests; docs.
 
@@ -149,7 +149,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** 32/32; 2,477/300; GetMap PNG; WFS 125 features for a state; Transaction rejected.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: publish national municipal and district cartography'`.
 
-## Task N5: Modelo municipal nacional
+## Task 5: Modelo municipal nacional
 
 **Files:** `prediction/national.py`; `prediction/artifacts.py`; `pipelines/training/national.py`; `cli.py`; docs/methodology/national-model.md; tests.
 
@@ -164,7 +164,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** full national train; coverage; M0/M1; insuff; goldens.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: train and evaluate the national municipal model'`.
 
-## Task N6: Modelo distrital 2023
+## Task 6: Modelo distrital 2023
 
 **Files:** `prediction/district.py`; `prediction/artifacts.py`; `pipelines/training/district.py`; `cli.py`; docs; tests.
 
@@ -179,7 +179,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** national district train; report coverage; expected insufficient count; no cross-level.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: train the 2023 federal district model with coverage gating'`.
 
-## Task N7: API nacional por nivel y gateway GIS
+## Task 7: API nacional por nivel y gateway GIS
 
 **Files:** `api/schemas/{territories,history,national,scenarios}.py`; `api/routes/{territories,history,summary,predictions,scenarios,recommendations,gis}.py`; `api/gis_client.py`; `db/repository.py`; `docs/api/contracts.md`; OpenAPI; tests.
 
@@ -194,7 +194,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** contract/OpenAPI; 2,477/300; API values match aggregates; state summary sums.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: serve national municipal and district analytics by level'`.
 
-## Task N8: Shell nacional y perfil municipal
+## Task 8: Shell nacional y perfil municipal
 
 **Files:** `apps/web/src/app/filters.ts`, `components/LevelSwitcher.tsx`, `features/national/*`, `features/territory/*`, `features/executive/*`, `lib/api.ts`, tests.
 
@@ -209,7 +209,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** Vitest/typecheck/build; Playwright national/municipal.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: add national level selector and municipal intelligence views'`.
 
-## Task N9: Perfil distrital y relación municipio–distrito
+## Task 9: Perfil distrital y relación municipio–distrito
 
 **Files:** `apps/web/src/features/district/*`, `features/territory/MunicipalityDistrictPanel.tsx`, `features/scenarios/*`, tests.
 
@@ -223,7 +223,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** Vitest/Playwright; 72 split cases; coverage.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: add federal district profiles and many-to-many municipal context'`.
 
-## Task N10: Reportes y exportaciones nacionales
+## Task 10: Reportes y exportaciones nacionales
 
 **Files:** `reporting/national.py`, `reporting/delivery.py`, `api/routes/reports.py`, `apps/web/src/features/reports/*`, `docs/hackathon/*`, scripts; tests.
 
@@ -238,7 +238,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** PDFs, ZIP complete; real data.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: generate national reports and reproducible exports'`.
 
-## Task N11: Rendimiento, CI, cleanroom y aceptación
+## Task 11: Rendimiento, CI, cleanroom y aceptación
 
 **Files:** `.github/workflows/ci.yml`, `tests/e2e/national/*`, `docs/architecture/deployment.md`, `docs/hackathon/verification-results.md`, `README.md`; tests.
 
