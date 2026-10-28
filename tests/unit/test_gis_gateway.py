@@ -25,6 +25,51 @@ def test_gis_gateway_bounds_national_wfs_by_state_and_limit():
     assert result["cql_filter"] == "state_code = '14'"
 
 
+def test_gis_gateway_wfs_accepts_bbox_without_state_and_caps_at_1000():
+    from participa_geo.api.gis_client import validate_wfs_request
+
+    result = validate_wfs_request(
+        {
+            "request": "GetFeature",
+            "typeNames": "participa_geo_national:districts_2023",
+            "bbox": "-117,14,-86,33,EPSG:4326",
+        }
+    )
+    assert result["count"] == "1000"
+    assert result["bbox"] == "-117,14,-86,33,EPSG:4326"
+
+
+def test_gis_gateway_rejects_client_supplied_cql_and_scenario_filters():
+    from participa_geo.api.errors import ProblemException
+    from participa_geo.api.gis_client import validate_wfs_request
+
+    for params in (
+        {"request": "GetFeature", "typeNames": "municipalities", "CQL_FILTER": "INCLUDE"},
+        {
+            "request": "GetFeature",
+            "typeNames": "predictions",
+            "scenario_id": "00000000-0000-0000-0000-000000000001",
+            "state_code": "14",
+        },
+    ):
+        try:
+            validate_wfs_request(params)
+        except ProblemException:
+            continue
+        raise AssertionError("client-supplied filters must not reach GeoServer")
+
+
+def test_gis_gateway_wfs_requires_state_or_bbox():
+    from participa_geo.api.errors import ProblemException
+    from participa_geo.api.gis_client import validate_wfs_request
+
+    try:
+        validate_wfs_request({"request": "GetFeature", "typeNames": "municipalities"})
+    except ProblemException:
+        return
+    raise AssertionError("unbounded national WFS must be rejected")
+
+
 def test_gis_gateway_rejects_cql_and_admin(api_client):
     response = api_client.get(
         "/api/v1/gis/wfs", params={"request": "GetFeature", "CQL_FILTER": "INCLUDE"}

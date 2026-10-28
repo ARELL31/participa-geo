@@ -75,6 +75,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/participation/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Participation Summary */
+        get: operations["participation_summary_api_v1_participation_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models": {
         parameters: {
             query?: never;
@@ -317,6 +334,16 @@ export interface components {
             name?: string | null;
             /** Municipality Code */
             municipality_code?: string | null;
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** Territory Code */
+            territory_code?: string | null;
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Ln */
             ln: number;
             /** Sv */
@@ -341,6 +368,8 @@ export interface components {
             identity_status?: string | null;
             /** Footprint Status */
             footprint_status?: string | null;
+            /** Coverage Share */
+            coverage_share?: number | null;
         };
         /** LiveStatus */
         LiveStatus: {
@@ -359,6 +388,14 @@ export interface components {
             model_run_id: string;
             /** Family */
             family: string;
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Target Year */
             target_year: number;
             /** Reference Date */
@@ -473,7 +510,17 @@ export interface components {
              */
             territory_id: string;
             /** Municipality Code */
-            municipality_code: string;
+            municipality_code?: string | null;
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** Territory Code */
+            territory_code?: string | null;
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Municipality Name */
             municipality_name: string;
             /** Target Year */
@@ -661,6 +708,14 @@ export interface components {
              * @enum {string}
              */
             assumption_code: "preventive_exploration" | "model_sensitivity";
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Assumption Version */
             assumption_version: string;
             /** Rationale Text */
@@ -706,6 +761,8 @@ export interface components {
              * @constant
              */
             target_year: 2027;
+            /** Level */
+            level?: ("municipality" | "federal_district") | null;
             /** Territory Ids */
             territory_ids: string[];
             /** Reduction Pp */
@@ -727,9 +784,19 @@ export interface components {
              */
             territory_id: string;
             /** Municipality Code */
-            municipality_code: string;
+            municipality_code: string | null;
             /** Municipality Name */
             municipality_name: string;
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** Territory Code */
+            territory_code?: string | null;
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Baseline Abstention Pct */
             baseline_abstention_pct?: number | null;
             /** Hypothetical Abstention Pct */
@@ -769,6 +836,38 @@ export interface components {
             /** Selected */
             selected: boolean;
         };
+        /** StateParticipationSummary */
+        StateParticipationSummary: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** State Code */
+            state_code: string;
+            /** State Name */
+            state_name: string;
+            /** Year */
+            year: number;
+            /** Ln */
+            ln: number;
+            /** Sv */
+            sv: number;
+            /** Nv */
+            nv: number;
+            /** Ns */
+            ns: number;
+            /** Observed Abstention Pct */
+            observed_abstention_pct: number | null;
+            /** Eligible Count */
+            eligible_count: number;
+            /** Insufficient Count */
+            insufficient_count: number;
+            /** High Risk Count */
+            high_risk_count: number;
+            /** Coverage Share */
+            coverage_share: number | null;
+        };
         /**
          * TerritoryDTO
          * @description A reference municipality with its comparability statuses.
@@ -784,7 +883,17 @@ export interface components {
             /** State Code */
             state_code: string;
             /** Municipality Code */
-            municipality_code: string;
+            municipality_code?: string | null;
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
+            /** Territory Code */
+            territory_code?: string | null;
+            /** District Plan */
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
             /** Identity Status */
             identity_status?: string | null;
             /** Footprint Status */
@@ -858,7 +967,7 @@ export interface operations {
         parameters: {
             query?: {
                 state_code?: string;
-                level?: "municipality";
+                level?: "municipality" | "federal_district";
                 q?: string | null;
                 page?: number;
                 page_size?: number;
@@ -892,6 +1001,8 @@ export interface operations {
     list_history_api_v1_participation_history_get: {
         parameters: {
             query?: {
+                level?: "municipality" | "federal_district";
+                state_code?: string;
                 territory_id?: string | null;
                 year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
                 page?: number;
@@ -910,6 +1021,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_HistoryDTO_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    participation_summary_api_v1_participation_summary_get: {
+        parameters: {
+            query?: {
+                level?: "municipality" | "federal_district";
+                year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateParticipationSummary"][];
                 };
             };
             /** @description Validation Error */
@@ -989,6 +1132,8 @@ export interface operations {
     list_predictions_api_v1_predictions_get: {
         parameters: {
             query?: {
+                level?: "municipality" | "federal_district";
+                state_code?: string;
                 model_run_id?: string | null;
                 target_year?: 2027;
                 territory_id?: string | null;

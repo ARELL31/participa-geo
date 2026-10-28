@@ -33,9 +33,7 @@ def _predictions(client) -> dict:
 
 def _eligible(payload: dict) -> list[dict]:
     return [
-        p
-        for p in payload["items"]
-        if p["eligible"] and p["estimated_abstention_pct"] is not None
+        p for p in payload["items"] if p["eligible"] and p["estimated_abstention_pct"] is not None
     ]
 
 
@@ -83,9 +81,7 @@ def test_create_returns_full_persisted_comparison(db_api_client, loaded_model_ru
     assert scenario["rationale_text"]
     assert len(scenario["input_sha256"]) == 64
     assert len(scenario["model_sha256"]) == 64
-    assert set(scenario["selected_territory_ids"]) == {
-        item["territory_id"] for item in selected
-    }
+    assert set(scenario["selected_territory_ids"]) == {item["territory_id"] for item in selected}
     assert "histórico" in scenario["error_band_label"].lower()
     assert "causal" in scenario["error_band_label"].lower()
 
@@ -106,11 +102,7 @@ def test_create_returns_full_persisted_comparison(db_api_client, loaded_model_ru
         assert row["requested_reduction_pp"] == 3.0
         assert row["risk_a"] == prediction["risk"]
 
-    unselected = next(
-        p
-        for p in eligible
-        if not by_id[p["territory_id"]]["selected"]
-    )
+    unselected = next(p for p in eligible if not by_id[p["territory_id"]]["selected"])
     row = by_id[unselected["territory_id"]]
     assert row["hypothetical_abstention_pct"] == row["baseline_abstention_pct"]
     assert row["effective_reduction_pp"] == 0.0
@@ -139,12 +131,27 @@ def test_unknown_scenario_is_404_problem(db_api_client):
         assert field in body
 
 
+def test_district_scenario_returns_unavailable_conflict(api_client):
+    response = api_client.post(
+        "/api/v1/scenarios",
+        json={
+            "model_run_id": str(uuid4()),
+            "target_year": 2027,
+            "level": "federal_district",
+            "territory_ids": [str(uuid4())],
+            "reduction_pp": 2,
+            "assumption_code": "preventive_exploration",
+        },
+    )
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "district_model_unavailable"
+
+
 def test_insufficient_selected_is_422_with_identifier_and_cause(db_api_client):
     payload = _predictions(db_api_client)
     insufficient = _insufficient(payload)[0]
-    body = _valid_body(
-        db_api_client, territory_ids=[insufficient["territory_id"]]
-    )
+    body = _valid_body(db_api_client, territory_ids=[insufficient["territory_id"]])
 
     response = _post(db_api_client, body)
 
@@ -159,9 +166,7 @@ def test_insufficient_selected_is_422_with_identifier_and_cause(db_api_client):
 
 
 def test_unknown_territory_and_model_are_422(db_api_client):
-    unknown_body = _valid_body(
-        db_api_client, territory_ids=[str(uuid4())]
-    )
+    unknown_body = _valid_body(db_api_client, territory_ids=[str(uuid4())])
     response = _post(db_api_client, unknown_body)
     assert response.status_code == 422
     assert response.json()["errors"][0]["reason"]
@@ -188,7 +193,7 @@ def test_duplicate_nan_extra_fields_and_bad_rationale_are_rejected(api_client):
     empty = dict(base, territory_ids=[])
     assert _post(api_client, empty).status_code == 422
 
-    too_many = dict(base, territory_ids=[str(uuid4()) for _ in range(126)])
+    too_many = dict(base, territory_ids=[str(uuid4()) for _ in range(1001)])
     assert _post(api_client, too_many).status_code == 422
 
     extra = dict(base, rationale_text="texto libre no permitido")
@@ -251,11 +256,7 @@ def test_recommendations_are_versioned_and_neutral(db_api_client):
     for forbidden in ("presupuesto", "partido", "movilizar", "segmentación persuasiva"):
         assert forbidden not in text
 
-    with_reasons = next(
-        p
-        for p in payload["items"]
-        if (p.get("quality") or {}).get("reasons")
-    )
+    with_reasons = next(p for p in payload["items"] if (p.get("quality") or {}).get("reasons"))
     single = db_api_client.get(
         "/api/v1/recommendations",
         params={"territory_id": with_reasons["territory_id"]},
@@ -300,7 +301,7 @@ def test_openapi_declares_scenario_contract():
     schema_name = schema_ref.rsplit("/", 1)[-1]
     schema = openapi["components"]["schemas"][schema_name]
 
-    assert set(schema["properties"]) == REQUEST_KEYS
+    assert set(schema["properties"]) == REQUEST_KEYS | {"level"}
     assert schema.get("additionalProperties") is False
     assert set(schema["required"]) == REQUEST_KEYS
 
@@ -313,7 +314,7 @@ def test_openapi_declares_scenario_contract():
 
     territories = schema["properties"]["territory_ids"]
     assert territories["minItems"] == 1
-    assert territories["maxItems"] == 125
+    assert territories["maxItems"] == 1000
 
     assumption = schema["properties"]["assumption_code"]
     assert set(assumption["enum"]) == {"preventive_exploration", "model_sensitivity"}

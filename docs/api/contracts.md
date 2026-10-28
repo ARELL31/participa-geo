@@ -10,7 +10,8 @@ manual divergente.
 - Prefijo: `/api/v1`. Todas las rutas de negocio viven bajo ese prefijo.
 - `Content-Type` de respuestas de datos: `application/json`.
 - `Content-Type` de errores: `application/problem+json`.
-- Cuerpos JSON de entrada: máximo **32 KiB** (`32768` bytes). Una petición mayor se
+- Cuerpos JSON de entrada: máximo **32 KiB** (`32768` bytes), excepto `POST /scenarios`
+  que admite hasta **128 KiB** (`131072` bytes). Una petición mayor se
   rechaza con `413` antes de parsear. Todos los cuerpos prohíben campos extra
   (`extra="forbid"`) y números no finitos (NaN/Infinito).
 - Fechas y horas en **ISO 8601 UTC**.
@@ -142,16 +143,17 @@ a sí mismo.
 
 | Método/ruta | Contrato |
 |---|---|
-| GET `/territories` | `state_code=14`, `level=municipality`, `q<=80`, `page=1`, `page_size=25`; `Page[TerritoryDTO]`. |
-| GET `/participation/history` | `territory_id?:UUID`, `year?:enum`, paginación; `Page[HistoryDTO]`. |
-| GET `/models`, `/models/{id}` | Ejecuciones ya entrenadas; sin endpoint de entrenamiento. |
-| GET `/predictions` | `model_run_id?:UUID`, `target_year=2027`, `territory_id?:UUID`; `Page[PredictionRecord]`. |
-| POST `/scenarios` | `ScenarioRequest`; `201` `ScenarioDTO`. |
+| GET `/territories` | `state_code=14` (o `all`), `level=municipality`, `q<=80`, `page=1`, `page_size<=500`; `Page[TerritoryDTO]`. |
+| GET `/participation/history` | `level=municipality`, `state_code=14` (o `all`), `territory_id?:UUID`, `year?:enum`, `page_size<=500`; `Page[HistoryDTO]`. Distrito devuelve sólo observación 2024. |
+| GET `/participation/summary` | `level`, `year=2024`; 32 filas con conteos sumados, riesgo elegible/insuficiente y cobertura por entidad. El color usa abstención observada de conteos. |
+| GET `/models`, `/models/{id}` | Ejecuciones ya entrenadas; sin endpoint de entrenamiento. Sólo hay modelo municipal disponible. |
+| GET `/predictions` | `level=municipality`, `model_run_id?:UUID`, `target_year=2027`, `territory_id?:UUID`, `state_code=14` (o `all`); `page_size<=500`. Nivel distrito devuelve 409 `district_model_unavailable`. |
+| POST `/scenarios` | `level=municipality`, hasta 1,000 IDs, cuerpo hasta 128 KiB; `201` `ScenarioDTO`. Distritos devuelven 409 `district_model_unavailable`; no hay escenarios distritales. |
 | GET `/scenarios/{id}` | `200`/`404`. |
 | GET `/recommendations` | Filtros de predicción; reglas explicadas. |
 | POST `/reports` | `ReportRequest`; `200` cache/`201` creado/`409`/`413`/`503`. |
 | GET `/reports/{id}`, `/reports/{id}/download` | Metadatos/estado y descarga; `404`/`409`. |
-| GET `/gis/wms`, `/gis/wfs` | Adaptador validado hacia GeoServer interno (sólo lectura). |
+| GET `/gis/wms`, `/gis/wfs` | Adaptador validado hacia GeoServer interno (sólo lectura). WMS nacional; WFS por entidad/bbox y máximo 1,000. No se aceptan CQL, REST, Transaction ni URLs. |
 
 Estas rutas se implementan en tareas posteriores; su firma queda fijada aquí para
 que el OpenAPI generado y los tipos de cliente no diverjan. Las rutas de lectura y

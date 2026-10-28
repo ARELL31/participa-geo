@@ -38,9 +38,7 @@ def test_territories_are_stably_paginated(db_api_client):
 
 
 def test_history_state_uses_summed_counts(db_api_client):
-    response = db_api_client.get(
-        "/api/v1/participation/history", params={"page_size": 125}
-    )
+    response = db_api_client.get("/api/v1/participation/history", params={"page_size": 125})
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 6
@@ -73,18 +71,14 @@ def test_insufficient_prediction_is_null(db_api_client):
 
 
 def test_state_history_honours_page_and_page_size(db_api_client):
-    first = db_api_client.get(
-        "/api/v1/participation/history", params={"page": 1, "page_size": 1}
-    )
+    first = db_api_client.get("/api/v1/participation/history", params={"page": 1, "page_size": 1})
     assert first.status_code == 200
     body = first.json()
     assert body["total"] == 6
     assert body["page"] == 1 and body["page_size"] == 1
     assert [row["year"] for row in body["items"]] == [2009]
 
-    second = db_api_client.get(
-        "/api/v1/participation/history", params={"page": 2, "page_size": 1}
-    )
+    second = db_api_client.get("/api/v1/participation/history", params={"page": 2, "page_size": 1})
     assert second.status_code == 200
     body = second.json()
     assert body["total"] == 6
@@ -102,8 +96,8 @@ def test_invalid_year_and_page_rejected(db_api_client):
     response = db_api_client.get("/api/v1/territories", params={"page": 0})
     assert response.status_code == 422
 
-    # page_size is bounded at 125.
-    response = db_api_client.get("/api/v1/territories", params={"page_size": 126})
+    # page_size is bounded at 500.
+    response = db_api_client.get("/api/v1/territories", params={"page_size": 501})
     assert response.status_code == 422
 
 
@@ -111,9 +105,7 @@ def test_invalid_year_and_page_rejected(db_api_client):
 def test_history_year_filter_accepts_all_years(db_api_client, year):
     # Regression: query-string `year` values must coerce to int and pass the
     # Literal check (Pydantic 2.14 rejected `"2024"` with `literal_error`).
-    response = db_api_client.get(
-        "/api/v1/participation/history", params={"year": year}
-    )
+    response = db_api_client.get("/api/v1/participation/history", params={"year": year})
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
@@ -121,18 +113,14 @@ def test_history_year_filter_accepts_all_years(db_api_client, year):
 
 
 def test_history_year_invalid_is_422_problem_json(db_api_client):
-    response = db_api_client.get(
-        "/api/v1/participation/history", params={"year": 2023}
-    )
+    response = db_api_client.get("/api/v1/participation/history", params={"year": 2023})
     assert response.status_code == 422
     assert response.headers["content-type"].startswith("application/problem+json")
     assert response.json()["code"] == "validation_error"
 
 
 def test_unknown_id_404(db_api_client):
-    response = db_api_client.get(
-        "/api/v1/models/00000000-0000-0000-0000-000000000001"
-    )
+    response = db_api_client.get("/api/v1/models/00000000-0000-0000-0000-000000000001")
     assert response.status_code == 404
     assert response.headers["content-type"].startswith("application/problem+json")
     assert response.json()["code"] == "not_found"
@@ -180,6 +168,13 @@ def test_predictions_target_year_2026_rejected(db_api_client):
     assert response.json()["code"] == "validation_error"
 
 
+def test_federal_district_predictions_fail_with_stable_409(api_client):
+    response = api_client.get("/api/v1/predictions", params={"level": "federal_district"})
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "district_model_unavailable"
+
+
 def _query_params(openapi: dict, path: str) -> dict[str, dict]:
     return {
         p["name"]: p
@@ -195,6 +190,7 @@ def test_openapi_matches_contract():
     for path in (
         "/api/v1/territories",
         "/api/v1/participation/history",
+        "/api/v1/participation/summary",
         "/api/v1/models",
         "/api/v1/predictions",
         "/api/v1/gis/wms",
@@ -202,11 +198,11 @@ def test_openapi_matches_contract():
     ):
         assert path in openapi["paths"], path
 
-    # Pagination bounds: page >= 1, page_size 1..125 default 25.
+    # Pagination bounds: page >= 1, page_size 1..500 default 25.
     territories = _query_params(openapi, "/api/v1/territories")
     assert territories["page"]["schema"]["minimum"] == 1
     assert territories["page_size"]["schema"]["minimum"] == 1
-    assert territories["page_size"]["schema"]["maximum"] == 125
+    assert territories["page_size"]["schema"]["maximum"] == 500
     assert territories["page_size"]["schema"]["default"] == 25
     assert territories["state_code"]["schema"]["default"] == "14"
 
@@ -215,11 +211,13 @@ def test_openapi_matches_contract():
     year_schema = history["year"]["schema"]
     year_enum = year_schema.get("enum")
     if year_enum is None:
-        year_enum = next(
-            opt["enum"] for opt in year_schema.get("anyOf", []) if "enum" in opt
-        )
+        year_enum = next(opt["enum"] for opt in year_schema.get("anyOf", []) if "enum" in opt)
     assert year_enum == [2009, 2012, 2015, 2018, 2021, 2024]
 
     # Predictions default to the 2027 horizon.
     predictions = _query_params(openapi, "/api/v1/predictions")
     assert predictions["target_year"]["schema"]["default"] == 2027
+    assert predictions["page_size"]["schema"]["maximum"] == 500
+    assert "level" in predictions
+    assert "state_code" in predictions
+    assert "level" in _query_params(openapi, "/api/v1/participation/summary")

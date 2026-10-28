@@ -571,10 +571,13 @@ class TerritoryRecord:
     id: UUID
     name: str
     state_code: str
-    municipality_code: str
+    municipality_code: str | None
     identity_status: str | None
     footprint_status: str | None
     reference_date: date | None
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -597,6 +600,10 @@ class HistoryRecord:
     eligible: bool
     identity_status: str | None
     footprint_status: str | None
+    coverage_share: float | None = None
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
 
 
 @dataclass(frozen=True)

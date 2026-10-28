@@ -33,7 +33,7 @@ class ScenarioRequest(BaseModel):
     model_run_id: UUID
     target_year: Literal[2027]
     level: TerritoryLevel | None = None
-    territory_ids: list[UUID] = Field(min_length=1, max_length=125)
+    territory_ids: list[UUID] = Field(min_length=1, max_length=1000)
     reduction_pp: float = Field(ge=0.0, le=10.0, allow_inf_nan=False)
     assumption_code: AssumptionCode
 

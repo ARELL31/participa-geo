@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
@@ -51,14 +51,26 @@ def to_prediction_dto(record: PredictionRecord) -> PredictionDTO:
 @router.get("/predictions", response_model=Page[PredictionDTO], tags=["predictions"])
 def list_predictions(
     request: Request,
+    level: Literal["municipality", "federal_district"] = "municipality",
+    state_code: Annotated[str, Query(pattern=r"^(\d{2}|all)$")] = "14",
     model_run_id: UUID | None = None,
     target_year: TargetYearQuery = 2027,
     territory_id: UUID | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=125)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 25,
     *,
     session: SessionDep,
 ) -> Page[PredictionDTO]:
+    if level == "federal_district":
+        raise ProblemException(
+            problem(
+                status=409,
+                code="district_model_unavailable",
+                title="Modelo distrital no disponible",
+                detail=("Sólo hay observaciones distritales de 2024; no existe predicción 2027."),
+                instance=request.url.path,
+            )
+        )
     repo = Repository(session)
     if model_run_id is None:
         model_run_id = repo.get_published_model_run_id()
@@ -89,6 +101,8 @@ def list_predictions(
         territory_id=territory_id,
         page=page,
         page_size=page_size,
+        level=level,
+        state_code=state_code,
     )
     items = [to_prediction_dto(r) for r in records]
     meta = build_meta(
@@ -96,6 +110,8 @@ def list_predictions(
         model_run_id=model_run_id,
         filters={
             "model_run_id": str(model_run_id),
+            "level": level,
+            "state_code": state_code,
             "target_year": target_year,
             "territory_id": str(territory_id) if territory_id else None,
             "page": page,

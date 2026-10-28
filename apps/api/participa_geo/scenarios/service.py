@@ -93,9 +93,7 @@ class ScenarioRateLimiter:
     def _make_room(self) -> None:
         """Evict least-recently-used inactive clients until a new key fits."""
         while len(self._events) >= self.max_clients:
-            victim = next(
-                (key for key in self._events if key not in self._active), None
-            )
+            victim = next((key for key in self._events if key not in self._active), None)
             if victim is None:
                 # All retained clients are mid-request; fail closed rather than
                 # exceed the documented memory bound.
@@ -239,17 +237,29 @@ class ScenarioService:
                 ]
             )
 
+        page_size = 500
         predictions, total = self.repository.get_predictions(
             model_run_id=published,
             target_year=request.target_year,
             territory_id=None,
             page=1,
-            page_size=125,
+            page_size=page_size,
+            level=model.level,
+            state_code="all",
         )
-        if total != 125 or len(predictions) != 125:
-            raise ScenarioConflictError(
-                "El universo publicado no contiene las 125 predicciones requeridas."
+        for page in range(2, (total + page_size - 1) // page_size + 1):
+            next_page, _ = self.repository.get_predictions(
+                model_run_id=published,
+                target_year=request.target_year,
+                territory_id=None,
+                page=page,
+                page_size=page_size,
+                level=model.level,
+                state_code="all",
             )
+            predictions.extend(next_page)
+        if total == 0 or len(predictions) != total:
+            raise ScenarioConflictError("El universo publicado contiene predicciones incompletas.")
 
         predictions_by_id = {prediction.territory_id: prediction for prediction in predictions}
         missing = [

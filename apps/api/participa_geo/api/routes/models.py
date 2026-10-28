@@ -42,7 +42,7 @@ def to_model_dto(record: ModelRecord) -> ModelDTO:
 @router.get("/models", response_model=Page[ModelDTO], tags=["models"])
 def list_models(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=125)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 25,
     *,
     session: SessionDep,
 ) -> Page[ModelDTO]:

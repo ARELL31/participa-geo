@@ -23,17 +23,17 @@ GEOGRAPHIC_WARNING = (
 
 @router.get("/territories", response_model=Page[TerritoryDTO], tags=["territories"])
 def list_territories(
-    state_code: Annotated[str, Query(pattern=r"^\d{2}$")] = "14",
-    level: Literal["municipality"] = "municipality",
+    state_code: Annotated[str, Query(pattern=r"^(\d{2}|all)$")] = "14",
+    level: Literal["municipality", "federal_district"] = "municipality",
     q: Annotated[str | None, Query(max_length=80)] = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=125)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 25,
     *,
     session: SessionDep,
 ) -> Page[TerritoryDTO]:
     repo = Repository(session)
     records, total = repo.get_territories(
-        state_code=state_code, q=q, page=page, page_size=page_size
+        state_code=state_code, level=level, q=q, page=page, page_size=page_size
     )
     items = [
         TerritoryDTO(
@@ -41,6 +41,9 @@ def list_territories(
             name=r.name,
             state_code=r.state_code,
             municipality_code=r.municipality_code,
+            level=r.level,
+            territory_code=r.territory_code or r.municipality_code,
+            district_plan=r.district_plan,
             identity_status=r.identity_status,
             footprint_status=r.footprint_status,
             reference_date=r.reference_date,

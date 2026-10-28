@@ -215,13 +215,26 @@ def _train_national_municipal(args: argparse.Namespace) -> int:
 
 
 def _model_load(args: argparse.Namespace) -> int:
-    from participa_geo.db.repository import load_model_bundle
+    from participa_geo.db.repository import (
+        Repository,
+        load_model_bundle,
+        read_national_municipal_observations,
+    )
     from participa_geo.db.session import session_scope, writer_engine
     from participa_geo.settings import Settings
 
     settings = Settings()
     bundle_dir = Path(args.bundle_dir)
     with session_scope(writer_engine(settings)) as session:
+        if args.model_command == "load-national":
+            observations = read_national_municipal_observations(
+                bundle_dir.parent
+            )
+            if len(observations) != 14779:
+                raise ValueError(
+                    f"national aggregates must contain 14,779 rows, found {len(observations)}"
+                )
+            Repository(session).upsert_observations(observations)
         model_run_id = load_model_bundle(bundle_dir, session)
 
     print(f"loaded model {model_run_id} from {bundle_dir}")
@@ -700,6 +713,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
     )
     model_load.set_defaults(handler=_model_load)
+
+    model_load_national = model_sub.add_parser(
+        "load-national", help="Cargar idempotentemente el modelo municipal nacional 2027."
+    )
+    model_load_national.add_argument(
+        "--bundle-dir",
+        default="data/processed/national/model",
+        help="Directorio de artefactos del modelo municipal nacional.",
+    )
+    model_load_national.set_defaults(handler=_model_load)
 
     deliver = subparsers.add_parser(
         "deliver",

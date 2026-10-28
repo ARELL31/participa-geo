@@ -24,6 +24,8 @@ from participa_geo.ingestion.schema import (
     MunicipalObservation,
     observation_id,
 )
+from participa_geo.territory import TerritoryKey
+from participa_geo.territory import territory_id as make_territory_id
 
 _REFERENCE_DATE = REFERENCE_DATE  # "2025-12-15"
 
@@ -33,7 +35,7 @@ _LATEST_VERSION_FOR_YEAR = (
     "dv.id = ("
     "SELECT dv2.id FROM dataset_version dv2 "
     "JOIN observation o2 ON o2.dataset_version_id = dv2.id "
-    "WHERE o2.year = o.year "
+    "WHERE o2.year = o.year AND dv2.state_code = dv.state_code "
     "ORDER BY dv2.created_at DESC, dv2.id DESC LIMIT 1)"
 )
 
@@ -47,6 +49,86 @@ class Repository:
 
     def __init__(self, session: Session) -> None:
         self.session = session
+
+    def get_participation_summary(self, *, level: str, year: int) -> list[dict]:
+        """Return all 32 state rows, deriving the map rate from summed counts."""
+        rows = (
+            self.session.execute(
+                text("""
+            WITH states AS (
+                SELECT state_code, name FROM api_state_catalogue
+            ), observed AS (
+                SELECT state_code, SUM(ln)::bigint AS ln, SUM(sv)::bigint AS sv,
+                       SUM(nv)::bigint AS nv, SUM(ns)::bigint AS ns
+                FROM (
+                    SELECT t.state_code, o.ln, o.sv, o.nv, o.ns
+                    FROM observation o
+                    JOIN dataset_version dv ON dv.id=o.dataset_version_id
+                    JOIN territory_version t ON t.id = o.origin_territory_id
+                    WHERE :level = 'municipality' AND o.level = 'municipality'
+                      AND o.year = :year AND dv.id = (
+                        SELECT dv2.id FROM dataset_version dv2
+                        JOIN observation o2 ON o2.dataset_version_id = dv2.id
+                        WHERE o2.year = o.year AND dv2.state_code = t.state_code
+                        ORDER BY dv2.created_at DESC, dv2.id DESC LIMIT 1
+                      )
+                    UNION ALL
+                    SELECT a.state_code, a.ln, a.sv, a.nv, a.ns
+                    FROM agg_municipality_district_year a
+                    WHERE :level = 'federal_district' AND a.year = :year
+                      AND a.district_plan = 'DERFE2023'
+                ) aggregate_rows
+                GROUP BY state_code
+            ), prediction_counts AS (
+                SELECT t.state_code, count(*) FILTER (WHERE p.eligible)::int AS eligible_count,
+                       count(*) FILTER (WHERE p.risk = 'high')::int AS high_risk_count,
+                       count(*)::int AS prediction_count
+                FROM prediction p
+                JOIN model_run m ON m.id = p.model_run_id AND m.level = :level
+                JOIN territory_version t ON t.id = p.reference_territory_id
+                WHERE p.target_year = 2027 AND p.model_run_id = (
+                    SELECT id FROM model_run WHERE level = :level
+                    ORDER BY created_at DESC LIMIT 1
+                )
+                GROUP BY t.state_code
+            ), district_coverage AS (
+                SELECT state_code, SUM(matched_ln)::bigint matched_ln,
+                       SUM(reference_ln)::bigint reference_ln,
+                       count(*) FILTER (WHERE status = 'eligible')::int eligible_count,
+                       count(*)::int total_count
+                FROM district_reconstruction_coverage
+                WHERE year = 2024 AND district_plan = 'DERFE2023' AND district_code <> '00'
+                GROUP BY state_code
+            )
+            SELECT s.state_code, s.name AS state_name,
+                   COALESCE(o.ln,0)::bigint ln, COALESCE(o.sv,0)::bigint sv,
+                   COALESCE(o.nv,0)::bigint nv, COALESCE(o.ns,0)::bigint ns,
+                   CASE WHEN COALESCE(o.sv,0) + COALESCE(o.nv,0) > 0
+                     THEN 100.0 * o.nv / (o.sv + o.nv) END AS observed_abstention_pct,
+                   CASE WHEN :level = 'federal_district'
+                     THEN COALESCE(dc.eligible_count,0)
+                     ELSE COALESCE(pc.eligible_count,0) END eligible_count,
+                   CASE WHEN :level = 'federal_district'
+                     THEN GREATEST(COALESCE(dc.total_count,0)-COALESCE(dc.eligible_count,0),0)
+                     ELSE GREATEST(
+                       COALESCE(pc.prediction_count,0)-COALESCE(pc.eligible_count,0),0
+                     ) END insufficient_count,
+                   COALESCE(pc.high_risk_count,0) high_risk_count,
+                   CASE WHEN :level = 'federal_district' AND COALESCE(dc.reference_ln,0)>0
+                     THEN dc.matched_ln::float8/dc.reference_ln
+                     WHEN :level = 'municipality' AND COALESCE(pc.prediction_count,0)>0
+                     THEN pc.eligible_count::float8/pc.prediction_count END coverage_share
+            FROM states s LEFT JOIN observed o USING (state_code)
+            LEFT JOIN prediction_counts pc USING (state_code)
+            LEFT JOIN district_coverage dc USING (state_code)
+            ORDER BY s.state_code
+        """),
+                {"level": level, "year": year},
+            )
+            .mappings()
+            .all()
+        )
+        return [dict(row, level=level, year=year) for row in rows]
 
     # -- writes -----------------------------------------------------------
 
@@ -144,8 +226,12 @@ class Repository:
                 }
             )
 
-        if origin_values:
-            origin_stmt = pg_insert(models.TerritoryVersion.__table__).values(origin_values)
+        # Chunk to stay below PostgreSQL's bind-parameter limit for the national
+        # 14k-row aggregate load; each chunk remains part of the caller's transaction.
+        for start in range(0, len(origin_values), 500):
+            origin_stmt = pg_insert(models.TerritoryVersion.__table__).values(
+                origin_values[start : start + 500]
+            )
             origin_stmt = origin_stmt.on_conflict_do_update(
                 index_elements=["id"],
                 set_={
@@ -154,8 +240,10 @@ class Repository:
                 },
             )
             self.session.execute(origin_stmt)
-        if obs_values:
-            obs_stmt = pg_insert(models.Observation.__table__).values(obs_values)
+        for start in range(0, len(obs_values), 500):
+            obs_stmt = pg_insert(models.Observation.__table__).values(
+                obs_values[start : start + 500]
+            )
             obs_stmt = obs_stmt.on_conflict_do_update(
                 index_elements=["id"],
                 set_={
@@ -185,13 +273,73 @@ class Repository:
         self,
         *,
         state_code: str,
+        level: str = "municipality",
         q: str | None,
         page: int,
         page_size: int,
     ) -> tuple[list[models.TerritoryRecord], int]:
-        """Return reference municipalities (stably ordered) plus the total."""
-        where = "t.reference_date = :ref_date AND t.state_code = :state_code"
-        params: dict = {"ref_date": _REFERENCE_DATE, "state_code": state_code}
+        """Return level-specific reference territories in stable code order."""
+        if level == "federal_district":
+            where = "TRUE"
+            params: dict = {}
+            if state_code != "all":
+                where += " AND d.state_code = :state_code"
+                params["state_code"] = state_code
+            if q:
+                pattern = f"%{_escape_like(q)}%"
+                where += (
+                    " AND (d.label ILIKE :q_pattern ESCAPE '!' "
+                    "OR d.district_code LIKE :q_code ESCAPE '!')"
+                )
+                params["q_pattern"] = pattern
+                params["q_code"] = f"{_escape_like(q)}%"
+            total = int(
+                self.session.scalar(
+                    text(f"SELECT count(*) FROM api_district_catalogue d WHERE {where}"), params
+                )
+            )
+            rows = (
+                self.session.execute(
+                    text(f"""
+                SELECT d.state_code, d.district_code AS territory_code, d.label AS name
+                FROM api_district_catalogue d WHERE {where}
+                ORDER BY d.state_code, d.district_code LIMIT :limit OFFSET :offset
+            """),
+                    {**params, "limit": page_size, "offset": (page - 1) * page_size},
+                )
+                .mappings()
+                .all()
+            )
+            from participa_geo.territory import TerritoryKey, territory_id
+
+            records = [
+                models.TerritoryRecord(
+                    id=territory_id(
+                        TerritoryKey(
+                            "federal_district",
+                            row["state_code"],
+                            row["territory_code"],
+                            "DERFE2023",
+                        )
+                    ),
+                    name=row["name"],
+                    state_code=row["state_code"],
+                    municipality_code=None,
+                    identity_status=None,
+                    footprint_status=None,
+                    reference_date=None,
+                    level="federal_district",
+                    territory_code=row["territory_code"],
+                    district_plan="DERFE2023",
+                )
+                for row in rows
+            ]
+            return records, total
+        where = "t.reference_date = :ref_date AND t.level = 'municipality'"
+        params = {"ref_date": _REFERENCE_DATE}
+        if state_code != "all":
+            where += " AND t.state_code = :state_code"
+            params["state_code"] = state_code
         if q:
             pattern = f"%{_escape_like(q)}%"
             where += (
@@ -205,7 +353,8 @@ class Repository:
         total = int(self.session.scalar(text(count_sql), params))
 
         list_sql = f"""
-            SELECT t.id, t.name, t.state_code, t.municipality_code, t.reference_date,
+            SELECT t.id, t.name, t.state_code, t.municipality_code, t.territory_code,
+                   t.level, t.district_plan, t.reference_date,
                    c.identity_status, c.footprint_status
             FROM territory_version t
             LEFT JOIN LATERAL (
@@ -216,7 +365,7 @@ class Repository:
                 LIMIT 1
             ) c ON true
             WHERE {where}
-            ORDER BY t.municipality_code
+            ORDER BY t.state_code, t.territory_code
             LIMIT :limit OFFSET :offset
         """
         params["limit"] = page_size
@@ -232,6 +381,9 @@ class Repository:
                 identity_status=row["identity_status"],
                 footprint_status=row["footprint_status"],
                 reference_date=row["reference_date"],
+                level=row["level"],
+                territory_code=row["territory_code"],
+                district_plan=row["district_plan"],
             )
             for row in rows
         ]
@@ -244,21 +396,131 @@ class Repository:
         year: int | None,
         page: int,
         page_size: int,
+        level: str = "municipality",
+        state_code: str = "14",
     ) -> tuple[list[models.HistoryRecord], int]:
         """Return participation history, either per territory or as state totals.
 
         State totals (``territory_id is None``) sum counts and recompute rates
         from the sums (never an average of municipal rates).
         """
+        if level == "federal_district":
+            return self._get_district_history(
+                territory_id, year, page, page_size, state_code=state_code
+            )
         if territory_id is not None:
-            return self._get_history_territory(territory_id, year, page, page_size)
-        return self._get_history_state(year, page, page_size)
+            return self._get_history_territory(territory_id, year, page, page_size, level=level)
+        return self._get_history_state(year, page, page_size, level=level, state_code=state_code)
+
+    def _get_district_history(
+        self,
+        territory_id: UUID | None,
+        year: int | None,
+        page: int,
+        page_size: int,
+        *,
+        state_code: str,
+    ) -> tuple[list[models.HistoryRecord], int]:
+        """Return observed 2024 district totals from municipality intersections."""
+        if year not in (None, 2024):
+            return [], 0
+        where = "a.year = 2024 AND a.district_plan = 'DERFE2023'"
+        params: dict = {}
+        if state_code != "all":
+            where += " AND a.state_code = :state_code"
+            params["state_code"] = state_code
+        if territory_id is not None:
+            refs = self.session.execute(
+                text("SELECT state_code, district_code FROM api_district_catalogue")
+            ).all()
+            match = next(
+                (
+                    (state, code)
+                    for state, code in refs
+                    if make_territory_id(TerritoryKey("federal_district", state, code, "DERFE2023"))
+                    == territory_id
+                ),
+                None,
+            )
+            if match is None:
+                return [], 0
+            where += " AND a.state_code = :state_code AND a.district_code = :district_code"
+            params.update(state_code=match[0], district_code=match[1])
+        total_sql = f"""
+            SELECT count(*) FROM (
+                SELECT 1 FROM agg_municipality_district_year a
+                WHERE {where} GROUP BY a.state_code, a.district_code
+            ) q
+        """
+        total = int(self.session.scalar(text(total_sql), params))
+        rows = (
+            self.session.execute(
+                text(f"""
+            SELECT a.state_code, a.district_code, MAX(d.label) AS name,
+                   SUM(a.ln)::bigint AS ln, SUM(a.sv)::bigint AS sv,
+                   SUM(a.nv)::bigint AS nv, SUM(a.ns)::bigint AS ns,
+                   MAX(c.coverage)::float8 AS coverage,
+                   bool_and(a.coverage_status = 'eligible') AS eligible
+            FROM agg_municipality_district_year a
+            LEFT JOIN api_district_catalogue d USING (state_code, district_code)
+            LEFT JOIN district_reconstruction_coverage c
+              ON c.state_code=a.state_code AND c.district_code=a.district_code
+             AND c.year=2024 AND c.district_plan='DERFE2023'
+            WHERE {where}
+            GROUP BY a.state_code, a.district_code
+            ORDER BY a.state_code, a.district_code
+            LIMIT :limit OFFSET :offset
+        """),
+                {**params, "limit": page_size, "offset": (page - 1) * page_size},
+            )
+            .mappings()
+            .all()
+        )
+        records = []
+        for row in rows:
+            ln, sv, nv, ns = (int(row[key] or 0) for key in ("ln", "sv", "nv", "ns"))
+            total_valid = sv + nv
+            records.append(
+                models.HistoryRecord(
+                    territory_id=make_territory_id(
+                        TerritoryKey(
+                            "federal_district", row["state_code"], row["district_code"], "DERFE2023"
+                        )
+                    ),
+                    year=2024,
+                    name=row["name"],
+                    municipality_code=None,
+                    ln=ln,
+                    sv=sv,
+                    nv=nv,
+                    ns=ns,
+                    participation_pct=100.0 * sv / total_valid if total_valid else None,
+                    abstention_pct=100.0 * nv / total_valid if total_valid else None,
+                    unknown_share=ns / ln if ln else None,
+                    ns_lower_pct=100.0 * nv / ln if ln else None,
+                    ns_upper_pct=100.0 * (nv + ns) / ln if ln else None,
+                    eligible=bool(row["eligible"]),
+                    identity_status=None,
+                    footprint_status=None,
+                    coverage_share=float(row["coverage"]) if row["coverage"] is not None else None,
+                    level="federal_district",
+                    territory_code=row["district_code"],
+                    district_plan="DERFE2023",
+                )
+            )
+        return records, total
 
     def _get_history_territory(
-        self, territory_id: UUID, year: int | None, page: int, page_size: int
+        self,
+        territory_id: UUID,
+        year: int | None,
+        page: int,
+        page_size: int,
+        *,
+        level: str = "municipality",
     ) -> tuple[list[models.HistoryRecord], int]:
-        where = "t_ref.id = :territory_id"
-        params: dict = {"territory_id": territory_id}
+        where = "t_ref.id = :territory_id AND o.level = :level"
+        params: dict = {"territory_id": territory_id, "level": level}
         if year is not None:
             where += " AND o.year = :year"
             params["year"] = year
@@ -299,19 +561,28 @@ class Repository:
         return records, total
 
     def _get_history_state(
-        self, year: int | None, page: int, page_size: int
+        self,
+        year: int | None,
+        page: int,
+        page_size: int,
+        *,
+        level: str = "municipality",
+        state_code: str = "14",
     ) -> tuple[list[models.HistoryRecord], int]:
-        where = ""
-        params: dict = {}
+        where = "o.level = :level AND (:state_code = 'all' OR t.state_code = :state_code)"
+        if level == "federal_district":
+            where += " AND o.district_plan = 'DERFE2023' AND o.year = 2024"
+        params: dict = {"level": level, "state_code": state_code}
         if year is not None:
-            where = "WHERE o.year = :year"
+            where += " AND o.year = :year"
             params["year"] = year
         latest = _LATEST_VERSION_FOR_YEAR
         count_sql = f"""
             SELECT count(DISTINCT o.year)
             FROM observation o
             JOIN dataset_version dv ON dv.id = o.dataset_version_id
-            {where} {"AND" if where else "WHERE"} {latest}
+            JOIN territory_version t ON t.id = o.origin_territory_id
+            WHERE {where} AND {latest}
         """
         total = int(self.session.scalar(text(count_sql), params))
         sql = f"""
@@ -334,7 +605,8 @@ class Repository:
                    NULL::text AS identity_status, NULL::text AS footprint_status
             FROM observation o
             JOIN dataset_version dv ON dv.id = o.dataset_version_id
-            {where} {"AND" if where else "WHERE"} {latest}
+            JOIN territory_version t ON t.id = o.origin_territory_id
+             WHERE {where} AND {latest}
             GROUP BY o.year
             ORDER BY o.year
             LIMIT :limit OFFSET :offset
@@ -370,43 +642,51 @@ class Repository:
 
     def get_dataset_version_ids(self) -> list[UUID]:
         """Return every loaded dataset version id (ascending year)."""
-        rows = self.session.execute(
-            text("SELECT id FROM dataset_version ORDER BY year")
-        ).scalars().all()
+        rows = (
+            self.session.execute(text("SELECT id FROM dataset_version ORDER BY year"))
+            .scalars()
+            .all()
+        )
         return [UUID(str(r)) for r in rows]
 
-    def get_models(
-        self, *, page: int, page_size: int
-    ) -> tuple[list[models.ModelRecord], int]:
+    def get_models(self, *, page: int, page_size: int) -> tuple[list[models.ModelRecord], int]:
         """Return the loaded model runs (most recent first) plus the total."""
         total = int(self.session.scalar(text("SELECT count(*) FROM model_run")))
-        rows = self.session.execute(
-            text(
-                """
+        rows = (
+            self.session.execute(
+                text(
+                    """
                 SELECT id, family, level, district_plan, parameters, features, cut_dates, hashes,
                        dependencies, metrics, exclusions, created_at
                 FROM model_run
                 ORDER BY created_at DESC
                 LIMIT :limit OFFSET :offset
                 """
-            ),
-            {"limit": page_size, "offset": (page - 1) * page_size},
-        ).mappings().all()
+                ),
+                {"limit": page_size, "offset": (page - 1) * page_size},
+            )
+            .mappings()
+            .all()
+        )
         return [self._model_record(row) for row in rows], total
 
     def get_model(self, model_run_id: UUID) -> models.ModelRecord | None:
         """Return one model run by id, or ``None`` when absent."""
-        row = self.session.execute(
-            text(
-                """
+        row = (
+            self.session.execute(
+                text(
+                    """
                 SELECT id, family, level, district_plan, parameters, features, cut_dates, hashes,
                        dependencies, metrics, exclusions, created_at
                 FROM model_run
                 WHERE id = :id
                 """
-            ),
-            {"id": model_run_id},
-        ).mappings().first()
+                ),
+                {"id": model_run_id},
+            )
+            .mappings()
+            .first()
+        )
         return self._model_record(row) if row else None
 
     def get_published_model_run_id(self) -> UUID | None:
@@ -424,18 +704,30 @@ class Repository:
         territory_id: UUID | None,
         page: int,
         page_size: int,
+        level: str = "municipality",
+        state_code: str = "14",
     ) -> tuple[list[models.PredictionRecord], int]:
         """Return prediction rows (stably ordered by territory code)."""
-        where = "p.model_run_id = :model_run_id AND p.target_year = :target_year"
-        params: dict = {"model_run_id": model_run_id, "target_year": target_year}
+        where = (
+            "p.model_run_id = :model_run_id AND p.target_year = :target_year AND p.level = :level"
+        )
+        params: dict = {
+            "model_run_id": model_run_id,
+            "target_year": target_year,
+            "level": level,
+        }
+        if state_code != "all":
+            where += (
+                " AND EXISTS (SELECT 1 FROM territory_version tx "
+                "WHERE tx.id=p.reference_territory_id AND tx.state_code=:state_code)"
+            )
+            params["state_code"] = state_code
         if territory_id is not None:
             where += " AND p.reference_territory_id = :territory_id"
             params["territory_id"] = territory_id
 
         total = int(
-            self.session.scalar(
-                text(f"SELECT count(*) FROM prediction p WHERE {where}"), params
-            )
+            self.session.scalar(text(f"SELECT count(*) FROM prediction p WHERE {where}"), params)
         )
 
         list_sql = f"""
@@ -448,7 +740,7 @@ class Repository:
             FROM prediction p
             JOIN territory_version t ON t.id = p.reference_territory_id
             WHERE {where}
-            ORDER BY t.territory_code
+            ORDER BY t.state_code, t.territory_code
             LIMIT :limit OFFSET :offset
         """
         params["limit"] = page_size
@@ -563,9 +855,10 @@ class Repository:
 
         This is a pure read: it never recomputes A/B from the current model.
         """
-        row = self.session.execute(
-            text(
-                """
+        row = (
+            self.session.execute(
+                text(
+                    """
                 SELECT id AS scenario_id, model_run_id, target_year, level, district_plan,
                        reduction_pp,
                        assumption_code, assumption_version, rationale_text,
@@ -574,9 +867,12 @@ class Repository:
                 FROM scenario
                 WHERE id = :scenario_id
                 """
-            ),
-            {"scenario_id": scenario_id},
-        ).mappings().first()
+                ),
+                {"scenario_id": scenario_id},
+            )
+            .mappings()
+            .first()
+        )
         if row is None:
             return None
 
@@ -597,9 +893,10 @@ class Repository:
             created_at=row["created_at"],
         )
 
-        result_rows = self.session.execute(
-            text(
-                """
+        result_rows = (
+            self.session.execute(
+                text(
+                    """
                 SELECT s.scenario_id, s.reference_territory_id AS territory_id,
                        t.municipality_code, t.name AS municipality_name,
                        s.level, t.territory_code, s.district_plan,
@@ -615,9 +912,12 @@ class Repository:
                 WHERE s.scenario_id = :scenario_id
                 ORDER BY t.territory_code
                 """
-            ),
-            {"scenario_id": scenario_id},
-        ).mappings().all()
+                ),
+                {"scenario_id": scenario_id},
+            )
+            .mappings()
+            .all()
+        )
 
         results = [
             models.ScenarioResultRecord(
@@ -632,12 +932,8 @@ class Repository:
                 hypothetical_abstention_pct=result["hypothetical_abstention_pct"],
                 baseline_error_lower_pct=result["baseline_error_lower_pct"],
                 baseline_error_upper_pct=result["baseline_error_upper_pct"],
-                hypothetical_error_lower_pct=result[
-                    "hypothetical_error_lower_pct"
-                ],
-                hypothetical_error_upper_pct=result[
-                    "hypothetical_error_upper_pct"
-                ],
+                hypothetical_error_lower_pct=result["hypothetical_error_lower_pct"],
+                hypothetical_error_upper_pct=result["hypothetical_error_upper_pct"],
                 requested_reduction_pp=float(result["requested_reduction_pp"]),
                 effective_reduction_pp=float(result["effective_reduction_pp"]),
                 risk_a=result["risk_a"] or "insufficient",
@@ -668,9 +964,7 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
 
     path = Path(path)
     model_payload = _json.loads((path / "model.json").read_text(encoding="utf-8"))
-    evaluation_payload = _json.loads(
-        (path / "evaluation.json").read_text(encoding="utf-8")
-    )
+    evaluation_payload = _json.loads((path / "evaluation.json").read_text(encoding="utf-8"))
     manifest_payload = _json.loads((path / "manifest.json").read_text(encoding="utf-8"))
 
     model_run_id = UUID(str(model_payload["model_run_id"]))
@@ -727,9 +1021,16 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
 
     exclusions: dict = evaluation_payload.get("exclusions", {})
 
+    level = str(model_payload.get("level", "municipality"))
+    district_plan = model_payload.get("district_plan")
+    if level != "municipality" or district_plan is not None:
+        raise ValueError("only municipal national model bundles can be loaded")
+
     stmt = pg_insert(models.ModelRun.__table__).values(
         id=model_run_id,
         family=family,
+        level=level,
+        district_plan=district_plan,
         parameters=parameters,
         features=feature_order,
         cut_dates=cut_dates,
@@ -742,6 +1043,8 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
         index_elements=["id"],
         set_={
             "family": stmt.excluded.family,
+            "level": stmt.excluded.level,
+            "district_plan": stmt.excluded.district_plan,
             "parameters": stmt.excluded.parameters,
             "features": stmt.excluded.features,
             "cut_dates": stmt.excluded.cut_dates,
@@ -754,6 +1057,17 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
     session.execute(stmt)
 
     frame = _pd.read_parquet(path / "predictions-2027.parquet")
+    if level == "municipality" and "national" in path.parts:
+        if len(frame) != 2477 or frame["territory_id"].nunique() != 2477:
+            raise ValueError("national municipal bundle must contain 2,477 unique territories")
+        insufficient = ~frame["eligible"].astype(bool)
+        forecast_fields = (
+            "estimated_abstention_pct",
+            "historical_error_lower_pct",
+            "historical_error_upper_pct",
+        )
+        if any(frame.loc[insufficient, field].notna().any() for field in forecast_fields):
+            raise ValueError("insufficient predictions must remain null, never zero")
     prediction_rows: list[dict] = []
     for _, row in frame.iterrows():
         territory_id = UUID(str(row["territory_id"]))
@@ -769,19 +1083,13 @@ def load_model_bundle(path: Path, session: Session) -> UUID:
                 "model_run_id": model_run_id,
                 "reference_territory_id": territory_id,
                 "target_year": target,
-                "estimated_abstention_pct": _float_or_none(
-                    row["estimated_abstention_pct"]
-                ),
-                "historical_error_lower_pct": _float_or_none(
-                    row["historical_error_lower_pct"]
-                ),
-                "historical_error_upper_pct": _float_or_none(
-                    row["historical_error_upper_pct"]
-                ),
+                "level": "municipality",
+                "district_plan": None,
+                "estimated_abstention_pct": _float_or_none(row["estimated_abstention_pct"]),
+                "historical_error_lower_pct": _float_or_none(row["historical_error_lower_pct"]),
+                "historical_error_upper_pct": _float_or_none(row["historical_error_upper_pct"]),
                 "risk": str(row["risk"]) if row["risk"] is not None else None,
-                "risk_unstable": bool(row["risk_unstable"])
-                if row["risk_unstable"] is not None
-                else False,
+                "risk_unstable": _optional_bool(row, "risk_unstable", default=False),
                 "eligible": bool(row["eligible"]),
                 "quality": quality,
             }
@@ -832,6 +1140,12 @@ def _prediction_quality_dict(row) -> dict | None:
             str(row["footprint_status"]) if row.get("footprint_status") is not None else None
         ),
     }
+
+
+def _optional_bool(row, field: str, *, default: bool) -> bool:
+    """Read an optional parquet boolean with a stable fallback."""
+    value = row.get(field, default)
+    return default if value is None else bool(value)
 
 
 def read_processed_observations(
@@ -889,6 +1203,45 @@ def read_processed_observations(
             )
         )
     return datasets, observations
+
+
+def read_national_municipal_observations(processed_dir: Path) -> list[MunicipalObservation]:
+    """Read the compact municipal-year aggregates used by history and summary."""
+    import ast as _ast
+    import json as _json
+
+    import pandas as _pd
+
+    from participa_geo.ingestion.schema import MunicipalityKey
+
+    frame = _pd.read_csv(Path(processed_dir) / "municipal-observations.csv")
+    observations = []
+    for row in frame.to_dict(orient="records"):
+        raw_source_ids = str(row["source_version_ids"])
+        try:
+            source_ids = _json.loads(raw_source_ids)
+        except _json.JSONDecodeError:
+            source_ids = _ast.literal_eval(raw_source_ids)
+        if len(source_ids) != 1:
+            raise ValueError("each municipal aggregate must reference exactly one dataset version")
+        observations.append(
+            MunicipalObservation(
+                key=MunicipalityKey(
+                    str(row["state_code"]), str(row["municipality_code"])
+                ),
+                year=int(row["year"]),
+                ln=int(row["ln"]),
+                sv=int(row["sv"]),
+                nv=int(row["nv"]),
+                ns=int(row["ns"]),
+                municipality_name=str(row["municipality_name"]),
+                young_share=_float_or_none(row.get("young_share")),
+                senior_share=_float_or_none(row.get("senior_share")),
+                rural_share=_float_or_none(row.get("rural_share")),
+                source_version_id=UUID(str(source_ids[0])),
+            )
+        )
+    return observations
 
 
 def _float_or_none(value: object) -> float | None:

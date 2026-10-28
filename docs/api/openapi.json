@@ -61,7 +61,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{2}$",
+              "pattern": "^(\\d{2}|all)$",
               "default": "14",
               "title": "State Code"
             }
@@ -71,7 +71,10 @@
             "in": "query",
             "required": false,
             "schema": {
-              "const": "municipality",
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
               "type": "string",
               "default": "municipality",
               "title": "Level"
@@ -111,7 +114,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 125,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -150,6 +153,31 @@
         "summary": "List History",
         "operationId": "list_history_api_v1_participation_history_get",
         "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "state_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(\\d{2}|all)$",
+              "default": "14",
+              "title": "State Code"
+            }
+          },
           {
             "name": "territory_id",
             "in": "query",
@@ -208,7 +236,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 125,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -222,6 +250,82 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page_HistoryDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/participation/summary": {
+      "get": {
+        "tags": [
+          "participation"
+        ],
+        "summary": "Participation Summary",
+        "operationId": "participation_summary_api_v1_participation_summary_get",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    2009,
+                    2012,
+                    2015,
+                    2018,
+                    2021,
+                    2024
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 2024,
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StateParticipationSummary"
+                  },
+                  "title": "Response Participation Summary Api V1 Participation Summary Get"
                 }
               }
             }
@@ -264,7 +368,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 125,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -347,6 +451,31 @@
         "operationId": "list_predictions_api_v1_predictions_get",
         "parameters": [
           {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "state_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(\\d{2}|all)$",
+              "default": "14",
+              "title": "State Code"
+            }
+          },
+          {
             "name": "model_run_id",
             "in": "query",
             "required": false,
@@ -408,7 +537,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 125,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -593,7 +722,7 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 125,
+              "maximum": 500,
               "minimum": 1,
               "default": 25,
               "title": "Page Size"
@@ -944,6 +1073,41 @@
             ],
             "title": "Municipality Code"
           },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "territory_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Code"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
+          },
           "ln": {
             "type": "integer",
             "title": "Ln"
@@ -1040,6 +1204,17 @@
               }
             ],
             "title": "Footprint Status"
+          },
+          "coverage_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Share"
           }
         },
         "type": "object",
@@ -1077,6 +1252,30 @@
           "family": {
             "type": "string",
             "title": "Family"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
           },
           "target_year": {
             "type": "integer",
@@ -1394,8 +1593,50 @@
             "title": "Territory Id"
           },
           "municipality_code": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Municipality Code"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "territory_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Code"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
           },
           "municipality_name": {
             "type": "string",
@@ -1477,7 +1718,6 @@
         "type": "object",
         "required": [
           "territory_id",
-          "municipality_code",
           "municipality_name",
           "target_year",
           "eligible",
@@ -1859,6 +2099,30 @@
             ],
             "title": "Assumption Code"
           },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
+          },
           "assumption_version": {
             "type": "string",
             "title": "Assumption Version"
@@ -1941,13 +2205,28 @@
             "const": 2027,
             "title": "Target Year"
           },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "municipality",
+                  "federal_district"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
           "territory_ids": {
             "items": {
               "type": "string",
               "format": "uuid"
             },
             "type": "array",
-            "maxItems": 125,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Territory Ids"
           },
@@ -1986,12 +2265,54 @@
             "title": "Territory Id"
           },
           "municipality_code": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Municipality Code"
           },
           "municipality_name": {
             "type": "string",
             "title": "Municipality Name"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "territory_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Code"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
           },
           "baseline_abstention_pct": {
             "anyOf": [
@@ -2116,6 +2437,97 @@
         "title": "ScenarioResultDTO",
         "description": "One municipality's persisted A/B comparison (null when insufficient)."
       },
+      "StateParticipationSummary": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level"
+          },
+          "state_code": {
+            "type": "string",
+            "title": "State Code"
+          },
+          "state_name": {
+            "type": "string",
+            "title": "State Name"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "ln": {
+            "type": "integer",
+            "title": "Ln"
+          },
+          "sv": {
+            "type": "integer",
+            "title": "Sv"
+          },
+          "nv": {
+            "type": "integer",
+            "title": "Nv"
+          },
+          "ns": {
+            "type": "integer",
+            "title": "Ns"
+          },
+          "observed_abstention_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Abstention Pct"
+          },
+          "eligible_count": {
+            "type": "integer",
+            "title": "Eligible Count"
+          },
+          "insufficient_count": {
+            "type": "integer",
+            "title": "Insufficient Count"
+          },
+          "high_risk_count": {
+            "type": "integer",
+            "title": "High Risk Count"
+          },
+          "coverage_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "state_code",
+          "state_name",
+          "year",
+          "ln",
+          "sv",
+          "nv",
+          "ns",
+          "observed_abstention_pct",
+          "eligible_count",
+          "insufficient_count",
+          "high_risk_count",
+          "coverage_share"
+        ],
+        "title": "StateParticipationSummary"
+      },
       "TerritoryDTO": {
         "properties": {
           "id": {
@@ -2132,8 +2544,50 @@
             "title": "State Code"
           },
           "municipality_code": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Municipality Code"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "territory_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Territory Code"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
           },
           "identity_status": {
             "anyOf": [
@@ -2174,8 +2628,7 @@
         "required": [
           "id",
           "name",
-          "state_code",
-          "municipality_code"
+          "state_code"
         ],
         "title": "TerritoryDTO",
         "description": "A reference municipality with its comparability statuses."

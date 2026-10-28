@@ -57,6 +57,7 @@ class HistoryDTO(BaseModel):
     eligible: bool
     identity_status: str | None = None
     footprint_status: str | None = None
+    coverage_share: float | None = None
 
 
 __all__ = ["ElectionYear", "ElectionYearQuery", "HistoryDTO"]

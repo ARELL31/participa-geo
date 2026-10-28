@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query
@@ -21,20 +21,25 @@ GEOGRAPHIC_WARNING = (
 )
 
 
-@router.get(
-    "/participation/history", response_model=Page[HistoryDTO], tags=["participation"]
-)
+@router.get("/participation/history", response_model=Page[HistoryDTO], tags=["participation"])
 def list_history(
+    level: Literal["municipality", "federal_district"] = "municipality",
+    state_code: Annotated[str, Query(pattern=r"^(\d{2}|all)$")] = "14",
     territory_id: UUID | None = None,
     year: ElectionYearQuery = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=125)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 25,
     *,
     session: SessionDep,
 ) -> Page[HistoryDTO]:
     repo = Repository(session)
     records, total = repo.get_history(
-        territory_id=territory_id, year=year, page=page, page_size=page_size
+        territory_id=territory_id,
+        year=year,
+        page=page,
+        page_size=page_size,
+        level=level,
+        state_code=state_code,
     )
     items = [
         HistoryDTO(
@@ -42,6 +47,10 @@ def list_history(
             year=r.year,
             name=r.name,
             municipality_code=r.municipality_code,
+            level=level,
+            territory_code=getattr(r, "territory_code", None),
+            district_plan=getattr(r, "district_plan", None),
+            coverage_share=getattr(r, "coverage_share", None),
             ln=r.ln,
             sv=r.sv,
             nv=r.nv,
@@ -62,6 +71,8 @@ def list_history(
         geographic_warning=GEOGRAPHIC_WARNING,
         filters={
             "territory_id": str(territory_id) if territory_id else None,
+            "level": level,
+            "state_code": state_code,
             "year": year,
             "page": page,
             "page_size": page_size,

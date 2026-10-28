@@ -31,6 +31,7 @@ from participa_geo.api.routes import (
     recommendations,
     reports,
     scenarios,
+    summary,
     territories,
 )
 from participa_geo.db.session import api_engine
@@ -151,16 +152,19 @@ class JsonSizeLimitMiddleware:
             return
 
         received = 0
+        max_bytes = 128 * 1024 if scope.get("path", "").endswith("/scenarios") else self.max_bytes
 
         async def limited_receive():
             nonlocal received
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > self.max_bytes:
+                if received > max_bytes:
                     raise StarletteHTTPException(
                         status_code=413,
-                        detail="El cuerpo de la petición supera el límite de 32 KiB.",
+                        detail=(
+                            f"El cuerpo de la petición supera el límite de {max_bytes // 1024} KiB."
+                        ),
                     )
             return message
 
@@ -208,6 +212,7 @@ def create_app(settings: Settings | None = None, *, readiness=None) -> FastAPI:
     app.include_router(health.router, prefix=f"{API_PREFIX}/health", tags=["health"])
     app.include_router(territories.router, prefix=API_PREFIX)
     app.include_router(history.router, prefix=API_PREFIX)
+    app.include_router(summary.router, prefix=API_PREFIX)
     app.include_router(models.router, prefix=API_PREFIX)
     app.include_router(predictions.router, prefix=API_PREFIX)
     app.include_router(scenarios.router, prefix=API_PREFIX)

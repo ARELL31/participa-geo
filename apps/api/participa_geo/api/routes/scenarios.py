@@ -50,9 +50,7 @@ def _conflict_problem(request: Request, exc: ScenarioConflictError) -> ProblemEx
     )
 
 
-def _rate_limit_problem(
-    request: Request, exc: ScenarioRateLimitError
-) -> ProblemException:
+def _rate_limit_problem(request: Request, exc: ScenarioRateLimitError) -> ProblemException:
     detail = (
         "Ya hay una solicitud de escenario en curso para este cliente."
         if exc.active
@@ -82,6 +80,16 @@ def create_scenario(
     *,
     session: SessionDep,
 ) -> ScenarioDTO:
+    if body.level == "federal_district":
+        raise ProblemException(
+            problem(
+                status=409,
+                code="district_model_unavailable",
+                title="Escenarios distritales no disponibles",
+                detail=("Sólo hay observaciones distritales de 2024; no existe escenario 2027."),
+                instance=request.url.path,
+            )
+        )
     limiter: ScenarioRateLimiter = request.app.state.scenario_rate_limiter
     try:
         with limiter.acquire(_client_key(request)):

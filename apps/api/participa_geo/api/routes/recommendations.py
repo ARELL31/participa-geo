@@ -49,7 +49,7 @@ def list_recommendations(
     target_year: TargetYearQuery = 2027,
     territory_id: UUID | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=125)] = 25,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 25,
     *,
     session: SessionDep,
 ) -> Page[RecommendationDTO]:
