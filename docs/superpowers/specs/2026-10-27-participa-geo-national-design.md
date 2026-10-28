@@ -452,3 +452,30 @@ Máximo 1,000 municipios o 300 distritos por escenario; cuerpos JSON hasta 128 K
 - Local districts fuera de alcance.
 - El builder puede ajustar umbrales sólo con evidencia de fase 1 y aprobación del usuario.
 
+## 17. Cambio de alcance distrital (2026-10-28)
+
+La compuerta de Task 3 se ejecutó con el ACCDB oficial y la columna DERFE2023 validada. La cobertura nacional resultó:
+
+| Año | Cobertura LN2024 | Gate 98% |
+|---|---:|---|
+| 2009 | 82.5931% | No |
+| 2012 | 83.8598% | No |
+| 2015 | 86.5857% | No |
+| 2018 | 86.6237% | No |
+| 2021 | 89.0089% | No |
+| 2024 | 95.1334% | No |
+
+El usuario eligió, con esta evidencia, **distrito sólo como observación 2024**. Por tanto:
+
+- **No se implementa el modelo distrital 2027** (Task 6 queda cancelada, no bloqueada).
+- No hay predicciones, bandas, semáforo predictivo ni escenarios distritales 2027.
+- Se publica la capa distrital del plan 2023 y el perfil **observado 2024** con cobertura explícita; la abstención observada se etiqueta “Observado 2024”, no “Predicción”.
+- La historia distrital 2009–2021 no se publica como serie reconstruida; permanece en auditoría. Las tablas oficiales del plan 2021 quedan como evidencia, no como una segunda vista de producto.
+- `/predictions?level=federal_district` y `/scenarios` distritales responden `409 district_model_unavailable` o equivalente; nunca inventan un valor.
+- Los reportes distritales describen 2024 observado y cobertura; no incluyen escenarios 2027.
+- El modelo municipal nacional 2027 continúa y es el único modelo predictivo del producto.
+- Task 9 se redefine como **perfil distrital observado 2024 y relación municipio–distrito**.
+- La compuerta y los artefactos de Task 3 se conservan para reproducibilidad y futuras fases.
+
+Esta decisión sustituye las frases anteriores que prometían un modelo distrital 2027. No se baja el umbral ni se publica una predicción distrital parcial.
+

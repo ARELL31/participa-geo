@@ -12,10 +12,13 @@
 
 **Estado de ejecución:** plan aprobado el 2026-10-27; método: agentes con ChatGPT Luna; respaldo Gemini 3.8 Flash si se agotan los tokens. Implementación autorizada.
 
+**Cambio de alcance 2026-10-28:** Task 3 midió cobertura distrital 82.59–95.13%; el usuario eligió **distrito sólo como observación 2024**. Task 6 (modelo distrital 2027) queda **cancelada**, no implementar. Task 9 se redefine como perfil distrital observado 2024. No hay predicciones/escenarios distritales 2027. El municipio conserva el modelo nacional.
+
 ## Global Constraints
 
 - Cobertura: 32 entidades, 2,477 municipios, 300 distritos federales; seis CCPC 2009/2012/2015/2018/2021/2024; objetivo 2027 federal intermedio.
 - Dos niveles: `municipality` y `federal_district`; el usuario elige. Nunca sumar predicciones municipales para producir un distrito.
+- **Distrito = observación 2024**; no hay modelo, banda, predicción ni escenario distrital 2027. El municipio conserva el modelo nacional 2027.
 - CCPC nativo: 54,872,712 filas, 3.73 GB descomprimidos; `LN=SV+NV+NS` al 100%; parser CSV formal; códigos INE normalizados; Oaxaca contiene nombres entrecomillados.
 - Distritos: `DERFE2021` para 2009–2021 y `DERFE2023` para 2024. Se publica el plan **2023**; la historia 2009–2021 se reconstruye por sección y se etiqueta, no se presenta como oficial.
 - Continuidad seccional validada; no unir números de sección a ciegas. `unmatched` no se imputa. Cobertura mínima: **98% nacional** y **95% por distrito** sobre LN2024 de referencia.
@@ -164,9 +167,11 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** full national train; coverage; M0/M1; insuff; goldens.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: train and evaluate the national municipal model'`.
 
-## Task 6: Modelo distrital 2023
+## Task 6: Modelo distrital 2023 — CANCELADA
 
-**Files:** `prediction/district.py`; `prediction/artifacts.py`; `pipelines/training/district.py`; `cli.py`; docs; tests.
+**Estado:** NO IMPLEMENTAR. La cobertura histórica no alcanzó la compuerta 98%; el usuario eligió observación 2024 únicamente. Se conserva esta sección como registro de la decisión; no crear `prediction/district.py`, no entrenar, no publicar predicciones ni escenarios distritales. Task 9 usa observación 2024.
+
+**Files (histórico):** `prediction/district.py`; `prediction/artifacts.py`; `pipelines/training/district.py`; `cli.py`; docs; tests.
 
 **Interfaces:**
 - Consumes: `DistrictObservation` reconstructed; `Coverage`; identities.
@@ -185,13 +190,14 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 
 **Interfaces:**
 - Consumes: aggregates/models N2–N6; `TerritoryKey`.
-- Produces: `level`, `state_code=all`, `/participation/summary`, national predictions/models; scenario level/plan; GIS gateway; page_size500; 128KiB; OpenAPI TS.
+- Produces: `level`, `state_code=all`, `/participation/summary`, municipal predictions/models; district observation endpoints; scenario level/plan; GIS gateway; page_size500; 128KiB; OpenAPI TS.
 - `/summary`: section-summed state counts + level-specific high/insufficient/coverage; map color observed abstention.
+- **District scope:** `/predictions?level=federal_district` returns `409 district_model_unavailable` (ProblemDetail); district scenarios are rejected. No fabricated district 2027 values. History/summary district returns observed 2024 and coverage.
 
-- [ ] **Step 1 — Tests rojos:** level filter; state14 legacy; all; summary counts; mixed level rejected; plan mismatch rejected; WFS state/bbox; max1,000; no CQL; insufficient null; page500.
+- [ ] **Step 1 — Tests rojos:** level filter; state14 legacy; all; summary counts; mixed level rejected; plan mismatch rejected; WFS state/bbox; max1,000; no CQL; insufficient null; page500; district predictions 409; district scenario 409; no model for district.
 - [ ] **Step 2 — RED:** contract/integration.
-- [ ] **Step 3 — Implementar:** schemas/routes/repository; current clients still work; `state_code=all`; scenario limits; GIS filters.
-- [ ] **Step 4 — GREEN:** contract/OpenAPI; 2,477/300; API values match aggregates; state summary sums.
+- [ ] **Step 3 — Implementar:** schemas/routes/repository; current clients still work; `state_code=all`; scenario limits; district observation; explicit 409 for district prediction/scenario; GIS filters.
+- [ ] **Step 4 — GREEN:** contract/OpenAPI; 2,477 municipalities; 300 district observations; API values match aggregates; state summary sums.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: serve national municipal and district analytics by level'`.
 
 ## Task 8: Shell nacional y perfil municipal
@@ -209,19 +215,20 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - [ ] **Step 4 — GREEN:** Vitest/typecheck/build; Playwright national/municipal.
 - [ ] **Step 5 — Commit:** `git commit -m 'feat: add national level selector and municipal intelligence views'`.
 
-## Task 9: Perfil distrital y relación municipio–distrito
+## Task 9: Perfil distrital observado 2024 y relación municipio–distrito
 
-**Files:** `apps/web/src/features/district/*`, `features/territory/MunicipalityDistrictPanel.tsx`, `features/scenarios/*`, tests.
+**Files:** `apps/web/src/features/district/*`, `features/territory/MunicipalityDistrictPanel.tsx`, tests.
 
 **Interfaces:**
-- Consumes: `/territories?level=federal_district`, `/participation/summary`, `/agg_municipality_district`, predictions.
-- Produces: district profile with plan2023 badge; reconstructed history notice; constituent municipalities; municipal profile lists districts; no 1:1 label; district scenario only with district model.
+- Consumes: `/territories?level=federal_district`, `/participation/summary`, `/agg_municipality_district`, history 2024.
+- Produces: district profile with plan2023 badge; observed 2024 abstention/coverage; **no 2027 prediction or scenario**; constituent municipalities; municipal profile lists districts; no 1:1 label.
+- The district UI must never display “Predicción 2027”, a model band, or a scenario button.
 
-- [ ] **Step 1 — Tests rojos:** district label contains `marco 2023`; reconstructed notice; municipal profile shows 2–5 districts; no “Distrito dominante”; district insuff not green; mixed scenario rejected; keyboard/mobile.
+- [ ] **Step 1 — Tests rojos:** district label contains `marco 2023`; “Observado 2024” present; no 2027 prediction/band/scenario; municipal profile shows 2–5 districts; no “Distrito dominante”; coverage visible; keyboard/mobile.
 - [ ] **Step 2 — RED:** Vitest.
-- [ ] **Step 3 — Implementar:** district page, intersection panel, plan note, map, scenario link.
-- [ ] **Step 4 — GREEN:** Vitest/Playwright; 72 split cases; coverage.
-- [ ] **Step 5 — Commit:** `git commit -m 'feat: add federal district profiles and many-to-many municipal context'`.
+- [ ] **Step 3 — Implementar:** district observed page, coverage, intersection panel, plan note, map; no prediction/scenario controls.
+- [ ] **Step 4 — GREEN:** Vitest/Playwright; 72 split cases; coverage; no 2027 text.
+- [ ] **Step 5 — Commit:** `git commit -m 'feat: add observed federal district profiles and municipal context'`.
 
 ## Task 10: Reportes y exportaciones nacionales
 
@@ -229,10 +236,10 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 
 **Interfaces:**
 - Consumes: aggregates/models N2–N9.
-- Produces: national methodology/executive PDFs; state/district/municipality fiches; CSV/XLSX up to20,000; GeoJSON by state/level; technical ZIP with national sources; manifest.
-- No 2,477-row PDF; no raw data without license flag.
+- Produces: national methodology/executive PDFs; state/municipality fiches; **district 2024 observation fiche**; CSV/XLSX up to20,000; GeoJSON by state/level; technical ZIP with national sources; manifest.
+- No 2,477-row PDF; no raw data without license flag. No district 2027 prediction/scenario in reports.
 
-- [ ] **Step 1 — Tests rojos:** page counts; national counts; level/plan metadata; 20,000 limit; GeoJSON state; ZIP sources; no private; scenario CSV; formula escaping.
+- [ ] **Step 1 — Tests rojos:** page counts; national counts; level/plan metadata; 20,000 limit; GeoJSON state; ZIP sources; no private; scenario CSV; formula escaping; district report says “Observado 2024” and has no 2027 prediction/band.
 - [ ] **Step 2 — RED:** unit/integration.
 - [ ] **Step 3 — Implementar:** reports; exports; UI actions; ZIP; verify.
 - [ ] **Step 4 — GREEN:** PDFs, ZIP complete; real data.
@@ -246,7 +253,7 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 - Consumes: all N1–N10.
 - Produces: perf tests WMS≤5s/WFS≤3s/API≤500ms; national E2E; cleanroom from ZIP; final acceptance.
 
-- [ ] **Step 1 — Tests rojos:** WMS/WFS latency; API500; national E2E; state/district switch; cleanroom; no 2,477 WFS.
+- [ ] **Step 1 — Tests rojos:** WMS/WFS latency; API500; national E2E; state/district switch; district observed 2024/no 2027; cleanroom; no 2,477 WFS.
 - [ ] **Step 2 — RED:** run and record.
 - [ ] **Step 3 — Implementar:** caching/indexes/simplification/CI/scripts; fix root causes.
 - [ ] **Step 4 — GREEN:** full suite, E2E, cleanroom, ZIP.
@@ -255,13 +262,14 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 ## Dependencies and parallelism
 
 - N1→N2→N3→N4→N7→N8→N9→N10→N11.
-- N5 requires N2; can run after N2, before N4. N6 requires N3 and N5's artifact schema.
+- N5 requires N2; can run after N2, before N4.
+- **N6 is cancelled** by the 2026-10-28 scope decision; do not implement a district model.
 - Do not run implementation subagents in parallel if they modify the same files (`db/models.py`, API, compose, UI). Parallelize only read-only audits.
-- N3 is a hard gate for N6/N9; if no continuity, stop district scope and deliver municipal national with explicit limitation.
+- N3 produced district coverage/aggregates; N9 uses 2024 observed only. No prediction/band/scenario for district.
 
 ## Review Focus tests
 
-1. District vs municipality/plan tests in N3, N6, N9.
+1. District vs municipality/plan tests in N3, N7, N9; district 2027 must be 409/absent.
 2. Coverage and unmatched tests in N3, N6, N10.
 3. National volume/streaming tests in N2, N4, N7, N11.
 4. Mixed-level/plan rejection in N1, N7, N9.
