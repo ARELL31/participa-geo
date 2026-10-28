@@ -1,0 +1,13 @@
+{
+  "description": "National CCPC official ZIP sources; member SHA-256 values are computed and persisted per state/year by ingest-national.",
+  "source": "Instituto Nacional Electoral (INE), Conteos Censales de Participación Ciudadana",
+  "years": [2009, 2012, 2015, 2018, 2021, 2024],
+  "sources": [
+    {"year": 2009, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2009.zip", "last_modified": "2022-04-18", "zip": "ccpc-2009.zip"},
+    {"year": 2012, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2012.zip", "last_modified": "2022-04-18", "zip": "ccpc-2012.zip"},
+    {"year": 2015, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2015.zip", "last_modified": "2022-04-18", "zip": "ccpc-2015.zip"},
+    {"year": 2018, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2018.zip", "last_modified": "2022-04-18", "zip": "ccpc-2018.zip"},
+    {"year": 2021, "source_url": "https://ine.mx/wp-content/uploads/2022/04/DatosAbiertos_DECEyEC_ConteosCensales2021.zip", "last_modified": "2022-04-18", "zip": "ccpc-2021.zip"},
+    {"year": 2024, "source_url": "https://ine.mx/wp-content/uploads/2025/08/DatosAbiertos_DECEyEC_ConteosCensales2024.zip", "last_modified": "2025-08-13", "zip": "ccpc-2024.zip"}
+  ]
+}

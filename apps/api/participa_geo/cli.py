@@ -32,6 +32,26 @@ def _ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _ingest_national(args: argparse.Namespace) -> int:
+    from participa_geo.ingestion.national import ingest_national
+    from pipelines.ingestion.national import load_national_facts
+
+    source_dir = Path(args.source_dir)
+    output_dir = Path(args.output_dir)
+    report = ingest_national(source_dir, output_dir)
+    loaded = load_national_facts(output_dir)
+    if loaded != report.row_count:
+        raise RuntimeError(f"loaded {loaded} rows, expected {report.row_count}")
+    print(
+        f"ingested {report.row_count} section facts from {report.csv_count} CSVs; "
+        f"{report.municipality_observation_count} municipal observations "
+        f"({report.municipality_count} in 2024), "
+        f"{report.district_count} plan-versioned districts, "
+        f"{report.blank_def_count} blank DEF values; loaded {loaded} rows into PostGIS"
+    )
+    return 0
+
+
 def _db_migrate(args: argparse.Namespace) -> int:
     from participa_geo.db.session import run_migrations
     from participa_geo.settings import Settings
@@ -467,6 +487,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Obtener fuentes verificadas (ZIP completo) si faltan en source-dir.",
     )
     ingest.set_defaults(handler=_ingest)
+
+    ingest_national = subparsers.add_parser(
+        "ingest-national",
+        help="Ingerir CCPC nacional por sección y agregar observaciones municipales.",
+    )
+    ingest_national.add_argument(
+        "--source-dir",
+        default="data/raw/ccpc-national",
+        help="Directorio de ZIP oficiales CCPC nacionales.",
+    )
+    ingest_national.add_argument(
+        "--output-dir",
+        default="data/processed/national",
+        help="Directorio para Parquet particionado, agregados y manifiesto.",
+    )
+    ingest_national.set_defaults(handler=_ingest_national)
 
     db = subparsers.add_parser("db", help="Operaciones de base de datos.")
     db_sub = db.add_subparsers(dest="db_command")

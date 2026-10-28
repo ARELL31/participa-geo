@@ -169,7 +169,23 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
                 "001",
                 None,
             )
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0004"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0005"
+            assert connection.scalar(
+                text(
+                    "SELECT relkind FROM pg_class "
+                    "WHERE oid = 'fact_ccpc_section'::regclass"
+                )
+            ) == "p"
+            assert connection.scalar(
+                text(
+                    "SELECT has_table_privilege('writer', 'fact_ccpc_section', 'TRUNCATE')"
+                )
+            ) is True
+            assert connection.scalar(
+                text(
+                    "SELECT has_table_privilege('writer', 'fact_ccpc_section', 'INSERT')"
+                )
+            ) is True
     finally:
         with engine.begin() as connection:
             connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))

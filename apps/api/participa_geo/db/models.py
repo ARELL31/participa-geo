@@ -74,6 +74,7 @@ class DatasetVersion(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
+    state_code: Mapped[str] = mapped_column(String(2), nullable=False, default="14")
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     member: Mapped[str] = mapped_column(Text, nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
