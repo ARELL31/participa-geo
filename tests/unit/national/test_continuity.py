@@ -65,6 +65,17 @@ def test_2024_reference_uses_official_plan_column_and_matches_ccpc_and_mgs():
     assert audit.mgs_mismatches == 0
 
 
+def test_2024_ccpc_section_without_mgs_geometry_is_unmatched():
+    historical = [_history(1)]
+    ccpc = [_fact(2024, 1, 100, district_2021=None, district_2023="01")]
+
+    report = build_continuity(historical, [], ccpc, source_year=2024)
+
+    assert report.matched_count == 0
+    assert report.links[0].status == "unmatched"
+    assert report.links[0].target_section is None
+
+
 def test_official_movement_maps_old_section_to_target_without_number_join():
     historical = [
         _history(10),
@@ -133,12 +144,19 @@ def test_coverage_uses_2024_reference_ln_and_both_gates():
                 "state_code": "01",
                 "source_section": "1",
                 "target_section": "1",
+                "target_district": "01",
                 "status": "matched",
             },
         )(),
     ]
+    mgs = [{"state_code": "01", "municipality_code": "001", "section": "1", "district_2023": "01"}]
 
-    coverage = district_coverage(reference, continuity, district_codes={("01", "01"), ("01", "02")})
+    coverage = district_coverage(
+        reference,
+        continuity,
+        district_codes={("01", "01"), ("01", "02")},
+        mgs_sections=mgs,
+    )
     by_district = {item.district_code: item for item in coverage}
 
     assert by_district["01"].reference_ln == 95
@@ -156,9 +174,94 @@ def test_coverage_uses_2024_reference_ln_and_both_gates():
     assert national.status == "insufficient"
 
 
+def test_mgs_only_sections_are_audited_as_uncovered_without_imputed_ln():
+    reference = [_fact(2024, 1, 90, district_2021=None, district_2023="01")]
+    continuity = [
+        type(
+            "Link",
+            (),
+            {
+                "source_year": 2024,
+                "state_code": "01",
+                "source_section": "1",
+                "target_section": "1",
+                "target_district": "01",
+                "status": "matched",
+            },
+        )()
+    ]
+    mgs = [
+        {"state_code": "01", "municipality_code": "001", "section": "1", "district_2023": "01"},
+        {"state_code": "01", "municipality_code": "002", "section": "2", "district_2023": "01"},
+    ]
+
+    coverage = district_coverage(
+        reference, continuity, district_codes={("01", "01")}, mgs_sections=mgs
+    )
+    district = coverage[0]
+    national = coverage[-1]
+
+    assert district.mgs_only_section_count == 1
+    assert district.mgs_only_ln == 0
+    assert district.section_universe_gap_count == 1
+    assert district.matched_section_count == 1
+    assert district.reference_section_count == 1
+    assert national.mgs_only_section_count == 1
+    assert national.section_universe_gap_count == 1
+
+
+def test_2024_coverage_uses_only_ccpc_sections_with_mgs_and_district_gate():
+    reference = [
+        _fact(2024, 1, 90, district_2021=None, district_2023="01"),
+        _fact(2024, 2, 10, district_2021=None, district_2023="01"),
+    ]
+    continuity = [
+        type(
+            "Link",
+            (),
+            {
+                "source_year": 2024,
+                "state_code": "01",
+                "source_section": "1",
+                "target_section": "1",
+                "target_district": "01",
+                "status": "matched",
+            },
+        )(),
+        type(
+            "Link",
+            (),
+            {
+                "source_year": 2024,
+                "state_code": "01",
+                "source_section": "2",
+                "target_section": None,
+                "status": "unmatched",
+            },
+        )(),
+    ]
+    mgs = [{"state_code": "01", "municipality_code": "001", "section": "1", "district_2023": "01"}]
+
+    coverage = district_coverage(
+        reference, continuity, district_codes={("01", "01")}, mgs_sections=mgs
+    )
+    district = coverage[0]
+    national = coverage[-1]
+
+    assert district.reference_ln == 100
+    assert district.matched_ln == 90
+    assert district.coverage == 0.9
+    assert district.district_gate_passed is False
+    assert district.unmatched_ccpc_section_count == 1
+    assert district.unmatched_ccpc_ln == 10
+    assert national.coverage == 0.9
+    assert national.status == "insufficient"
+
+
 def test_new_district_is_eligible_only_with_coverage():
     reference = [_fact(2024, 1, 100, district_2021=None, district_2023="09")]
-    absent = district_coverage(reference, [], district_codes={("01", "09")})[0]
+    mgs = [{"state_code": "01", "municipality_code": "001", "section": "1", "district_2023": "09"}]
+    absent = district_coverage(reference, [], district_codes={("01", "09")}, mgs_sections=mgs)[0]
     matched = district_coverage(
         reference,
         [
@@ -170,11 +273,13 @@ def test_new_district_is_eligible_only_with_coverage():
                     "state_code": "01",
                     "source_section": "11",
                     "target_section": "1",
+                    "target_district": "09",
                     "status": "matched",
                 },
             )()
         ],
         district_codes={("01", "09")},
+        mgs_sections=mgs,
     )[0]
 
     assert absent.status == "insufficient"
@@ -197,7 +302,16 @@ def test_seven_new_numbers_are_not_given_historical_district_identity():
     ]
     # These section facts deliberately have no continuity links: eligibility is
     # decided by validated coverage, never by district number novelty alone.
-    coverage = district_coverage(reference, [], district_codes=new_districts)
+    mgs = [
+        {
+            "state_code": state,
+            "municipality_code": "001",
+            "section": str(index),
+            "district_2023": district,
+        }
+        for index, (state, district) in enumerate(sorted(new_districts), 1)
+    ]
+    coverage = district_coverage(reference, [], district_codes=new_districts, mgs_sections=mgs)
 
     assert len([row for row in coverage if row.district_code != "ALL"]) == 7
     assert all(row.status == "insufficient" for row in coverage if row.district_code != "ALL")

@@ -84,6 +84,15 @@ class Coverage:
     reference_ln: int
     coverage: float
     status: Literal["eligible", "insufficient"]
+    reference_section_count: int
+    matched_section_count: int
+    unmatched_ccpc_section_count: int
+    unmatched_ccpc_ln: int
+    ccpc_without_mgs_section_count: int
+    ccpc_without_mgs_ln: int
+    mgs_only_section_count: int
+    mgs_only_ln: int
+    section_universe_gap_count: int
     district_gate_passed: bool
     national_gate_passed: bool
     national_threshold: float = 0.98
@@ -391,12 +400,13 @@ def build_continuity(
             target = mgs.get(key)
             source_district = fact.district_2023
             official_district = history_row.get(TARGET_DISTRICT_COLUMN)
-            if source_district and official_district:
+            if target and source_district and official_district:
                 target_district = _code(source_district, 2)
-                mgs_agrees = target is None or _code(target["district_2023"], 2) == target_district
+                mgs_agrees = _code(target["district_2023"], 2) == target_district
                 if mgs_agrees and target_district == _code(official_district, 2):
-                    evidence = f"{TARGET_DISTRICT_COLUMN}; CCPC 2024 DEF"
-                    evidence += "; MGS 2025 SECCION.distrito_f" if target else "; no MGS geometry"
+                    evidence = (
+                        f"{TARGET_DISTRICT_COLUMN}; CCPC 2024 DEF; MGS 2025 SECCION.distrito_f"
+                    )
                     links.append(
                         SectionContinuity(
                             2024, key[0], key[1], key[1], target_district, "matched", evidence
@@ -498,39 +508,85 @@ def district_coverage(
     continuity: Iterable[SectionContinuity],
     *,
     district_codes: set[tuple[str, str]],
+    mgs_sections: Iterable[Mapping[str, object]],
 ) -> list[Coverage]:
-    """Measure covered target LN against 2024 section LN, nationally and by district."""
-    links = [link for link in continuity if link.status == "matched"]
-    source_years = {link.source_year for link in continuity}
+    """Measure matched CCPC LN and report both sides of the section-universe gap."""
+    continuity_rows = list(continuity)
+    links = [link for link in continuity_rows if link.status == "matched"]
+    source_years = {link.source_year for link in continuity_rows}
     if len(source_years) > 1:
         raise ContinuityError("coverage input mixes source years")
     year = next(iter(source_years), 0)
-    matched_targets = {
-        (link.state_code, _section(link.target_section)) for link in links if link.target_section
-    }
+    reference_rows = [fact for fact in reference_2024 if fact.year == 2024]
+    mgs = _row_index(mgs_sections, "MGS")
+    matched_targets: set[tuple[str, str]] = set()
+    for link in links:
+        if not link.target_section:
+            continue
+        target_key = (link.state_code, _section(link.target_section))
+        target = mgs.get(target_key)
+        if target is None or not link.target_district:
+            continue
+        if _code(target["district_2023"], 2) == _code(link.target_district, 2):
+            matched_targets.add(target_key)
+
     denominator_by_district: dict[tuple[str, str], int] = defaultdict(int)
     matched_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    reference_count_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    matched_count_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    unmatched_count_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    unmatched_ln_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    ccpc_no_mgs_count_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    ccpc_no_mgs_ln_by_district: dict[tuple[str, str], int] = defaultdict(int)
+    mgs_only_count_by_district: dict[tuple[str, str], int] = defaultdict(int)
     national_reference = 0
     national_matched = 0
-    for fact in reference_2024:
-        if fact.year != 2024:
-            continue
+    national_reference_count = 0
+    national_matched_count = 0
+    national_unmatched_count = 0
+    national_unmatched_ln = 0
+    national_ccpc_no_mgs_count = 0
+    national_ccpc_no_mgs_ln = 0
+    for fact in reference_rows:
         if fact.ln < 0:
             raise ContinuityError("negative 2024 reference LN")
         national_reference += fact.ln
+        national_reference_count += 1
         key = (fact.state_code, _section(fact.section))
         if fact.district_2023:
             district_key = (fact.state_code, _code(fact.district_2023, 2))
             denominator_by_district[district_key] += fact.ln
+            reference_count_by_district[district_key] += 1
             if key in matched_targets:
                 matched_by_district[district_key] += fact.ln
                 national_matched += fact.ln
+                matched_count_by_district[district_key] += 1
+                national_matched_count += 1
+            else:
+                unmatched_count_by_district[district_key] += 1
+                unmatched_ln_by_district[district_key] += fact.ln
+                national_unmatched_count += 1
+                national_unmatched_ln += fact.ln
+            if key not in mgs:
+                ccpc_no_mgs_count_by_district[district_key] += 1
+                ccpc_no_mgs_ln_by_district[district_key] += fact.ln
+                national_ccpc_no_mgs_count += 1
+                national_ccpc_no_mgs_ln += fact.ln
+
+    ccpc_keys = {(fact.state_code, _section(fact.section)) for fact in reference_rows}
+    for key, row in mgs.items():
+        if key not in ccpc_keys:
+            district_key = (key[0], _code(row["district_2023"], 2))
+            mgs_only_count_by_district[district_key] += 1
+    national_mgs_only_count = sum(mgs_only_count_by_district.values())
+
     output: list[Coverage] = []
     for state, district in sorted(district_codes):
         key = (state, district)
         reference_ln = denominator_by_district.get(key, 0)
         matched_ln = matched_by_district.get(key, 0)
         coverage = matched_ln / reference_ln if reference_ln else 0.0
+        local_passed = bool(reference_ln and coverage >= 0.95)
         output.append(
             Coverage(
                 year,
@@ -540,6 +596,15 @@ def district_coverage(
                 reference_ln,
                 coverage,
                 "insufficient",
+                reference_count_by_district.get(key, 0),
+                matched_count_by_district.get(key, 0),
+                unmatched_count_by_district.get(key, 0),
+                unmatched_ln_by_district.get(key, 0),
+                ccpc_no_mgs_count_by_district.get(key, 0),
+                ccpc_no_mgs_ln_by_district.get(key, 0),
+                mgs_only_count_by_district.get(key, 0),
+                0,
+                ccpc_no_mgs_count_by_district.get(key, 0) + mgs_only_count_by_district.get(key, 0),
                 False,
                 False,
             )
@@ -556,6 +621,15 @@ def district_coverage(
             item.reference_ln,
             item.coverage,
             "eligible" if local_passed and national_passed else "insufficient",
+            item.reference_section_count,
+            item.matched_section_count,
+            item.unmatched_ccpc_section_count,
+            item.unmatched_ccpc_ln,
+            item.ccpc_without_mgs_section_count,
+            item.ccpc_without_mgs_ln,
+            item.mgs_only_section_count,
+            item.mgs_only_ln,
+            item.section_universe_gap_count,
             local_passed,
             national_passed,
         )
@@ -568,6 +642,15 @@ def district_coverage(
             national_reference,
             national_coverage,
             "eligible" if national_passed else "insufficient",
+            national_reference_count,
+            national_matched_count,
+            national_unmatched_count,
+            national_unmatched_ln,
+            national_ccpc_no_mgs_count,
+            national_ccpc_no_mgs_ln,
+            national_mgs_only_count,
+            0,
+            national_ccpc_no_mgs_count + national_mgs_only_count,
             national_passed,
             national_passed,
         )

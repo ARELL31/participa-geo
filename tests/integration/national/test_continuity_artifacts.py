@@ -28,8 +28,8 @@ def test_official_2023_reference_is_exact_on_common_ccpc_and_mgs_sections():
     assert report["reference_common_count"] == 70_301
     assert report["reference_ccpc_mismatches"] == 0
     assert report["reference_mgs_mismatches"] == 0
-    assert report["national_coverage_by_year"]["2024"] == 1.0
-    assert report["national_status_by_year"]["2024"] == "eligible"
+    assert report["national_coverage_by_year"]["2024"] < 0.98
+    assert report["national_status_by_year"]["2024"] == "insufficient"
     assert report["ccpc_2024_without_mgs_count"] == 450
     assert report["mgs_without_ccpc_2024_count"] == 2_967
 
@@ -58,6 +58,28 @@ def test_real_historical_coverage_gates_fail_closed():
             row for row in rows if int(row["year"]) == year and row["district_code"] != "ALL"
         ]
         assert all(row["status"] == "insufficient" for row in district_rows)
+
+
+def test_2024_coverage_counts_ccpc_without_mgs_as_uncovered_and_mgs_only_without_ln():
+    rows = _rows("coverage-report.csv")
+    national = next(row for row in rows if row["year"] == "2024" and row["district_code"] == "ALL")
+
+    assert float(national["coverage"]) < 0.98
+    assert national["status"] == "insufficient"
+    assert int(national["ccpc_without_mgs_section_count"]) == 450
+    assert int(national["ccpc_without_mgs_ln"]) > 0
+    assert int(national["mgs_only_section_count"]) == 2_967
+    assert int(national["mgs_only_ln"]) == 0
+    assert int(national["section_universe_gap_count"]) == 3_417
+    assert int(national["unmatched_ccpc_section_count"]) == 450
+    assert int(national["unmatched_ccpc_ln"]) == int(national["reference_ln"]) - int(
+        national["matched_ln"]
+    )
+    mgs_only = _rows("mgs-sections-without-2024-ccpc.csv")
+    assert len(mgs_only) == 2_967
+    assert all(row["status"] == "uncovered_no_ccpc_ln" for row in mgs_only)
+    assert all(row["section_count"] == "1" and row["ln"] == "" for row in mgs_only)
+    assert all(row["ln_status"] == "absent_no_ccpc_fact" for row in mgs_only)
 
 
 def test_new_seven_district_numbers_do_not_inherit_historical_identity():
@@ -96,8 +118,7 @@ def test_intersection_aggregates_reconcile_counts_and_plan():
     assert aggregates
     assert all(row["district_plan"] == "DERFE2023" for row in aggregates)
     assert all(
-        int(row["ln"]) == int(row["sv"]) + int(row["nv"]) + int(row["ns"])
-        for row in aggregates
+        int(row["ln"]) == int(row["sv"]) + int(row["nv"]) + int(row["ns"]) for row in aggregates
     )
     for year in (2009, 2012, 2015, 2018, 2021):
         aggregate_rows = [row for row in aggregates if int(row["year"]) == year]

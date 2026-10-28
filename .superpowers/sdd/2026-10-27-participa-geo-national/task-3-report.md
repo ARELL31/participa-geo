@@ -1,6 +1,6 @@
 # Task 3 — Informe de continuidad seccional y reconstrucción distrital 2023
 
-**Estado actualizado: IMPLEMENTADO; cobertura histórica insuficiente para publicación distrital.**
+**Estado actualizado: IMPLEMENTADO; 2009–2024 insuficiente para publicación distrital (gate nacional <98%).**
 
 > La auditoría inicial registrada abajo reflejaba el estado anterior a que se proporcionara el ACCDB oficial. La sección «Reanudación» la reemplaza como conclusión vigente; se conserva el registro anterior para trazabilidad.
 
@@ -38,9 +38,11 @@ La metodología y la evidencia reproducible quedan en `docs/methodology/national
 - Test summary: no se ejecutó una suite de Task 3, ya que la fuente de continuidad requerida no está disponible y el entregable se detuvo en el gate BLOCKED.
 - Se registraron solamente documentación/informe de Task 3; ningún artefacto de datos fue agregado al repositorio.
 
-## Reanudación — fuente oficial disponible
+## Reanudación inicial — SUPERSEDIDA por Fix round 1
 
-**Resultado vigente:** se implementaron continuidad oficial por sección, validación DERFE2023, migración `0006`, bridges, agregados y cobertura real. No se publica reconstrucción distrital histórica para 2009–2021, porque los cinco años fallan el gate nacional de 98%; todos sus distritos quedan en estado efectivo `insufficient`. El 2024 de referencia pasa exacto al 100%.
+> La corrida inicial permitió 450 secciones CCPC2024 sin geometría MGS en la cobertura. Su fila 2024 de 100% más abajo queda explícitamente reemplazada por los cálculos corregidos de «Fix round 1».
+
+**Resultado de esa corrida inicial (superado):** continuidad oficial, migración `0006`, bridges, agregados y cobertura real. El addendum Fix round 1 registra la cobertura vigente.
 
 ### Fuente, exportación y selección del plan
 
@@ -75,4 +77,23 @@ MGS contiene 73,268 secciones y su bridge reproduce 2,581 pares municipio–dist
 - Tests unitarios y de artefactos: 17 passed. Migración integrada con Postgres: 2 passed (ejecutada separadamente en la red Docker `participa-geo-national_internal`). Ruff y `git diff --check`: sin errores. Advertencia no bloqueante deprecada de Starlette/httpx.
 - Informe metodológico completo y reproducible: `docs/methodology/national-district-reconstruction.md`.
 
-**Commit:** pendiente al momento de esta actualización; no se hizo push.
+**Commit inicial:** `b16592f`; no se hizo push.
+
+## Fix round 1 — corregir cobertura fuera de MGS
+
+**Resultado vigente:** corregido el defecto de cobertura. `build_continuity` ya no permite matched para CCPC2024 sin fila MGS. La cobertura cuenta sólo la intersección validada CCPC2024×catálogo oficial×MGS; el LN de las 450 secciones CCPC-sin-MGS permanece en el denominador, pero aporta cero al numerador. También se incluye explícitamente el otro lado del universo: 2,967 secciones MGS sin hecho CCPC, con LN ausente/no imputado, sección contada y estado uncovered. Gate 2024 revisado: **95.1334%, falla 98%**.
+
+| Año | Matched / unmatched | LN2024 cubierto / referencia | Cobertura nacional | Gate 98% | Distritos ≥95% local | Elegibles efectivos |
+|---|---:|---:|---:|---|---:|---:|
+| 2009 | 62,590 / 2,344 | 81,214,044 / 98,330,348 | 82.5931% | Falla | 83 | 0 |
+| 2012 | 63,326 / 2,273 | 82,459,643 / 98,330,348 | 83.8598% | Falla | 71 | 0 |
+| 2015 | 66,282 / 2,080 | 85,140,029 / 98,330,348 | 86.5857% | Falla | 90 | 0 |
+| 2018 | 66,313 / 2,095 | 85,177,344 / 98,330,348 | 86.6237% | Falla | 90 | 0 |
+| 2021 | 66,959 / 1,853 | 87,522,791 / 98,330,348 | 89.0089% | Falla | 110 | 0 |
+| 2024 | 70,301 / 450 | 93,545,034 / 98,330,348 | 95.1334% | Falla | 191 | 0 |
+
+En 2024, las 450 CCPC-sin-MGS contienen 4,785,314 LN: permanecen en el denominador y no se suman al numerador. Los 2,967 MGS-sin-CCPC se registran con `mgs_only_section_count=2,967`, `mgs_only_ln=0` (sin LN observado), y estado por sección `uncovered_no_ccpc_ln`; total de diferencia entre universos: 3,417 secciones. Cada distrito aplica el mismo criterio al numerador y su propio LN CCPC2024 al denominador; 191 pasan 95% localmente, pero ninguno es elegible porque falla la compuerta nacional.
+
+Se regeneraron continuidad 2009–2024, coverage CSV/JSON, observaciones y agregados; el bridge geométrico no cambió. Migraciones aditivas `0007` y `0008` persisten conteos de cobertura/gap sin alterar `0001`–`0006`. Se incorporaron regresiones para CCPC-sin-MGS unmatched, MGS-sin-CCPC explícito sin LN, cobertura <100%, denominador y gate distrital.
+
+**Verificación Fix round 1:** 21 pruebas unitarias/artefactos pasaron; 2 pruebas de migración Postgres pasaron; Ruff y `git diff --check` limpios. Warning no bloqueante: deprecación Starlette/httpx.

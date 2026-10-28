@@ -167,6 +167,15 @@ class DistrictReconstructionCoverage(Base):
     reference_ln: Mapped[int] = mapped_column(Integer, nullable=False)
     coverage: Mapped[float] = mapped_column(nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reference_section_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    matched_section_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    unmatched_ccpc_section_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    unmatched_ccpc_ln: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ccpc_without_mgs_section_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ccpc_without_mgs_ln: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    mgs_only_section_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    mgs_only_ln: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    section_universe_gap_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     district_plan: Mapped[str] = mapped_column(String(16), nullable=False, default="DERFE2023")
 
     __table_args__ = (

@@ -148,7 +148,9 @@ def build_national_continuity(
         for year in (2009, 2012, 2015, 2018, 2021, 2024)
     }
     coverage_by_year = {
-        year: district_coverage(reference, report.links, district_codes=district_codes)
+        year: district_coverage(
+            reference, report.links, district_codes=district_codes, mgs_sections=mgs
+        )
         for year, report in continuity_reports.items()
     }
     coverage_rows = [
@@ -201,6 +203,15 @@ def build_national_continuity(
             "reference_ln",
             "coverage",
             "status",
+            "reference_section_count",
+            "matched_section_count",
+            "unmatched_ccpc_section_count",
+            "unmatched_ccpc_ln",
+            "ccpc_without_mgs_section_count",
+            "ccpc_without_mgs_ln",
+            "mgs_only_section_count",
+            "mgs_only_ln",
+            "section_universe_gap_count",
             "district_gate_passed",
             "national_gate_passed",
             "national_threshold",
@@ -302,13 +313,26 @@ def build_national_continuity(
                 "section": row["section"],
                 "municipality_code": row["municipality_code"],
                 "district_code": row["district_2023"],
-                "status": "unmatched",
-                "evidence": "MGS section has no 2024 CCPC LN reference; no value imputed",
+                "status": "uncovered_no_ccpc_ln",
+                "section_count": 1,
+                "ln": "",
+                "ln_status": "absent_no_ccpc_fact",
+                "evidence": "MGS section has no 2024 CCPC fact; LN is absent, not imputed",
             }
             for row in mgs
             if (row["state_code"], row["section"]) not in ccpc_keys
         ],
-        ["state_code", "section", "municipality_code", "district_code", "status", "evidence"],
+        [
+            "state_code",
+            "section",
+            "municipality_code",
+            "district_code",
+            "status",
+            "section_count",
+            "ln",
+            "ln_status",
+            "evidence",
+        ],
     )
     _write_csv(
         output_dir / "ccpc-2024-sections-without-mgs.csv",
@@ -427,7 +451,24 @@ def build_national_continuity(
     _copy_rows(
         session,
         "district_reconstruction_coverage",
-        ["year", "state_code", "district_code", "matched_ln", "reference_ln", "coverage", "status"],
+        [
+            "year",
+            "state_code",
+            "district_code",
+            "matched_ln",
+            "reference_ln",
+            "coverage",
+            "status",
+            "reference_section_count",
+            "matched_section_count",
+            "unmatched_ccpc_section_count",
+            "unmatched_ccpc_ln",
+            "ccpc_without_mgs_section_count",
+            "ccpc_without_mgs_ln",
+            "mgs_only_section_count",
+            "mgs_only_ln",
+            "section_universe_gap_count",
+        ],
         [
             dict(row, district_code="00") if row["district_code"] == "ALL" else row
             for row in coverage_rows
