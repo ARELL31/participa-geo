@@ -1,6 +1,6 @@
 # PARTICIPA-GEO Nacional — Diseño de expansión municipal y distrital
 
-Fecha: 2026-10-27. Estado: **borrador para revisión y aprobación; no autoriza implementación**.
+Fecha: 2026-10-27. Estado: **aprobado por el usuario; ejecución nacional autorizada**. Método: agentes con ChatGPT Luna; respaldo Gemini 3.8 Flash si se agotan los tokens.
 
 ## 1. Intención
 

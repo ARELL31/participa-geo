@@ -8,7 +8,9 @@
 
 **Tech Stack:** Python 3.12, FastAPI/Pydantic2, SQLAlchemy2/Alembic/psycopg3, pandas/NumPy/scikit-learn, PostgreSQL/PostGIS, GeoServer; React/TypeScript/Vite/MapLibre/TanStack Query/Radix/Lucide; pytest/Vitest/Playwright; Docker Compose.
 
-**Spec:** `docs/superpowers/specs/2026-10-27-participa-geo-national-design.md` — aprobada por el usuario. Este plan requiere aprobación antes de implementar.
+**Spec:** `docs/superpowers/specs/2026-10-27-participa-geo-national-design.md` — aprobada por el usuario.
+
+**Estado de ejecución:** plan aprobado el 2026-10-27; método: agentes con ChatGPT Luna; respaldo Gemini 3.8 Flash si se agotan los tokens. Implementación autorizada.
 
 ## Global Constraints
 
@@ -275,6 +277,4 @@ def observation_id(key: TerritoryKey, year: int, source_version_id: UUID) -> UUI
 
 ## Approval and execution
 
-El usuario aprobó el diseño. Este plan aún requiere revisión y aprobación, y elegir método de ejecución. Recomendación: **subagent-driven-development** por la cantidad de contratos compartidos y las compuertas de datos/GIS; un error en la reconstrucción distrital se propaga a modelo, UI y reportes. Alternativa: ejecución nativa para reducir coste, con revisión final independiente.
-
-No se implementa nada hasta aprobar este plan. La implementación debe comenzar en una rama/worktree nuevo, no en `main` ni en la rama de diseño.
+El usuario aprobó el diseño y el plan, y eligió ejecución por agentes con **ChatGPT Luna**; si se agotan los tokens, **Gemini 3.8 Flash**. La implementación comienza en un worktree nuevo, no en `main` ni en la rama de diseño. Cada tarea tendrá implementador y revisor independientes; la compuerta N3 se evalúa antes de N6/N9.
