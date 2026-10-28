@@ -159,3 +159,45 @@ pasan. El stack nacional mantiene readiness 200.
   actualizado. Cleanroom no se repitió por ser cambios de pruebas/documentación;
   la verificación cleanroom previa sigue en §13 de resultados y no es evidencia
   de una nueva corrida en esta ronda.
+
+## Fix round 2 — revisión final de distrito (2026-10-28)
+
+- Los 300 agregados observados 2024 ahora se calculan directamente desde hechos
+  CCPC por `DEF`/DERFE2023 en `agg_district_year`, sin depender de MGS ni de la
+  continuidad geométrica. Se mantienen por separado los agregados
+  municipio×distrito MGS y `district_reconstruction_coverage`. `district rebuild`
+  rehizo los artefactos y la persistencia; los 450 sectores CCPC sin MGS aportan
+  4,785,314 LN observada.
+- Reconciliación tras rebuild: los 300 distritos suman LN 98,330,348, SV
+  54,899,228, NV 37,105,466 y NS 6,325,654, exactamente igual al total de los
+  hechos CCPC 2024. El endpoint de historia, verificado después del reinicio de
+  API, devolvió los mismos 300 registros/conteos y cobertura separada en los 300.
+- La ficha distrital explica que el universo de conteos incluye todas las
+  secciones CCPC asignadas al DEF2023, mientras cobertura es conciliación MGS.
+  Verificación live generó/descargó PDF de 2,665 bytes; ambos textos fueron
+  encontrados. `DERFE2021` fue rechazado por la API con HTTP 422 y mensaje que
+  exige DERFE2023. La validación también aplica a exportaciones históricas a
+  nivel distrital; cache rules subió a `1.1.0`.
+- Migración aditiva `0014` agrega `agg_district_year` y permisos de lectura API /
+  escritura writer. Se añadieron regresiones para agregación sin MGS,
+  reconciliación al CCPC, cobertura independiente, chain/grants y rechazo del
+  plan viejo. Pruebas focales: 49 pasaron. Backend completo: **262 passed, 76
+  skipped, 1 warning**; web: ESLint, TypeScript, build y **67 tests / 10
+  archivos**; Playwright: **16 passed, 2 skipped**. Ruff y `git diff --check`
+  pasaron. El warning restante es la deprecación Starlette/TestClient.
+- Cleanroom completo no se repitió: el modelo, sus entradas/artefactos y
+  predicciones municipales no cambiaron; el cambio afecta observaciones
+  distritales y validación de informes. En vez de presentarlo como cleanroom,
+  se ejecutaron la reconciliación real de 300 distritos contra los hechos CCPC,
+  la regresión de cobertura MGS independiente y la prueba live de historia/PDF/
+  HTTP 422. La aceptación cleanroom previa permanece como evidencia histórica,
+  no como corrida de esta ronda.
+- `dist/national/technical.zip` y su `DELIVERY.json` se regeneraron después de
+  estos cambios. Verificación independiente: `complete: true`, 318 miembros,
+  modo `confirm`, sin escenario requerido; 461,140,043 bytes; SHA-256
+  `c210132c3b2623f40e67c7eebb170fa0c8543c2e5eb7dcaeb698602e37a45045`.
+  Se confirmaron en el inventario la migración `0014`, las pruebas de regresión,
+  `district-observations.csv`, metodología y verificación-results actualizados.
+- Estado sigue `DONE_WITH_CONCERNS`: GitHub Actions no ejecutado y revisión
+  humana metodológica/cartas pendiente. No se generó ninguna predicción
+  distrital 2027.

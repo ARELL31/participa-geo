@@ -169,7 +169,7 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
                 "001",
                 None,
             )
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0013"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0014"
             assert (
                 connection.scalar(
                     text("SELECT relkind FROM pg_class WHERE oid = 'fact_ccpc_section'::regclass")
@@ -200,6 +200,13 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
                 )
                 is True
             )
+            assert (
+                connection.scalar(text("SELECT to_regclass('agg_district_year') IS NOT NULL"))
+                is True
+            )
+            assert connection.scalar(
+                text("SELECT has_table_privilege('api', 'agg_district_year', 'SELECT')")
+            ) is True
             assert (
                 connection.scalar(text("SELECT to_regclass('section_continuity') IS NOT NULL"))
                 is True

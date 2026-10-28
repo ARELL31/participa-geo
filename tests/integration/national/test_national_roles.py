@@ -13,7 +13,7 @@ NATIONAL_DATA_TABLES = (
     "model_run",
     "prediction",
 )
-AGGREGATE_TABLES = ("agg_municipality_district_year",)
+AGGREGATE_TABLES = ("agg_municipality_district_year", "agg_district_year")
 GIS_TABLES = (
     "geo_state",
     "geo_municipality",

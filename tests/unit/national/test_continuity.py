@@ -3,6 +3,7 @@ from __future__ import annotations
 from participa_geo.ingestion.continuity import (
     SectionFactCount,
     aggregate_municipality_district_year,
+    aggregate_observed_district_2024,
     build_continuity,
     build_municipality_district_bridge,
     district_coverage,
@@ -370,6 +371,23 @@ def test_reconstruction_keeps_2021_plan_separate_from_2023_plan():
     assert observations[0].district_plan == "DERFE2023"
     assert observations[0].district_code == "02"
     assert observations[0].district_code != facts[0].district_2021
+
+
+def test_2024_observed_district_totals_use_official_codes_without_continuity_or_mgs():
+    facts = [
+        _fact(2024, 1, 100, district_2023="01", municipality="001"),
+        _fact(2024, 2, 50, district_2023="01", municipality="001"),
+        _fact(2024, 3, 200, district_2023="02", municipality="002"),
+    ]
+
+    observations = aggregate_observed_district_2024(facts)
+
+    by_district = {row.district_code: row for row in observations}
+    assert set(by_district) == {"01", "02"}
+    assert by_district["01"].ln == 150
+    assert by_district["01"].section_count == 2
+    assert by_district["02"].ln == 200
+    assert sum(row.ln for row in observations) == sum(fact.ln for fact in facts)
 
 
 def test_district_aggregates_sum_to_mapped_section_counts():

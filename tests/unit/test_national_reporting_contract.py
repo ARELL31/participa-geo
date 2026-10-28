@@ -87,6 +87,27 @@ def test_district_observed_report_is_explicit_and_does_not_accept_2027():
         )
 
 
+@pytest.mark.parametrize(
+    ("kind", "fields"),
+    [
+        ("history_csv", {"state_code": "14"}),
+        (
+            "district_observed_pdf",
+            {"territory_id": "00000000-0000-0000-0000-000000000002"},
+        ),
+    ],
+)
+def test_district_reports_reject_derfe2021(kind, fields):
+    with pytest.raises(ValidationError, match="DERFE2023"):
+        ReportRequest(
+            kind=kind,
+            level="federal_district",
+            district_plan="DERFE2021",
+            year=2024,
+            **fields,
+        )
+
+
 def test_district_scenario_report_is_rejected():
     with pytest.raises(ValidationError):
         ReportRequest(
@@ -174,6 +195,8 @@ def test_district_fiche_is_observed_2024_and_has_coverage_not_forecast():
     text = " ".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(report)).pages)
     assert "Observado 2024" in text
     assert "96.0%" in text
+    assert "todas las secciones CCPC 2024" in text
+    assert "medida separada de reconstrucción" in text
     assert "Predicción" not in text
     assert "2027" not in text
 

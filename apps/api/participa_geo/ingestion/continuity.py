@@ -731,6 +731,47 @@ def reconstruct_district_2023(
             values["ns"],
         )
         for (year, state, district), values in sorted(groups.items())
+]
+
+
+def aggregate_observed_district_2024(
+    facts: Iterable[SectionFactCount],
+) -> list[DistrictObservation]:
+    """Aggregate observed 2024 counts by the CCPC official DEF2023 assignment.
+
+    This is independent of the MGS crosswalk: CCPC sections without geometry
+    still belong to their published 2024 federal district.
+    """
+    groups: dict[tuple[str, str], dict[str, int]] = {}
+    for fact in facts:
+        if fact.year != 2024:
+            continue
+        if fact.district_2023 is None:
+            raise ContinuityError(
+                "2024 CCPC fact has no official DEF2023 district: "
+                f"{fact.state_code}/{fact.municipality_code}/{fact.section}"
+            )
+        district = _code(fact.district_2023, 2)
+        group = groups.setdefault(
+            (fact.state_code, district), {"sections": 0, "ln": 0, "sv": 0, "nv": 0, "ns": 0}
+        )
+        group["sections"] += 1
+        for field in ("ln", "sv", "nv", "ns"):
+            group[field] += getattr(fact, field)
+
+    return [
+        DistrictObservation(
+            2024,
+            state,
+            district,
+            "DERFE2023",
+            values["sections"],
+            values["ln"],
+            values["sv"],
+            values["nv"],
+            values["ns"],
+        )
+        for (state, district), values in sorted(groups.items())
     ]
 
 
@@ -793,6 +834,7 @@ __all__ = [
     "SectionContinuity",
     "SectionFactCount",
     "aggregate_municipality_district_year",
+    "aggregate_observed_district_2024",
     "build_continuity",
     "build_municipality_district_bridge",
     "district_coverage",

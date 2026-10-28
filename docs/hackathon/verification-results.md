@@ -539,3 +539,32 @@ prueba nacional-crítica.
   pruebas p95 actualizadas y la secuencia vigente de README. No se repitió
   cleanroom por ser un cambio de pruebas/documentación; la aceptación cleanroom
   previa de §13 no se presenta como corrida nueva de esta revisión.
+
+## 15. Fix round 2 — observaciones distritales completas (2026-10-28)
+
+- La agregación 2024 de distrito se separó de las intersecciones MGS: los 300
+  registros por `DEF`/DERFE2023 reconcilian con los hechos CCPC en
+  LN=98,330,348, SV=54,899,228, NV=37,105,466 y NS=6,325,654. Las 450 secciones
+  CCPC sin MGS agregan 4,785,314 LN al observado completo. La cobertura de
+  reconstrucción sigue reportando 95.1334% y permanece `insufficient`; no se
+  presenta como cobertura del conteo observado.
+- Backend completo: **262 passed, 76 skipped, 1 warning**. Focales: **49 passed**.
+  Web: ESLint, TypeScript, build y **67 tests / 10 archivos**. Playwright:
+  **16 passed, 2 skipped**. Ruff y `git diff --check` pasaron. La advertencia
+  conocida es Starlette/TestClient; skips permanecen documentados.
+- Live tras reiniciar API: historia distrito **300 filas**, agregados y hechos
+  CCPC iguales en los cuatro conteos; cobertura presente en los 300. Ficha PDF
+  descargada (2,665 bytes) con texto de universo CCPC y cobertura separada.
+  Solicitud district report DERFE2021 respondió **422** con requisito DERFE2023.
+- No se ejecutó el cleanroom completo en esta ronda. No cambiaron modelo,
+  entrenamiento, features ni predicciones municipales; se corrieron en su lugar
+  la prueba focal de artefactos (300 distritos contra CCPC, incluido el conteo
+  de las 450 secciones), la prueba DB que compara observado completo con
+  intersección/coverage MGS y la verificación live API/PDF/422. La aceptación de
+  §13 es histórica, no evidencia de un cleanroom nuevo.
+- Se regeneró `dist/national/technical.zip` tras actualizar código, artefactos,
+  metodología y esta sección. `verify-delivery` independiente reportó
+  `complete: true`, 318 miembros, modo `confirm`, sin escenario requerido.
+  `DELIVERY.json` conserva el SHA-256/tamaño del ZIP como sidecar (no se incluye
+  dentro del propio archivo). Se verificó la inclusión de la migración `0014`,
+  los tests/regresiones de distrito, los artefactos 2024 y esta documentación.

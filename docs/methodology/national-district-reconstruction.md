@@ -1,6 +1,6 @@
 # Reconstrucción distrital federal 2023 — estado de evidencia
 
-**Estado: implementado; ningún año 2009–2024 pasa la compuerta nacional de 98%.** La cobertura corregida exige que las secciones CCPC tengan geometría MGS. 2009–2021 y 2024 quedan `insufficient`; 2024 alcanza 95.1334%, no 100%.
+**Estado: implementado; ningún año histórico reconstruido pasa la compuerta nacional de 98%.** La cobertura MGS mide qué proporción de LN puede conciliarse con geometría/continuidad y queda `insufficient` en 2009–2024; en 2024 es 95.1334%. Esto no reduce los totales observados distritales de 2024: éstos se agregan directamente desde CCPC por el `DEF` oficial DERFE2023, para las 70,751 secciones (incluidas las 450 sin geometría), y sus 300 distritos suman 98,330,348 LN, igual al total municipal CCPC. La cobertura MGS se presenta separadamente como medida de reconstrucción.
 
 ## Fuente oficial incorporada y decisión de plan
 
@@ -15,6 +15,15 @@
 Cada vínculo histórico exige sección fuente presente en la columna oficial de su año (`Distrito_PEF2009/2012/2015/2018/2021`), destino oficial DERFE2023, acuerdo del distrito objetivo con MGS y ausencia de baja/reseccionamiento parcial. Se acepta además una fusión completa sólo si la nota oficial especifica un destino singular existente y coherente con el catálogo/MGS. Altas, bajas, movimientos parciales y destinos ambiguos no se completan por número: quedan `unmatched`. En el material histórico CCPC, `DEF` es el campo de plan 2021, no se reasigna como una identidad de los planes anteriores.
 
 El denominador es LN agregado por sección del CCPC 2024; el numerador es LN de secciones con continuidad validada hacia el plan DERFE2023. Para reconstrucción publicable se requiere ≥98% nacional y ≥95% en cada distrito. El gate nacional se aplica también al estado efectivo distrital; se informan aparte los distritos que localmente llegan a 95%.
+
+Este gate no filtra el dato observado 2024. `agg_district_year` y
+`district-observations.csv` contienen los totales oficiales CCPC 2024 directamente
+agregados por `DEF`/DERFE2023, incluida la LN de las 450 secciones que no tienen
+geometría MGS. Los agregados municipio×distrito continúan describiendo sólo las
+intersecciones cartográficas MGS; no deben usarse como total observado del
+distrito. Así, los conteos y tasas distritales reflejan todas las secciones
+CCPC, mientras `coverage_share` expresa por separado el porcentaje de LN
+conciliado con MGS.
 
 | Año origen | Vínculos matched / unmatched | Cobertura LN2024 | Gate nacional | Distritos ≥95% localmente | Distritos efectivos elegibles |
 |---|---:|---:|---|---:|---:|
@@ -33,10 +42,10 @@ Los siete distritos con números entrantes (BC09, Coahuila08, NL13/14, Puebla16,
 
 ## Implementación y artefactos
 
-- Migraciones aditivas `0006_continuity.py`, `0007_coverage_gap_audit.py` y `0008_total_section_gap.py`; no se editaron `0001`–`0005`. La cobertura persiste LN, conteos CCPC/MGS y el gap total de secciones junto con los gates.
+- Migraciones aditivas `0006_continuity.py`, `0007_coverage_gap_audit.py`, `0008_total_section_gap.py` y `0014_complete_district_observations.py`; la cobertura conserva LN, conteos CCPC/MGS y el gap total, mientras los conteos observados completos viven en `agg_district_year`.
 - Comandos `continuity build` y `district rebuild`; validación en `apps/api/participa_geo/ingestion/continuity.py` y `pipelines/validation/continuity.py`.
 - Artefactos reproducibles bajo `data/processed/national/continuity/`: continuidad por año, reporte de cobertura, ambos puentes, observaciones distritales, agregados municipio×distrito×año, listas unmatched/no-geometry y `continuity-build.json`.
-- Base real: 73,268 filas puente sección-distrito, 2,581 intersecciones municipio-distrito, 15,428 agregados; todos los agregados reconcilian `LN = SV + NV + NS` y se etiquetan `DERFE2023`. Los estatus históricos permanecen insuficientes; no hay modelo/API/UI distrital.
+- Base real: 73,268 filas puente sección-distrito, 2,581 intersecciones municipio-distrito y 15,428 agregados de intersección; los 300 agregados observados 2024 se persisten por separado y reconcilian al total CCPC. Los estatus de reconstrucción siguen insuficientes; no hay modelo ni predicción distrital.
 
 ## Auditoría bloqueada inicial — SUPERSEDIDA (no es el estado vigente)
 

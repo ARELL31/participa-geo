@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from participa_geo.ingestion.continuity import (
     SectionFactCount,
     aggregate_municipality_district_year,
+    aggregate_observed_district_2024,
     build_continuity,
     build_municipality_district_bridge,
     district_coverage,
@@ -183,10 +184,25 @@ def build_national_continuity(
     # when the year fails its publishability gate.
     district_rows = []
     for year, report in continuity_reports.items():
+        observations = (
+            aggregate_observed_district_2024(facts)
+            if year == 2024
+            else reconstruct_district_2023(facts, report.links, mgs)
+        )
         district_rows.extend(
-            asdict(row)
-            for row in reconstruct_district_2023(facts, report.links, mgs)
-            if row.year == year
+            asdict(row) for row in observations if row.year == year
+        )
+    observed_2024_districts = {
+        (row["state_code"], row["district_code"])
+        for row in district_rows
+        if row["year"] == 2024
+    }
+    if observed_2024_districts != district_codes:
+        missing = sorted(district_codes - observed_2024_districts)
+        unexpected = sorted(observed_2024_districts - district_codes)
+        raise ValueError(
+            "2024 CCPC district totals must cover the complete MGS DERFE2023 catalogue "
+            f"(missing={missing[:5]}, unexpected={unexpected[:5]})"
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -400,6 +416,7 @@ def build_national_continuity(
 
     # Bulk replace only the Task 3 tables; raw section facts remain untouched.
     for table in (
+        "agg_district_year",
         "agg_municipality_district_year",
         "district_reconstruction_coverage",
         "bridge_municipality_district",
@@ -483,6 +500,22 @@ def build_national_continuity(
             "district_plan",
         ],
         _coverage_copy_rows(coverage_rows),
+    )
+    _copy_rows(
+        session,
+        "agg_district_year",
+        [
+            "year",
+            "state_code",
+            "district_code",
+            "district_plan",
+            "section_count",
+            "ln",
+            "sv",
+            "nv",
+            "ns",
+        ],
+        [row for row in district_rows if row["year"] == 2024],
     )
     _copy_rows(
         session,

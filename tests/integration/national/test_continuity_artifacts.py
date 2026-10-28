@@ -126,3 +126,26 @@ def test_intersection_aggregates_reconcile_counts_and_plan():
         assert sum(int(row["ln"]) for row in aggregate_rows) == sum(
             int(row["ln"]) for row in district_rows
         )
+
+
+def test_observed_2024_district_totals_reconcile_to_ccpc_and_include_no_mgs_sections():
+    districts = [row for row in _rows("district-observations.csv") if row["year"] == "2024"]
+    municipal = [
+        row for row in _rows("../municipal-observations.csv") if row["year"] == "2024"
+    ]
+    coverage = _rows("coverage-report.csv")
+    national_coverage = next(
+        row for row in coverage if row["year"] == "2024" and row["district_code"] == "ALL"
+    )
+
+    assert len(districts) == 300
+    ccpc_ln = sum(int(row["ln"]) for row in municipal)
+    district_ln = sum(int(row["ln"]) for row in districts)
+    assert district_ln == ccpc_ln
+    assert int(national_coverage["ccpc_without_mgs_section_count"]) == 450
+    assert int(national_coverage["ccpc_without_mgs_ln"]) == (
+        int(national_coverage["reference_ln"]) - int(national_coverage["matched_ln"])
+    )
+    assert district_ln - int(national_coverage["matched_ln"]) == int(
+        national_coverage["ccpc_without_mgs_ln"]
+    )

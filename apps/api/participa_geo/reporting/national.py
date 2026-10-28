@@ -96,9 +96,11 @@ def generate_observed_territory_fiche(record: HistoryDTO) -> bytes:
         Spacer(1, 6 * mm),
         Paragraph(
             (
-                "La cobertura describe la proporción de lista nominal 2024 conciliada con "
-                "la correspondencia sección–distrito del plan publicado. No es cobertura "
-                "de una predicción ni una medida de representatividad."
+                "Los conteos observados suman todas las secciones CCPC 2024 asignadas al "
+                "DEF2023 oficial, incluidas las que no tienen geometría MGS. La cobertura "
+                "describe la proporción de LN conciliada con la correspondencia "
+                "sección–distrito MGS; es una medida separada de reconstrucción, no de "
+                "predicción ni representatividad."
                 if record.level == "federal_district"
                 else "Los conteos son observados; no se estiman personas ni efectos causales."
             ),

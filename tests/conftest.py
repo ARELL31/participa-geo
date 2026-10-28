@@ -215,6 +215,7 @@ def postgis_session(db_config: dict):
         for view in VIEWS:
             conn.execute(text(f"DROP VIEW IF EXISTS {view} CASCADE"))
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
+        conn.execute(text("DROP TABLE IF EXISTS agg_district_year CASCADE"))
         # These migration-created tables are outside Base.metadata. Drop them
         # before SQLAlchemy orders drops from its incomplete metadata graph.
         conn.execute(text("DROP TABLE IF EXISTS fact_ccpc_section CASCADE"))

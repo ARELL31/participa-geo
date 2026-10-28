@@ -97,7 +97,7 @@ function DistrictObserved({
       <dl className="kpi-grid">
         <div className="kpi"><dt>Abstención observada</dt><dd>{formatRateOrInsufficient(observation?.abstention_pct)}</dd><dd className="kpi__note">Conteos agregados de secciones</dd></div>
         <div className="kpi"><dt>Cobertura</dt><dd>{formatShare(observation?.coverage_share)}</dd><dd className="kpi__note">Sobre LN2024 de referencia</dd></div>
-        <div className="kpi"><dt>Lista nominal (LN)</dt><dd>{formatCount(observation?.ln)}</dd><dd className="kpi__note">Secciones vinculadas al marco 2023</dd></div>
+        <div className="kpi"><dt>Lista nominal (LN)</dt><dd>{formatCount(observation?.ln)}</dd><dd className="kpi__note">Todas las secciones CCPC asignadas al DEF2023 oficial</dd></div>
         <div className="kpi"><dt>Estado de cobertura</dt><dd>{observation?.eligible ? "Suficiente" : "Información insuficiente"}</dd><dd className="kpi__note">No implica elegibilidad predictiva</dd></div>
       </dl>
     </section>

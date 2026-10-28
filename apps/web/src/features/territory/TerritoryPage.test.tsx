@@ -227,7 +227,9 @@ describe("TerritoryPage", () => {
     expect(await screen.findByRole("heading", { name: /Distrito 05 · marco 2023/i })).toBeVisible();
     expect(screen.getByText("Observado 2024")).toBeVisible();
     expect(screen.getByText("Cobertura")).toBeVisible();
+    expect(screen.getByText(/Todas las secciones CCPC asignadas al DEF2023 oficial/)).toBeVisible();
     expect(await screen.findByRole("table", { name: /Municipios que intersectan/i })).toBeVisible();
+    expect(screen.getByText(/sólo incluyen secciones vinculadas a geometría/)).toBeVisible();
     expect(within(screen.getByRole("table", { name: /Municipios que intersectan/i })).getByRole("button", { name: /Acatic/ })).toBeVisible();
     expect(screen.queryByText(/Predicción 2027|Banda/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Escenario/i })).not.toBeInTheDocument();

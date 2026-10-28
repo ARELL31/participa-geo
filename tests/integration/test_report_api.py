@@ -57,6 +57,32 @@ def _create_scenario(client) -> dict:
     return response.json()
 
 
+@pytest.mark.parametrize(
+    ("kind", "fields"),
+    [
+        ("history_csv", {"state_code": "14"}),
+        (
+            "district_observed_pdf",
+            {"territory_id": "00000000-0000-0000-0000-000000000002"},
+        ),
+    ],
+)
+def test_district_reports_reject_legacy_plan_with_clear_422(db_api_client, kind, fields):
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": kind,
+            "level": "federal_district",
+            "district_plan": "DERFE2021",
+            "year": 2024,
+            **fields,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "DERFE2023" in response.json()["errors"][0]["msg"]
+
+
 def test_history_csv_export_and_download(db_api_client, tmp_path):
     store = _store(tmp_path)
     db_api_client.app.state.report_store = store

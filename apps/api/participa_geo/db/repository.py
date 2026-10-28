@@ -75,9 +75,9 @@ class Repository:
                       AND o.year = :year AND dv.state_code = t.state_code
                     UNION ALL
                     SELECT a.state_code, a.ln, a.sv, a.nv, a.ns
-                    FROM agg_municipality_district_year a
-                    WHERE :level = 'federal_district' AND a.year = :year
-                      AND a.district_plan = 'DERFE2023'
+                     FROM agg_district_year a
+                     WHERE :level = 'federal_district' AND a.year = :year
+                       AND a.district_plan = 'DERFE2023'
                 ) aggregate_rows
                 GROUP BY state_code
             ), prediction_counts AS (
@@ -579,7 +579,7 @@ class Repository:
         *,
         state_code: str,
     ) -> tuple[list[models.HistoryRecord], int]:
-        """Return observed 2024 district totals from municipality intersections."""
+        """Return complete CCPC district totals with MGS coverage kept separate."""
         if year not in (None, 2024):
             return [], 0
         where = "a.year = 2024 AND a.district_plan = 'DERFE2023'"
@@ -606,7 +606,7 @@ class Repository:
             params.update(state_code=match[0], district_code=match[1])
         total_sql = f"""
             SELECT count(*) FROM (
-                SELECT 1 FROM agg_municipality_district_year a
+                SELECT 1 FROM agg_district_year a
                 WHERE {where} GROUP BY a.state_code, a.district_code
             ) q
         """
@@ -614,18 +614,16 @@ class Repository:
         rows = (
             self.session.execute(
                 text(f"""
-            SELECT a.state_code, a.district_code, MAX(d.label) AS name,
-                   SUM(a.ln)::bigint AS ln, SUM(a.sv)::bigint AS sv,
-                   SUM(a.nv)::bigint AS nv, SUM(a.ns)::bigint AS ns,
-                   MAX(c.coverage)::float8 AS coverage,
-                   bool_and(a.coverage_status = 'eligible') AS eligible
-            FROM agg_municipality_district_year a
+            SELECT a.state_code, a.district_code, d.label AS name,
+                   a.ln, a.sv, a.nv, a.ns,
+                   c.coverage::float8 AS coverage,
+                   COALESCE(c.status = 'eligible', false) AS eligible
+            FROM agg_district_year a
             LEFT JOIN api_district_catalogue d USING (state_code, district_code)
             LEFT JOIN district_reconstruction_coverage c
               ON c.state_code=a.state_code AND c.district_code=a.district_code
              AND c.year=2024 AND c.district_plan='DERFE2023'
             WHERE {where}
-            GROUP BY a.state_code, a.district_code
             ORDER BY a.state_code, a.district_code
             LIMIT :limit OFFSET :offset
         """),

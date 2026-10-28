@@ -51,7 +51,7 @@ SCENARIO_KINDS = frozenset(
 INSTITUTIONAL_KINDS = frozenset({"methodology_pdf", "executive_pdf", "technical_zip"})
 
 #: Fixed version included in every cache key and metadata block.
-REPORT_RULES_VERSION = "report-rules-1.0.0"
+REPORT_RULES_VERSION = "report-rules-1.1.0"
 
 FORMAT_BY_KIND: dict[str, ReportFormat] = {
     "history_csv": "csv",
@@ -101,6 +101,8 @@ class ReportRequest(BaseModel):
                 raise ValueError(
                     "district_observed_pdf requiere level=federal_district y district_plan"
                 )
+            if self.district_plan != "DERFE2023":
+                raise ValueError("los reportes distritales requieren district_plan=DERFE2023")
             if self.year not in (None, 2024):
                 raise ValueError("el reporte distrital sólo publica Observado 2024")
             if self.territory_id is None or self.scenario_id is not None:
@@ -151,6 +153,8 @@ class ReportRequest(BaseModel):
             if self.level == "federal_district":
                 if self.district_plan is None:
                     raise ValueError("district_plan es obligatorio para nivel distrital")
+                if self.district_plan != "DERFE2023":
+                    raise ValueError("los reportes distritales requieren district_plan=DERFE2023")
                 if self.year not in (None, 2024):
                     raise ValueError("el reporte distrital sólo publica Observado 2024")
             elif self.district_plan is not None:

@@ -42,7 +42,7 @@ export function MunicipalityDistrictPanel({
       <div className="card-heading">
         <div>
           <h2 id="intersection-heading">{caption}</h2>
-          <p>Relación N:M del marco 2023. Cada fila conserva sus conteos agregados de 2024; no se establece una jerarquía entre unidades.</p>
+          <p>Intersecciones cartográficas MGS del marco 2023. Los conteos de cada fila sólo incluyen secciones vinculadas a geometría; los totales distritales observados incluyen todas las secciones CCPC asignadas al DEF2023 oficial. La cobertura mide la conciliación MGS por separado.</p>
         </div>
       </div>
       <DataTable
