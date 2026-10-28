@@ -243,9 +243,7 @@ def _reason_summary(facts) -> str:
             counts[reason] = counts.get(reason, 0) + 1
     if not counts:
         return "—"
-    return "; ".join(
-        f"{reason} ({count})" for reason, count in sorted(counts.items())
-    )
+    return "; ".join(f"{reason} ({count})" for reason, count in sorted(counts.items()))
 
 
 def _table(
@@ -338,7 +336,7 @@ def _page_decorator(report_title: str, *, landscape_mode: bool = False):
         canvas.drawRightString(
             width - 18 * mm,
             height - 10.5 * mm,
-            "PARTICIPA-GEO · Jalisco 2009–2027 · uso local",
+            "PARTICIPA-GEO · Nacional 2009–2027",
         )
         canvas.line(18 * mm, 12 * mm, width - 18 * mm, 12 * mm)
         canvas.drawString(
@@ -369,7 +367,7 @@ def _document(
         bottomMargin=18 * mm,
         title=title,
         author="PARTICIPA-GEO",
-        subject="Análisis municipal de participación electoral, Jalisco",
+        subject="Análisis municipal nacional de participación electoral",
         creator="PARTICIPA-GEO",
     )
 
@@ -393,8 +391,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
     scenario = context.scenario
     source_years = [source.year for source in context.sources]
     source_years_text = (
-        ", ".join(str(year) for year in source_years[:-1])
-        + f" y {source_years[-1]}"
+        ", ".join(str(year) for year in source_years[:-1]) + f" y {source_years[-1]}"
         if source_years
         else "sin fuentes"
     )
@@ -407,7 +404,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Spacer(1, 25 * mm),
             Paragraph("PARTICIPA-GEO", styles["title"]),
             Paragraph(
-                "Abstención municipal en Jalisco: método, validación y uso responsable "
+                "Abstención municipal nacional: método, validación y uso responsable "
                 "de escenarios 2027",
                 styles["subtitle"],
             ),
@@ -425,8 +422,11 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                     ["Eje", context.eje],
                     ["Modelo publicado", f"{model.family} · {model.model_run_id}"],
                     ["Corte territorial", context.reference_date],
-                    ["Universo", f"{cohort.total} municipios de Jalisco"],
-                    ["Documento", "12 páginas · A4 · resultados derivados de artefactos y base de datos"],
+                    ["Universo", f"{cohort.total} municipios de las 32 entidades"],
+                    [
+                        "Documento",
+                        "12 páginas · A4 · resultados derivados de artefactos y base de datos",
+                    ],
                 ],
                 widths=[36 * mm, 134 * mm],
             ),
@@ -441,7 +441,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Spacer(1, 8 * mm),
             Paragraph(
                 "Fuente primaria: Conteos Censales de Participación Ciudadana (CCPC) del INE, "
-                f"{source_years_text}. Los {len(source_years)} archivos oficiales de Jalisco, "
+                f"{source_years_text}. Los {len(source_years)} cortes oficiales del INE, "
                 "sus checksums y el diccionario se incluyen en el paquete técnico de "
                 "reproducción.",
                 styles["small"],
@@ -526,7 +526,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Paragraph("Preguntas que el sistema responde", styles["h2"]),
             Paragraph(
                 "1. ¿Cómo ha evolucionado la participación y la abstención en cada municipio "
-                "de Jalisco entre 2009 y 2024?",
+                "en las 32 entidades entre 2009 y 2024?",
                 styles["body"],
             ),
             Paragraph(
@@ -548,7 +548,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 styles["body"],
             ),
             Paragraph(
-                "El alcance es un piloto municipal para Jalisco, de uso local, sin "
+                "El alcance es nacional, con publicación municipal, sin "
                 "autenticación. La unidad de análisis es el municipio de la referencia "
                 "INE 2025; las observaciones históricas conservan su propio año y su "
                 "estado de correspondencia.",
@@ -578,7 +578,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
         [
             Paragraph("3. Fuentes, universo y granularidad", styles["h1"]),
             Paragraph(
-                f"Se usan los {len(source_years)} CCPC federales de Jalisco "
+                f"Se usan los {len(source_years)} cortes CCPC federales nacionales "
                 f"({source_years_text}). La agregación produce "
                 f"<b>{observation_count} observaciones municipales</b> "
                 f"({cohort.total} municipios × {len(source_years)} años) y conserva los "
@@ -778,7 +778,10 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                     ["Ejecución", str(model.model_run_id)],
                     ["Años de validación / prueba", f"{model.validation_year} / {model.test_year}"],
                     ["Variables M0", "same_type_abstention_pct (t−6)"],
-                    ["Reproducibilidad", f"Python {context.versions.get('python', '3.12')} · scikit-learn {context.versions.get('scikit_learn', '—')}"],
+                    [
+                        "Reproducibilidad",
+                        f"Python {context.versions.get('python', '3.12')} · scikit-learn {context.versions.get('scikit_learn', '—')}",
+                    ],
                 ],
                 widths=[45 * mm, 125 * mm],
             ),
@@ -786,12 +789,8 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
     )
     if model.candidate_m1:
         coefficients = list(model.candidate_m1.get("coefficients") or [])
-        candidate_rows: list[list[Any]] = [
-            ["Variable", "Coeficiente (escala transformada)"]
-        ]
-        for feature, coefficient in zip(
-            model.feature_order, coefficients, strict=False
-        ):
+        candidate_rows: list[list[Any]] = [["Variable", "Coeficiente (escala transformada)"]]
+        for feature, coefficient in zip(model.feature_order, coefficients, strict=False):
             candidate_rows.append([feature, f"{coefficient:+.2f}"])
         story.extend(
             [
@@ -831,7 +830,12 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             ),
             _table(
                 [
-                    ["Familia", f"MAE {model.validation_year} (n={model.n_validation})", f"MAE {model.test_year} (n={model.n_test})", "Decisión"],
+                    [
+                        "Familia",
+                        f"MAE {model.validation_year} (n={model.n_validation})",
+                        f"MAE {model.test_year} (n={model.n_test})",
+                        "Decisión",
+                    ],
                     ["M0", _pp(model.mae_2021), _pp(model.mae_2024), "Seleccionada"],
                     ["M1", _pp(model.m1_mae_2021), _pp(model.m1_mae_2024), "Descartada"],
                 ],
@@ -900,7 +904,12 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                     ["Bajo", "< 40 %", risk.get("low", 0), "Menor abstención estimada"],
                     ["Medio", "40–<50 %", risk.get("medium", 0), "Seguimiento preventivo"],
                     ["Alto", "≥ 50 %", risk.get("high", 0), "Prioridad de revisión"],
-                    ["Insuficiente", "sin estimación", risk.get("insufficient", 0), "Mejorar dato antes de decidir"],
+                    [
+                        "Insuficiente",
+                        "sin estimación",
+                        risk.get("insufficient", 0),
+                        "Mejorar dato antes de decidir",
+                    ],
                 ],
                 widths=[38 * mm, 34 * mm, 32 * mm, 66 * mm],
             ),
@@ -934,12 +943,30 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
                 ["Escenario", str(scenario.scenario_id)],
                 ["Año objetivo", scenario.target_year],
                 ["Municipios seleccionados", scenario.selected_count],
-                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {_effective_range(scenario)} (rango seleccionado)"],
+                [
+                    "Reducción solicitada / efectiva",
+                    f"{scenario.requested_reduction_pp:.1f} pp / {_effective_range(scenario)} (rango seleccionado)",
+                ],
                 ["Supuesto", f"{scenario.assumption_code} v{scenario.assumption_version}"],
                 ["Reglas", scenario.rules_version],
-                ["Media A / B en seleccionados", f"{_pct(scenario.baseline_mean)} / {_pct(scenario.hypothetical_mean)}"],
-                ["Riesgo A (bajo/medio/alto/insuf.)", "/".join(str(scenario.risk_a_counts.get(k, 0)) for k in ("low", "medium", "high", "insufficient"))],
-                ["Riesgo B (bajo/medio/alto/insuf.)", "/".join(str(scenario.risk_b_counts.get(k, 0)) for k in ("low", "medium", "high", "insufficient"))],
+                [
+                    "Media A / B en seleccionados",
+                    f"{_pct(scenario.baseline_mean)} / {_pct(scenario.hypothetical_mean)}",
+                ],
+                [
+                    "Riesgo A (bajo/medio/alto/insuf.)",
+                    "/".join(
+                        str(scenario.risk_a_counts.get(k, 0))
+                        for k in ("low", "medium", "high", "insufficient")
+                    ),
+                ],
+                [
+                    "Riesgo B (bajo/medio/alto/insuf.)",
+                    "/".join(
+                        str(scenario.risk_b_counts.get(k, 0))
+                        for k in ("low", "medium", "high", "insufficient")
+                    ),
+                ],
             ],
             widths=[58 * mm, 112 * mm],
         )
@@ -997,10 +1024,26 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             _table(
                 [
                     ["Señal", "Acción preventiva", "Límite"],
-                    ["Dato insuficiente o no especificado alto", "Mejorar captura y revisar la fuente antes de decidir", "No imputar ceros"],
-                    ["Riesgo alto", "Considerar revisión institucional y información cívica", "No es una obligación ni una asignación"],
-                    ["Categoría inestable", "Monitorear y repetir la lectura con la banda visible", "No presentar la categoría como certeza"],
-                    ["Brecha de cobertura", "Advertir equidad y cobertura; no comparar municipios sin denominador", "No inferir personas"],
+                    [
+                        "Dato insuficiente o no especificado alto",
+                        "Mejorar captura y revisar la fuente antes de decidir",
+                        "No imputar ceros",
+                    ],
+                    [
+                        "Riesgo alto",
+                        "Considerar revisión institucional y información cívica",
+                        "No es una obligación ni una asignación",
+                    ],
+                    [
+                        "Categoría inestable",
+                        "Monitorear y repetir la lectura con la banda visible",
+                        "No presentar la categoría como certeza",
+                    ],
+                    [
+                        "Brecha de cobertura",
+                        "Advertir equidad y cobertura; no comparar municipios sin denominador",
+                        "No inferir personas",
+                    ],
                 ],
                 widths=[45 * mm, 82 * mm, 43 * mm],
             ),
@@ -1023,9 +1066,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
     story.append(PageBreak())
 
     # 12 — Limitaciones y reproducibilidad
-    limitation_items = "".join(
-        f"<br/>• {limitation}" for limitation in context.limitations
-    )
+    limitation_items = "".join(f"<br/>• {limitation}" for limitation in context.limitations)
     story.extend(
         [
             Paragraph("11. Limitaciones, uso responsable y reproducibilidad", styles["h1"]),
@@ -1035,7 +1076,7 @@ def _methodology_story(context: DeliveryContext, styles: dict[str, ParagraphStyl
             Paragraph("Reproducibilidad y entrega", styles["h2"]),
             Paragraph(
                 f"El paquete técnico incorpora los {len(source_years)} CSV oficiales de "
-                "Jalisco y el ZIP cartográfico original únicamente cuando el usuario confirma "
+                "los datos CCPC nacionales y cartografía original únicamente cuando se confirma "
                 "la licencia de redistribución; en el modo `--skip-sources` incluye sólo URL y "
                 "checksums. En ambos casos añade diccionarios, agregados municipales, "
                 "artefactos del modelo y métricas, código, documentación, reportes/mapas y un "
@@ -1109,8 +1150,7 @@ def _executive_story(context: DeliveryContext, styles) -> list:
     scenario = context.scenario
     source_years = [source.year for source in context.sources]
     source_years_text = (
-        ", ".join(str(year) for year in source_years[:-1])
-        + f" y {source_years[-1]}"
+        ", ".join(str(year) for year in source_years[:-1]) + f" y {source_years[-1]}"
         if source_years
         else "sin fuentes"
     )
@@ -1120,13 +1160,15 @@ def _executive_story(context: DeliveryContext, styles) -> list:
     story.extend(
         _slide(
             "PARTICIPA-GEO",
-            "Abstención municipal en Jalisco: evidencia para decidir con incertidumbre visible",
+            "Abstención municipal nacional: evidencia para decidir con incertidumbre visible",
             [
                 Spacer(1, 8 * mm),
                 Table(
                     [
                         [
-                            _metric_box(str(cohort.eligible), "municipios elegibles", width=58 * mm),
+                            _metric_box(
+                                str(cohort.eligible), "municipios elegibles", width=58 * mm
+                            ),
                             _metric_box(str(cohort.insufficient), "sin predicción", width=58 * mm),
                             _metric_box(_pp(model.mae_2021), "MAE validación 2021", width=58 * mm),
                             _metric_box(_pp(model.band_pp), "banda histórica", width=58 * mm),
@@ -1155,10 +1197,22 @@ def _executive_story(context: DeliveryContext, styles) -> list:
             "1. El problema",
             "La abstención no es uniforme y la información municipal es desigual",
             [
-                Paragraph("• La decisión pública necesita una señal municipal comparable.", styles["slide_body"]),
-                Paragraph("• No todos los municipios tienen datos suficientemente completos.", styles["slide_body"]),
-                Paragraph("• Una cifra sin banda e incertidumbre invita a sobreinterpretar.", styles["slide_body"]),
-                Paragraph("• El sistema prioriza revisión y conversación, no asignación automática.", styles["slide_body"]),
+                Paragraph(
+                    "• La decisión pública necesita una señal municipal comparable.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• No todos los municipios tienen datos suficientemente completos.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• Una cifra sin banda e incertidumbre invita a sobreinterpretar.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• El sistema prioriza revisión y conversación, no asignación automática.",
+                    styles["slide_body"],
+                ),
                 Spacer(1, 4 * mm),
                 _warning(
                     "Pregunta guía: ¿dónde conviene mirar primero y dónde hace falta mejorar "
@@ -1172,20 +1226,26 @@ def _executive_story(context: DeliveryContext, styles) -> list:
     story.extend(
         _slide(
             "2. Fuentes y universo",
-            "Seis CCPC federales del INE, agregados municipales de Jalisco",
+            "Seis cortes CCPC federales del INE, agregados municipales nacionales",
             [
                 Paragraph(
                     f"• {source_years_text}: <b>{cohort.total}</b> municipios y "
                     f"<b>{observation_count}</b> observaciones municipales.",
                     styles["slide_body"],
                 ),
-                Paragraph("• Conteos LN, SV, NV y NS; tasas recalculadas desde los conteos.", styles["slide_body"]),
+                Paragraph(
+                    "• Conteos LN, SV, NV y NS; tasas recalculadas desde los conteos.",
+                    styles["slide_body"],
+                ),
                 Paragraph(
                     f"• Referencia cartográfica INE 2025-12-15, {cohort.total} polígonos "
                     "EPSG:4326.",
                     styles["slide_body"],
                 ),
-                Paragraph("• Checksums y diccionarios incluidos en el paquete técnico.", styles["slide_body"]),
+                Paragraph(
+                    "• Checksums y diccionarios incluidos en el paquete técnico.",
+                    styles["slide_body"],
+                ),
                 _warning(
                     "Límite: la referencia 2025 no prueba igualdad histórica de límites. "
                     "Los CCPC excluyen casillas especiales y residentes en el extranjero."
@@ -1220,7 +1280,9 @@ def _executive_story(context: DeliveryContext, styles) -> list:
                     f"M1 {_pp(model.m1_mae_2024)}.",
                     styles["slide_body"],
                 ),
-                _warning("M0 no usa variables sociodemográficas en producción. Alpha fijo en 1.0; sin reoptimizar con 2024."),
+                _warning(
+                    "M0 no usa variables sociodemográficas en producción. Alpha fijo en 1.0; sin reoptimizar con 2024."
+                ),
             ],
             styles,
         )
@@ -1233,7 +1295,12 @@ def _executive_story(context: DeliveryContext, styles) -> list:
             [
                 _table(
                     [
-                        ["Familia", f"Validación {model.validation_year}", f"Prueba {model.test_year}", "Decisión"],
+                        [
+                            "Familia",
+                            f"Validación {model.validation_year}",
+                            f"Prueba {model.test_year}",
+                            "Decisión",
+                        ],
                         ["M0", _pp(model.mae_2021), _pp(model.mae_2024), "Seleccionada"],
                         ["M1", _pp(model.m1_mae_2021), _pp(model.m1_mae_2024), "Descartada"],
                     ],
@@ -1272,7 +1339,12 @@ def _executive_story(context: DeliveryContext, styles) -> list:
                 _table(
                     [
                         ["Bajo", "Medio", "Alto", "Insuficiente"],
-                        [risk.get("low", 0), risk.get("medium", 0), risk.get("high", 0), risk.get("insufficient", 0)],
+                        [
+                            risk.get("low", 0),
+                            risk.get("medium", 0),
+                            risk.get("high", 0),
+                            risk.get("insufficient", 0),
+                        ],
                     ],
                     widths=[45 * mm] * 4,
                 ),
@@ -1337,11 +1409,24 @@ def _executive_story(context: DeliveryContext, styles) -> list:
             "7. Propuesta",
             "Priorizar revisión, calidad de datos y conversación institucional",
             [
-                Paragraph("1. Mejorar el dato donde la predicción es insuficiente.", styles["slide_body"]),
-                Paragraph("2. Revisar institucionalmente los municipios de riesgo alto, con la banda visible.", styles["slide_body"]),
-                Paragraph("3. Monitorear categorías inestables antes de comunicar una etiqueta.", styles["slide_body"]),
-                Paragraph("4. Advertir brechas de cobertura y evitar comparaciones sin denominador.", styles["slide_body"]),
-                Paragraph("5. No asignar presupuesto ni personas con esta señal.", styles["slide_body"]),
+                Paragraph(
+                    "1. Mejorar el dato donde la predicción es insuficiente.", styles["slide_body"]
+                ),
+                Paragraph(
+                    "2. Revisar institucionalmente los municipios de riesgo alto, con la banda visible.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "3. Monitorear categorías inestables antes de comunicar una etiqueta.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "4. Advertir brechas de cobertura y evitar comparaciones sin denominador.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "5. No asignar presupuesto ni personas con esta señal.", styles["slide_body"]
+                ),
             ],
             styles,
         )
@@ -1352,11 +1437,26 @@ def _executive_story(context: DeliveryContext, styles) -> list:
             "8. Límites y uso responsable",
             "Lo que la evidencia permite y lo que no",
             [
-                Paragraph("• No implica efecto causal ni sustituye una evaluación de impacto.", styles["slide_body"]),
-                Paragraph("• No contiene datos personales ni permite inferencia individual.", styles["slide_body"]),
-                Paragraph("• Referencia 2025: no promete límites históricos iguales.", styles["slide_body"]),
-                Paragraph("• Banda histórica, no intervalo de confianza ni garantía de cobertura.", styles["slide_body"]),
-                Paragraph("• Firmas, cesión, licencias y envío final son revisiones humanas.", styles["slide_body"]),
+                Paragraph(
+                    "• No implica efecto causal ni sustituye una evaluación de impacto.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• No contiene datos personales ni permite inferencia individual.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• Referencia 2025: no promete límites históricos iguales.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• Banda histórica, no intervalo de confianza ni garantía de cobertura.",
+                    styles["slide_body"],
+                ),
+                Paragraph(
+                    "• Firmas, cesión, licencias y envío final son revisiones humanas.",
+                    styles["slide_body"],
+                ),
                 Spacer(1, 3 * mm),
                 _warning(
                     "Conserve fuente, corte, modelo y supuestos en toda copia. "
@@ -1384,9 +1484,7 @@ def generate_scenario_pdf(
     rows: list[list[Any]] = [
         ["Municipio", "A", "B", "Reducción efectiva", "Riesgo A", "Riesgo B", "Seleccionado"]
     ]
-    selected_effective = [
-        row.effective_reduction_pp for row in scenario.results if row.selected
-    ]
+    selected_effective = [row.effective_reduction_pp for row in scenario.results if row.selected]
     effective_min = min(selected_effective, default=0.0)
     effective_max = max(selected_effective, default=0.0)
     effective_text = (
@@ -1424,7 +1522,10 @@ def generate_scenario_pdf(
         _table(
             [
                 ["Campo", "Valor"],
-                ["Reducción solicitada / efectiva", f"{scenario.requested_reduction_pp:.1f} pp / {effective_text} (rango seleccionado)"],
+                [
+                    "Reducción solicitada / efectiva",
+                    f"{scenario.requested_reduction_pp:.1f} pp / {effective_text} (rango seleccionado)",
+                ],
                 ["Municipios seleccionados", len(scenario.selected_territory_ids)],
                 ["Resultados persistidos", len(scenario.results)],
                 ["Hash de entrada", scenario.input_sha256],

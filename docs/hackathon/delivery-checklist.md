@@ -12,28 +12,28 @@ verificarse con comandos; la segunda no se automatiza.
 - [x] `deliver` se ejecutó con **un** modo explícito de fuentes:
       `--confirm-source-license` (originales incluidos) o `--skip-sources`
       (sólo URL/checksums). Sin ninguno de los dos, el comando falla.
-- [x] `deliver` termina y produce `technical.zip`, `methodology.pdf`,
-      `executive.pdf`, `scenario.csv`, `scenario.geojson`, `scenario.pdf`,
-      `scenario-map.png` y `scenario-map.pdf`.
+- [x] `deliver` nacional termina y produce `technical.zip`, `methodology.pdf`,
+      `executive.pdf` y observaciones distritales 2024. Mapas/escenarios sólo
+      existen para el nivel municipal y no se generan como distritos 2027.
 - [x] `verify-delivery --archive .../technical.zip` devuelve `complete: true` y
       todos los checksums coinciden; un paquete incompleto sale con código
       distinto de cero.
-- [x] En modo `--confirm-source-license`, el ZIP incluye los seis CSV CCPC de
-      Jalisco y el ZIP cartográfico original. En modo `--skip-sources`, no los
-      incluye y sí lleva `sources/SOURCES.md` + `sources/sources.json` con URL y
-      SHA-256.
+- [x] En modo `--confirm-source-license`, el ZIP incluye los seis ZIP CCPC
+      nacionales y los 32 ZIP cartográficos por entidad. En modo `--skip-sources`,
+      omite originales e incluye `sources/SOURCES.md` + `sources/sources.json`.
 - [x] El ZIP incluye diccionarios, agregados, artefactos/métricas del modelo,
       código, docs, `docs/api/openapi.json`, reportes/mapas condicionados al
       escenario, `MANIFEST.json` y `CHECKSUMS.sha256`.
 - [x] El ZIP **no** incluye `.git`, `node_modules`, cachés, `.env`, cartas
       firmadas, contactos, credenciales ni datos personales.
 - [x] `pypdf` cuenta 10–15 páginas en metodología y ≤10 en la presentación.
-- [x] El reporte contiene M0, 4.93, 8.90, 3.43, 8.56, 85, 40, 70, 2025-12-15 y
-      la advertencia de no causalidad.
+- [x] El reporte usa los artefactos nacionales: 2,477 municipios, M0 con MAE
+      12.1854 (validación 2021) y 5.5602 (prueba 2024), banda 28.8979, y
+      advertencia de no causalidad.
 - [x] CSV/XLSX conservan nulos (no ceros), metadatos/versiones y escapan
       prefijos de fórmula; XLSX abre con hoja de diccionario.
-- [x] GeoJSON contiene 125 geometrías EPSG:4326 de la referencia 2025-12-15 y
-      valores A/B nulos cuando la información es insuficiente.
+- [x] Las salidas espaciales se limitan por entidad/nivel; perfil distrital
+      exclusivamente observado 2024 con cobertura explícita.
 - [x] Los mapas A/B salen de GeoServer (capa `scenario_results`), comparten
       leyenda/corte y no hay placeholder si GIS falla.
 - [x] El reporte y la presentación se generan desde artefactos/BD; una fecha de

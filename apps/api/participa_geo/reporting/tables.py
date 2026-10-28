@@ -66,7 +66,12 @@ def _json_value(value: Any) -> str:
 
 
 HISTORY_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
-    ("territory_id", "identificador de referencia (UUID)", "texto", "Municipio de referencia INE 2025; vacío en agregados estatales."),
+    (
+        "territory_id",
+        "identificador de referencia (UUID)",
+        "texto",
+        "Municipio de referencia INE 2025; vacío en agregados estatales.",
+    ),
     ("year", "año", "entero", "Año electoral CCPC (2009, 2012, 2015, 2018, 2021, 2024)."),
     ("name", "municipio", "texto", "Nombre del municipio o nulo en el agregado estatal."),
     ("municipality_code", "código municipal", "texto", "Código INE de tres dígitos."),
@@ -74,41 +79,165 @@ HISTORY_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
     ("sv", "votación", "personas", "Sufragios válidos agregados."),
     ("nv", "no votó", "personas", "Personas en lista nominal que no votaron."),
     ("ns", "no especificado", "personas", "Conteo no especificado de la fuente."),
-    ("participation_pct", "participación", "porcentaje", "100 × SV / (SV + NV); nulo si el denominador es cero."),
-    ("abstention_pct", "abstención", "porcentaje", "100 × NV / (SV + NV); nulo si el denominador es cero."),
-    ("unknown_share", "proporción no especificada", "proporción 0–1", "NS / LN; nulo si LN es cero."),
+    (
+        "participation_pct",
+        "participación",
+        "porcentaje",
+        "100 × SV / (SV + NV); nulo si el denominador es cero.",
+    ),
+    (
+        "abstention_pct",
+        "abstención",
+        "porcentaje",
+        "100 × NV / (SV + NV); nulo si el denominador es cero.",
+    ),
+    (
+        "unknown_share",
+        "proporción no especificada",
+        "proporción 0–1",
+        "NS / LN; nulo si LN es cero.",
+    ),
     ("ns_lower_pct", "cota inferior NS", "porcentaje", "100 × NV / LN; supuesto de cota inferior."),
-    ("ns_upper_pct", "cota superior NS", "porcentaje", "100 × (NV + NS) / LN; supuesto de cota superior."),
-    ("eligible", "elegible", "booleano", "Decisión de calidad: alta proporción de no especificados excluye."),
-    ("identity_status", "estado de identidad", "catálogo", "Coincidencia de catálogo entre fuente y referencia."),
-    ("footprint_status", "estado de huella", "catálogo", "Igualdad histórica de límites: no verificada, nunca inferida."),
+    (
+        "ns_upper_pct",
+        "cota superior NS",
+        "porcentaje",
+        "100 × (NV + NS) / LN; supuesto de cota superior.",
+    ),
+    (
+        "eligible",
+        "elegible",
+        "booleano",
+        "Decisión de calidad: alta proporción de no especificados excluye.",
+    ),
+    (
+        "identity_status",
+        "estado de identidad",
+        "catálogo",
+        "Coincidencia de catálogo entre fuente y referencia.",
+    ),
+    (
+        "footprint_status",
+        "estado de huella",
+        "catálogo",
+        "Igualdad histórica de límites: no verificada, nunca inferida.",
+    ),
+    ("level", "nivel geográfico", "catálogo", "municipality o federal_district."),
+    (
+        "territory_code",
+        "clave territorial",
+        "texto",
+        "Clave INE del territorio; distrito asociado a plan.",
+    ),
+    (
+        "district_plan",
+        "plan distrital",
+        "catálogo",
+        "DERFE2023 para la observación distrital 2024.",
+    ),
+    (
+        "coverage_share",
+        "cobertura distrital",
+        "proporción 0–1",
+        "Cobertura observada de LN 2024; no representa cobertura predictiva.",
+    ),
 )
 
 HISTORY_FIELDS: tuple[str, ...] = tuple(column[0] for column in HISTORY_COLUMNS)
 
 SCENARIO_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
-    ("scenario_id", "identificador del escenario", "UUID", "Escenario persistido; no se recalcula al exportar."),
+    (
+        "scenario_id",
+        "identificador del escenario",
+        "UUID",
+        "Escenario persistido; no se recalcula al exportar.",
+    ),
     ("territory_id", "identificador de referencia", "UUID", "Municipio de referencia INE 2025."),
     ("municipality_code", "código municipal", "texto", "Código INE de tres dígitos."),
     ("municipality_name", "municipio", "texto", "Nombre publicado."),
-    ("selected", "seleccionado", "booleano", "Verdadero sólo si el municipio recibió la reducción hipotética."),
-    ("baseline_abstention_pct", "A · abstención estimada", "porcentaje", "Predicción publicada 2027; nulo si es insuficiente."),
-    ("hypothetical_abstention_pct", "B · abstención hipotética", "porcentaje", "max(0, A − reducción) en seleccionados; nulo si es insuficiente."),
-    ("baseline_error_lower_pct", "A · cota inferior", "porcentaje", "Banda de error histórico de referencia; no es intervalo causal."),
-    ("baseline_error_upper_pct", "A · cota superior", "porcentaje", "Banda de error histórico de referencia; no es intervalo causal."),
-    ("hypothetical_error_lower_pct", "B · cota inferior", "porcentaje", "Banda A trasladada condicionalmente y recortada a 0."),
-    ("hypothetical_error_upper_pct", "B · cota superior", "porcentaje", "Banda A trasladada condicionalmente y recortada a 100."),
-    ("requested_reduction_pp", "reducción solicitada", "puntos porcentuales", "Valor original de la solicitud (0–10)."),
-    ("effective_reduction_pp", "reducción efectiva", "puntos porcentuales", "A − B; puede ser menor si B se recorta a cero."),
-    ("risk_a", "riesgo A", "categoría", "Semáforo analítico: low/medium/high/insufficient; no es clasificación oficial."),
+    (
+        "selected",
+        "seleccionado",
+        "booleano",
+        "Verdadero sólo si el municipio recibió la reducción hipotética.",
+    ),
+    (
+        "baseline_abstention_pct",
+        "A · abstención estimada",
+        "porcentaje",
+        "Predicción publicada 2027; nulo si es insuficiente.",
+    ),
+    (
+        "hypothetical_abstention_pct",
+        "B · abstención hipotética",
+        "porcentaje",
+        "max(0, A − reducción) en seleccionados; nulo si es insuficiente.",
+    ),
+    (
+        "baseline_error_lower_pct",
+        "A · cota inferior",
+        "porcentaje",
+        "Banda de error histórico de referencia; no es intervalo causal.",
+    ),
+    (
+        "baseline_error_upper_pct",
+        "A · cota superior",
+        "porcentaje",
+        "Banda de error histórico de referencia; no es intervalo causal.",
+    ),
+    (
+        "hypothetical_error_lower_pct",
+        "B · cota inferior",
+        "porcentaje",
+        "Banda A trasladada condicionalmente y recortada a 0.",
+    ),
+    (
+        "hypothetical_error_upper_pct",
+        "B · cota superior",
+        "porcentaje",
+        "Banda A trasladada condicionalmente y recortada a 100.",
+    ),
+    (
+        "requested_reduction_pp",
+        "reducción solicitada",
+        "puntos porcentuales",
+        "Valor original de la solicitud (0–10).",
+    ),
+    (
+        "effective_reduction_pp",
+        "reducción efectiva",
+        "puntos porcentuales",
+        "A − B; puede ser menor si B se recorta a cero.",
+    ),
+    (
+        "risk_a",
+        "riesgo A",
+        "categoría",
+        "Semáforo analítico: low/medium/high/insufficient; no es clasificación oficial.",
+    ),
     ("risk_b", "riesgo B", "categoría", "Mismos cortes que A; no es clasificación oficial."),
     ("risk_a_unstable", "A inestable", "booleano", "La banda cruza un umbral de riesgo."),
-    ("risk_b_unstable", "B inestable", "booleano", "La banda trasladada cruza un umbral de riesgo."),
+    (
+        "risk_b_unstable",
+        "B inestable",
+        "booleano",
+        "La banda trasladada cruza un umbral de riesgo.",
+    ),
     ("assumption_code", "supuesto", "catálogo", "preventive_exploration o model_sensitivity."),
-    ("assumption_version", "versión del supuesto", "texto", "Versión controlada del texto de supuesto."),
+    (
+        "assumption_version",
+        "versión del supuesto",
+        "texto",
+        "Versión controlada del texto de supuesto.",
+    ),
     ("rules_version", "versión de reglas", "texto", "Versión de las reglas de escenario."),
     ("target_year", "año objetivo", "entero", "Fijo en 2027."),
-    ("input_sha256", "hash de entrada", "sha256", "Huella de las entradas del escenario persistido."),
+    (
+        "input_sha256",
+        "hash de entrada",
+        "sha256",
+        "Huella de las entradas del escenario persistido.",
+    ),
     ("model_run_id", "ejecución de modelo", "UUID", "Modelo publicado utilizado."),
     ("model_sha256", "hash del modelo", "sha256", "Huella lógica del modelo."),
 )
@@ -116,21 +245,34 @@ SCENARIO_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
 SCENARIO_FIELDS: tuple[str, ...] = tuple(column[0] for column in SCENARIO_COLUMNS)
 
 MODEL_EVIDENCE_COLUMNS: tuple[tuple[str, str, str, str], ...] = (
-    ("record_type", "tipo de evidencia", "catálogo", "feature, exclusion, contribution_selected o contribution_candidate_m1."),
+    (
+        "record_type",
+        "tipo de evidencia",
+        "catálogo",
+        "feature, exclusion, contribution_selected o contribution_candidate_m1.",
+    ),
     ("cut_year", "corte", "entero/año", "Año del corte; 2027 para features y contribuciones."),
     ("municipality_code", "código municipal", "texto", "Código INE de tres dígitos."),
     ("municipality_name", "municipio", "texto", "Nombre publicado."),
     ("field", "campo", "texto", "Variable o motivo de exclusión."),
     ("value", "valor", "según campo", "Valor de la feature o contribución aditiva."),
     ("unit", "unidad", "texto", "porcentaje, proporción 0–1, indicador o puntos porcentuales."),
-    ("source_year", "año de origen", "entero o vacío", "Año de la observación que origina la feature; vacío si es estructural."),
-    ("reason", "motivo de exclusión", "texto", "Motivos estables separados por punto y coma; vacío en features/contribuciones."),
+    (
+        "source_year",
+        "año de origen",
+        "entero o vacío",
+        "Año de la observación que origina la feature; vacío si es estructural.",
+    ),
+    (
+        "reason",
+        "motivo de exclusión",
+        "texto",
+        "Motivos estables separados por punto y coma; vacío en features/contribuciones.",
+    ),
     ("model_run_id", "ejecución de modelo", "UUID", "Modelo publicado que origina la evidencia."),
 )
 
-MODEL_EVIDENCE_FIELDS: tuple[str, ...] = tuple(
-    column[0] for column in MODEL_EVIDENCE_COLUMNS
-)
+MODEL_EVIDENCE_FIELDS: tuple[str, ...] = tuple(column[0] for column in MODEL_EVIDENCE_COLUMNS)
 
 _FEATURE_UNITS: dict[str, str] = {
     "same_type_abstention_pct": "porcentaje",
@@ -142,17 +284,37 @@ _FEATURE_UNITS: dict[str, str] = {
 }
 
 REPORT_DICTIONARY: tuple[tuple[str, str, str, str], ...] = (
-    ("report_artifact", "report_id", "UUID", "Identificador determinista del artefacto; la URL de descarga no expone rutas."),
-    ("report_artifact", "sha256", "sha256", "Hash del contenido descargado; permite verificar integridad."),
+    (
+        "report_artifact",
+        "report_id",
+        "UUID",
+        "Identificador determinista del artefacto; la URL de descarga no expone rutas.",
+    ),
+    (
+        "report_artifact",
+        "sha256",
+        "sha256",
+        "Hash del contenido descargado; permite verificar integridad.",
+    ),
     ("report_artifact", "status", "catálogo", "ready o failed; no existe estado pending ni cola."),
-    ("report_artifact", "cache_key", "sha256 (interno)", "Filtros, versiones, modelo, escenario y supuestos; una caché sólo se reutiliza si coincide."),
-    ("scenario", "error_band_label", "texto", "Banda de error histórico de referencia; no es intervalo causal."),
+    (
+        "report_artifact",
+        "cache_key",
+        "sha256 (interno)",
+        "Filtros, versiones, modelo, escenario y supuestos; una caché sólo se reutiliza si coincide.",
+    ),
+    (
+        "scenario",
+        "error_band_label",
+        "texto",
+        "Banda de error histórico de referencia; no es intervalo causal.",
+    ),
 )
 
 
 def _metadata_lines(meta: DatasetMeta, sources: dict | None) -> list[str]:
     lines = [
-        "# PARTICIPA-GEO · exportación municipal agregada",
+        "# PARTICIPA-GEO · exportación nacional agregada",
         f"# kind={meta.filters.get('report_kind', '')}",
         f"# generated_at={meta.generated_at.isoformat()}",
         f"# reference_date={meta.reference_date}",
@@ -279,19 +441,19 @@ def export_scenario_csv(
 def _load_model_evidence(model_dir: Path | str) -> tuple[dict, dict]:
     model_dir = Path(model_dir)
     model = json.loads((model_dir / "model.json").read_text(encoding="utf-8"))
-    evaluation = json.loads(
-        (model_dir / "evaluation.json").read_text(encoding="utf-8")
-    )
+    evaluation = json.loads((model_dir / "evaluation.json").read_text(encoding="utf-8"))
     return model, evaluation
 
 
-def _model_evidence_rows(model: dict, evaluation: dict) -> list[dict[str, Any]]:
+def _model_evidence_rows(
+    model: dict, evaluation: dict, model_dir: Path | None = None
+) -> list[dict[str, Any]]:
     model_run_id = str(model.get("model_run_id", ""))
     features = model.get("features_2027") or []
+    if not features and model_dir and model.get("level") == "municipality":
+        return _national_model_evidence_rows(model, model_dir)
     names = {
-        str(item.get("municipality_code", "")): str(
-            item.get("municipality_name", "")
-        )
+        str(item.get("municipality_code", "")): str(item.get("municipality_name", ""))
         for item in features
     }
     rows: list[dict[str, Any]] = []
@@ -368,6 +530,129 @@ def _model_evidence_rows(model: dict, evaluation: dict) -> list[dict[str, Any]]:
     return rows
 
 
+def _national_model_evidence_rows(model: dict, model_dir: Path) -> list[dict[str, Any]]:
+    """Derive evidence from the immutable national observation/prediction artifacts."""
+    import pandas as pd
+
+    root = model_dir.parent
+    observations = pd.read_csv(root / "municipal-observations.csv")
+    predictions = pd.read_parquet(model_dir / "predictions-2027.parquet")
+    model_run_id = str(model.get("model_run_id", ""))
+    years = observations.loc[observations["year"].isin([2021, 2024])].copy()
+    years["state_code"] = years["state_code"].astype(str).str.zfill(2)
+    years["municipality_code"] = years["municipality_code"].astype(str).str.zfill(3)
+    predictions["state_code"] = predictions["state_code"].astype(str).str.zfill(2)
+    predictions["municipality_code"] = predictions["municipality_code"].astype(str).str.zfill(3)
+    index = years.set_index(["state_code", "municipality_code", "year"])
+    names = {
+        (str(row.state_code).zfill(2), str(row.municipality_code).zfill(3)): row.municipality_name
+        for row in observations.itertuples()
+    }
+    rows: list[dict[str, Any]] = []
+    feature_order = list(model.get("feature_order", []))
+    candidate = model.get("candidate_m1_2021") or {}
+    scaler = candidate.get("scaler") or {}
+    means = scaler.get("mean", [])
+    scales = scaler.get("scale", [])
+    coefficients = candidate.get("coefficients", [])
+    for prediction in predictions.itertuples():
+        key = (prediction.state_code, prediction.municipality_code)
+        if not bool(prediction.eligible):
+            continue
+        try:
+            same = index.loc[(*key, 2021)]
+            previous = index.loc[(*key, 2024)]
+        except KeyError:
+            continue
+        denominator_same = float(same.sv + same.nv)
+        denominator_previous = float(previous.sv + previous.nv)
+        if not denominator_same or not denominator_previous:
+            continue
+        feature_values = {
+            "same_type_abstention_pct": float(same.nv) * 100 / denominator_same,
+            "previous_abstention_pct": float(previous.nv) * 100 / denominator_previous,
+            "previous_young_share": float(previous.young_share),
+            "previous_senior_share": float(previous.senior_share),
+            "previous_rural_share": float(previous.rural_share),
+            "is_midterm": 1.0,
+        }
+        for field, value in feature_values.items():
+            rows.append(
+                {
+                    "record_type": "feature",
+                    "cut_year": 2027,
+                    "municipality_code": prediction.municipality_code,
+                    "municipality_name": prediction.municipality_name,
+                    "field": field,
+                    "value": value,
+                    "unit": _FEATURE_UNITS.get(field, "indicador 0/1"),
+                    "source_year": 2021
+                    if field == "same_type_abstention_pct"
+                    else 2024
+                    if field != "is_midterm"
+                    else "",
+                    "reason": "",
+                    "model_run_id": model_run_id,
+                }
+            )
+        rows.append(
+            {
+                "record_type": "contribution_selected",
+                "cut_year": 2027,
+                "municipality_code": prediction.municipality_code,
+                "municipality_name": prediction.municipality_name,
+                "field": "same_type_abstention_pct",
+                "value": feature_values["same_type_abstention_pct"],
+                "unit": "puntos porcentuales",
+                "source_year": 2021,
+                "reason": "",
+                "model_run_id": model_run_id,
+            }
+        )
+        if (
+            len(coefficients) >= len(feature_order)
+            and len(means) >= len(feature_order)
+            and len(scales) >= len(feature_order)
+        ):
+            for position, field in enumerate(feature_order):
+                rows.append(
+                    {
+                        "record_type": "contribution_candidate_m1",
+                        "cut_year": 2027,
+                        "municipality_code": prediction.municipality_code,
+                        "municipality_name": prediction.municipality_name,
+                        "field": field,
+                        "value": (feature_values[field] - float(means[position]))
+                        / (float(scales[position]) or 1.0)
+                        * float(coefficients[position]),
+                        "unit": "puntos porcentuales (componente lineal)",
+                        "source_year": "",
+                        "reason": "",
+                        "model_run_id": model_run_id,
+                    }
+                )
+
+    exclusions_path = model_dir / "exclusions-by-cut.csv"
+    if exclusions_path.is_file():
+        for exclusion in pd.read_csv(exclusions_path).itertuples():
+            key = (str(exclusion.state_code).zfill(2), str(exclusion.municipality_code).zfill(3))
+            rows.append(
+                {
+                    "record_type": "exclusion",
+                    "cut_year": int(exclusion.year),
+                    "municipality_code": key[1],
+                    "municipality_name": names.get(key, ""),
+                    "field": "",
+                    "value": "",
+                    "unit": "",
+                    "source_year": "",
+                    "reason": str(exclusion.reasons),
+                    "model_run_id": model_run_id,
+                }
+            )
+    return rows
+
+
 def export_model_evidence(
     kind: str,
     model_dir: Path | str,
@@ -378,7 +663,7 @@ def export_model_evidence(
     """User-facing CSV/XLSX with features, per-cut exclusions and contributions."""
     fmt = _resolve_kind(kind)
     model, evaluation = _load_model_evidence(model_dir)
-    rows = _model_evidence_rows(model, evaluation)
+    rows = _model_evidence_rows(model, evaluation, Path(model_dir))
     evidence_meta = meta.model_copy(
         update={
             "filters": {
@@ -452,9 +737,7 @@ def _style_data_sheet(sheet, column_count: int) -> None:
     }
     for index in range(1, column_count + 1):
         header = str(sheet.cell(row=1, column=index).value)
-        sheet.column_dimensions[get_column_letter(index)].width = widths.get(
-            header, 18
-        )
+        sheet.column_dimensions[get_column_letter(index)].width = widths.get(header, 18)
 
 
 def _write_metadata_sheet(sheet, meta: DatasetMeta, sources: dict | None) -> None:

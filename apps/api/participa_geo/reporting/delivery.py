@@ -90,9 +90,7 @@ class CohortFacts:
     #: Year whose observed LN is the coverage denominator for 2027 (2024).
     ln_coverage_base_year: int | None = None
     #: Per-cut excluded municipalities and their reasons (Spec §7).
-    exclusion_details: dict[int, tuple[ExclusionFact, ...]] = field(
-        default_factory=dict
-    )
+    exclusion_details: dict[int, tuple[ExclusionFact, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -137,6 +135,7 @@ class DeliveryContext:
     scenario: ScenarioFacts | None = None
     team_slug: str = "participa-geo"
     eje: str = "Participación y territorio"
+    national: bool = False
 
 
 def _read_json(path: Path) -> Any:
@@ -151,9 +150,7 @@ def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
     results = scenario.results
     selected = [row for row in results if row.selected]
     baseline_values = [
-        row.baseline_abstention_pct
-        for row in selected
-        if row.baseline_abstention_pct is not None
+        row.baseline_abstention_pct for row in selected if row.baseline_abstention_pct is not None
     ]
     hypothetical_values = [
         row.hypothetical_abstention_pct
@@ -191,13 +188,9 @@ def _scenario_facts(scenario: ScenarioDTO) -> ScenarioFacts:
         risk_b_counts=risk_b_counts,
         risk_a_unstable=sum(1 for row in results if row.risk_a_unstable),
         risk_b_unstable=sum(1 for row in results if row.risk_b_unstable),
-        baseline_mean=(
-            sum(baseline_values) / len(baseline_values) if baseline_values else None
-        ),
+        baseline_mean=(sum(baseline_values) / len(baseline_values) if baseline_values else None),
         hypothetical_mean=(
-            sum(hypothetical_values) / len(hypothetical_values)
-            if hypothetical_values
-            else None
+            sum(hypothetical_values) / len(hypothetical_values) if hypothetical_values else None
         ),
     )
 
@@ -214,22 +207,53 @@ def load_delivery_context(
 
     root = repo_root()
     processed = Path(processed_dir) if processed_dir else root / "data" / "processed"
-    model_dir = Path(model_dir) if model_dir else processed / "model"
+    national_processed = processed / "national"
+    national_model = national_processed / "model"
+    explicit_model = Path(model_dir) if model_dir else None
+    is_national = national_model.is_dir() and (
+        model_dir is None
+        or explicit_model is None
+        or explicit_model.resolve() == national_model.resolve()
+        or not (explicit_model / "manifest.json").is_file()
+    )
+    if is_national:
+        processed = national_processed
+    model_dir = (
+        explicit_model if explicit_model and explicit_model.is_dir() else processed / "model"
+    )
 
     manifest = _read_json(model_dir / "manifest.json")
     evaluation = _read_json(model_dir / "evaluation.json")
     model = _read_json(model_dir / "model.json")
-    provenance = _read_json(processed / "provenance.json")
+    provenance_path = processed / ("national-ingest.json" if is_national else "provenance.json")
+    provenance = _read_json(provenance_path)
     predictions = pd.read_parquet(model_dir / "predictions-2027.parquet")
 
     total = len(predictions)
     eligible = int(predictions["eligible"].fillna(False).sum())
     insufficient = total - eligible
-    unstable = int(
-        predictions.loc[predictions["eligible"].fillna(False), "risk_unstable"]
-        .fillna(False)
-        .sum()
-    )
+    if "risk_unstable" in predictions:
+        unstable = int(
+            predictions.loc[predictions["eligible"].fillna(False), "risk_unstable"]
+            .fillna(False)
+            .sum()
+        )
+    elif {"historical_error_lower_pct", "historical_error_upper_pct"}.issubset(predictions.columns):
+        eligible_predictions = predictions.loc[predictions["eligible"].fillna(False)]
+        unstable = int(
+            (
+                (
+                    (eligible_predictions["historical_error_lower_pct"] < 40)
+                    & (eligible_predictions["historical_error_upper_pct"] >= 40)
+                )
+                | (
+                    (eligible_predictions["historical_error_lower_pct"] < 50)
+                    & (eligible_predictions["historical_error_upper_pct"] >= 50)
+                )
+            ).sum()
+        )
+    else:
+        unstable = 0
     risk_counts = {
         key: int((predictions["risk"].fillna("insufficient") == key).sum())
         for key in ("low", "medium", "high", "insufficient")
@@ -238,9 +262,7 @@ def load_delivery_context(
         predictions["eligible"].fillna(False), "estimated_abstention_pct"
     ].dropna()
     eligible_ln = int(
-        predictions.loc[
-            predictions["eligible"].fillna(False), "estimated_abstention_pct"
-        ]
+        predictions.loc[predictions["eligible"].fillna(False), "estimated_abstention_pct"]
         .notna()
         .sum()
     )
@@ -249,6 +271,27 @@ def load_delivery_context(
     cohort_2027 = cohorts.get("2027", {})
     eligible_ln_value = int(cohort_2027.get("eligible_ln", 0))
     total_ln_value = int(cohort_2027.get("total_ln", 0))
+    if is_national and processed.joinpath("municipal-observations.csv").is_file():
+        observations_2024 = pd.read_csv(processed / "municipal-observations.csv")
+        observations_2024 = observations_2024.loc[observations_2024["year"] == 2024]
+        total_ln_value = int(observations_2024["ln"].fillna(0).sum())
+        eligible_predictions = predictions.loc[predictions["eligible"].fillna(False)]
+        eligible_keys = set(
+            zip(
+                eligible_predictions["state_code"].astype(str).str.zfill(2),
+                eligible_predictions["municipality_code"].astype(str).str.zfill(3),
+                strict=True,
+            )
+        )
+        observations_2024["state_code"] = observations_2024["state_code"].astype(str).str.zfill(2)
+        observations_2024["municipality_code"] = (
+            observations_2024["municipality_code"].astype(str).str.zfill(3)
+        )
+        eligible_mask = observations_2024.apply(
+            lambda row: (row["state_code"], row["municipality_code"]) in eligible_keys,
+            axis=1,
+        )
+        eligible_ln_value = int(observations_2024.loc[eligible_mask, "ln"].fillna(0).sum())
     eligible_by_year = {
         int(year): int(values.get("eligible_count", 0))
         for year, values in cohorts.items()
@@ -283,19 +326,46 @@ def load_delivery_context(
     band = evaluation.get("band", {})
     selection = evaluation.get("selection", {})
 
-    sources = tuple(
-        SourceFact(
-            year=int(source.get("year", 0)),
-            source_url=str(source.get("source_url", "")),
-            member=str(source.get("member", "")),
-            sha256=str(source.get("sha256", "")),
-            municipality_count=source.get("municipality_count"),
-            ln=(source.get("totals") or {}).get("ln"),
+    if is_national:
+        inventory_path = root / "data" / "sources-national.json"
+        inventory = _read_json(inventory_path) if inventory_path.is_file() else {}
+        source_by_year = {int(item["year"]): item for item in inventory.get("sources", [])}
+        ingest_by_year = {int(item["year"]): item for item in provenance.get("sources", [])}
+        csv_by_year: dict[int, list[dict]] = {}
+        for year_fact in provenance.get("sources", []):
+            members = year_fact.get("csv_members", [])
+            if not members:
+                continue
+            try:
+                year = int(str(members[0].get("member", "")).split("ConteosCensales", 1)[1][:4])
+            except (IndexError, ValueError):
+                continue
+            csv_by_year[year] = members
+        sources = tuple(
+            SourceFact(
+                year=year,
+                source_url=str(source_by_year.get(year, {}).get("source_url", "")),
+                member=str(source_by_year.get(year, {}).get("zip", "")),
+                sha256=str(ingest_by_year.get(year, {}).get("zip_sha256") or ""),
+                municipality_count=int(provenance.get("municipality_count", 0)),
+                ln=None,
+            )
+            for year in sorted(csv_by_year)
         )
-        for source in sorted(
-            provenance.get("sources", []), key=lambda item: int(item.get("year", 0))
+    else:
+        sources = tuple(
+            SourceFact(
+                year=int(source.get("year", 0)),
+                source_url=str(source.get("source_url", "")),
+                member=str(source.get("member", "")),
+                sha256=str(source.get("sha256", "")),
+                municipality_count=source.get("municipality_count"),
+                ln=(source.get("totals") or {}).get("ln"),
+            )
+            for source in sorted(
+                provenance.get("sources", []), key=lambda item: int(item.get("year", 0))
+            )
         )
-    )
 
     limitations = tuple(
         dict.fromkeys(
@@ -315,26 +385,19 @@ def load_delivery_context(
         generated_at=generated_at or datetime.now(UTC),
         reference_date=str(manifest.get("reference_date", "2025-12-15")),
         data_aggregate_sha256=str(
-            manifest.get("data_aggregate_sha256")
-            or provenance.get("aggregate_sha256", "")
+            manifest.get("data_aggregate_sha256") or provenance.get("aggregate_sha256", "")
         ),
         versions={str(k): str(v) for k, v in (manifest.get("versions") or {}).items()},
         model=ModelFacts(
             family=str(evaluation.get("selected_family", model.get("family", "M0"))),
-            model_run_id=UUID(
-                str(manifest.get("model_run_id", model.get("model_run_id")))
-            ),
+            model_run_id=UUID(str(manifest.get("model_run_id", model.get("model_run_id")))),
             validation_year=validation_year,
             test_year=test_year,
             mae_2021=_float(
-                m0.get(str(validation_year), {}).get(
-                    "mae", selection.get("m0_mae_2021", 0.0)
-                )
+                m0.get(str(validation_year), {}).get("mae", selection.get("m0_mae_2021", 0.0))
             ),
             m1_mae_2021=_float(
-                m1.get(str(validation_year), {}).get(
-                    "mae", selection.get("m1_mae_2021", 0.0)
-                )
+                m1.get(str(validation_year), {}).get("mae", selection.get("m1_mae_2021", 0.0))
             ),
             mae_2024=_float(m0.get(str(test_year), {}).get("mae", 0.0)),
             m1_mae_2024=_float(m1.get(str(test_year), {}).get("mae", 0.0)),
@@ -345,7 +408,7 @@ def load_delivery_context(
             feature_order=tuple(model.get("feature_order", [])),
             limitations=tuple(model.get("limitations", [])),
             empirical_coverage_2024=band.get("empirical_coverage_2024"),
-            candidate_m1=model.get("candidate_m1"),
+            candidate_m1=model.get("candidate_m1") or model.get("candidate_m1_2021"),
         ),
         cohort=CohortFacts(
             total=total,
@@ -365,12 +428,17 @@ def load_delivery_context(
         ),
         sources=sources,
         dataset_version_ids=tuple(
-            UUID(str(source.get("source_version_id")))
-            for source in sorted(
-                provenance.get("sources", []),
-                key=lambda item: int(item.get("year", 0)),
+            UUID(str(version_id))
+            for version_id in (
+                [
+                    member.get("dataset_version_id")
+                    for year_source in provenance.get("sources", [])
+                    for member in year_source.get("csv_members", [])
+                ]
+                if is_national
+                else [source.get("source_version_id") for source in provenance.get("sources", [])]
             )
-            if source.get("source_version_id")
+            if version_id
         ),
         exclusions={
             int(year): len(values)
@@ -380,6 +448,7 @@ def load_delivery_context(
         exclusion_details=exclusion_details,
         limitations=limitations,
         scenario=_scenario_facts(scenario) if scenario is not None else None,
+        national=is_national,
     )
 
 
@@ -422,12 +491,8 @@ def context_manifest(context: DeliveryContext) -> dict:
             "ln_coverage_base_year": context.cohort.ln_coverage_base_year,
             "exclusion_reasons_by_year": {
                 str(year): {
-                    reason: sum(
-                        1 for fact in facts if reason in fact.reasons
-                    )
-                    for reason in sorted(
-                        {reason for fact in facts for reason in fact.reasons}
-                    )
+                    reason: sum(1 for fact in facts if reason in fact.reasons)
+                    for reason in sorted({reason for fact in facts for reason in fact.reasons})
                 }
                 for year, facts in context.exclusion_details.items()
             },
@@ -554,6 +619,18 @@ ALLOWLIST_EXPLICIT = (
     "data/processed/provenance.json",
     "data/processed/gis/reference-2025-12-15.geojson",
     "data/processed/gis/reference-2025-12-15.geojson.sha256",
+    "data/sources-national.json",
+    "docs/api/openapi.json",
+    "data/processed/national/national-ingest.json",
+    "data/processed/national/municipal-observations.csv",
+    "data/processed/national/continuity/district-observations.csv",
+    "data/processed/national/continuity/coverage-report.csv",
+    "data/processed/national/continuity/bridge-municipality-district.csv",
+    "data/processed/national/model/model.json",
+    "data/processed/national/model/evaluation.json",
+    "data/processed/national/model/manifest.json",
+    "data/processed/national/model/predictions-2027.parquet",
+    "data/processed/national/model/exclusions-by-cut.csv",
 )
 
 REQUIRED_MEMBERS = (
@@ -586,6 +663,37 @@ REQUIRED_MEMBERS = (
     "reports/executive.pdf",
 )
 
+REQUIRED_NATIONAL_MEMBERS = (
+    "README.md",
+    "pyproject.toml",
+    "uv.lock",
+    "compose.yaml",
+    ".env.example",
+    ".dockerignore",
+    "infrastructure/docker/api.Dockerfile",
+    "infrastructure/docker/web.Dockerfile",
+    "data/sources-national.json",
+    "data/processed/national/national-ingest.json",
+    "data/processed/national/municipal-observations.csv",
+    "data/processed/national/model/model.json",
+    "data/processed/national/model/evaluation.json",
+    "data/processed/national/model/manifest.json",
+    "data/processed/national/model/predictions-2027.parquet",
+    "data/processed/national/model/exclusions-by-cut.csv",
+    "data/processed/national/continuity/district-observations.csv",
+    "data/processed/national/continuity/coverage-report.csv",
+    "data/processed/national/continuity/bridge-municipality-district.csv",
+    "sources/SOURCES.md",
+    "sources/sources.json",
+    "dictionaries/history.csv",
+    "dictionaries/scenario.csv",
+    "docs/hackathon/delivery-checklist.md",
+    "docs/hackathon/source-licenses.md",
+    "reports/methodology.pdf",
+    "reports/executive.pdf",
+    "reports/district-observations.csv",
+)
+
 RAW_SOURCE_MEMBERS = (
     "data/raw/ccpc/jalisco-2009.csv",
     "data/raw/ccpc/jalisco-2012.csv",
@@ -594,6 +702,10 @@ RAW_SOURCE_MEMBERS = (
     "data/raw/ccpc/jalisco-2021.csv",
     "data/raw/ccpc/jalisco-2024.csv",
     "data/raw/gis/ine-jalisco-2025-12-15.zip",
+)
+NATIONAL_RAW_SOURCE_MEMBERS = tuple(
+    [f"data/raw/ccpc-national/ccpc-{year}.zip" for year in (2009, 2012, 2015, 2018, 2021, 2024)]
+    + [f"data/raw/gis/national/{state_code:02d}.zip" for state_code in range(1, 33)]
 )
 
 SCENARIO_REPORT_MEMBERS = (
@@ -615,13 +727,22 @@ def _is_forbidden(relative: Path) -> bool:
     return any(fragment in name for fragment in FORBIDDEN_NAME_FRAGMENTS)
 
 
-def _candidate_files(root: Path, *, include_raw_sources: bool) -> list[Path]:
+def _candidate_files(
+    root: Path, *, include_raw_sources: bool, national: bool = False
+) -> list[Path]:
     candidates: list[Path] = []
     allowed_explicit = set(ALLOWLIST_EXPLICIT) | set(ALLOWLIST_FILES)
-    if not include_raw_sources:
+    allowed_explicit.update(NATIONAL_RAW_SOURCE_MEMBERS if include_raw_sources else ())
+    if national:
         allowed_explicit = {
-            item for item in allowed_explicit if not item.startswith("data/raw/")
+            item
+            for item in allowed_explicit
+            if not item.startswith("data/raw/ccpc/")
+            and item != "data/raw/gis/ine-jalisco-2025-12-15.zip"
+            and item != "data/sources.json"
         }
+    if not include_raw_sources:
+        allowed_explicit = {item for item in allowed_explicit if not item.startswith("data/raw/")}
     for relative in allowed_explicit:
         path = root / relative
         if path.is_file():
@@ -678,9 +799,7 @@ def _add_path(
     digest = hashlib.sha256()
     size = 0
     mode = path.stat().st_mode & 0o777
-    with path.open("rb") as source, archive.open(
-        _zip_info(arcname, mode or 0o644), "w"
-    ) as target:
+    with path.open("rb") as source, archive.open(_zip_info(arcname, mode or 0o644), "w") as target:
         while True:
             chunk = source.read(1024 * 1024)
             if not chunk:
@@ -745,9 +864,9 @@ def _sources_json(context: DeliveryContext, *, include_raw_sources: bool) -> byt
             for source in context.sources
         ],
     }
-    return (
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    ).encode("utf-8")
+    return (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(
+        "utf-8"
+    )
 
 
 def _license_review_text() -> str:
@@ -782,9 +901,9 @@ def build_technical_zip(
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.parent / f".tmp-{uuid4().hex}.zip"
 
-    required = list(REQUIRED_MEMBERS)
+    required = list(REQUIRED_NATIONAL_MEMBERS if context.national else REQUIRED_MEMBERS)
     if include_raw_sources:
-        required.extend(RAW_SOURCE_MEMBERS)
+        required.extend(NATIONAL_RAW_SOURCE_MEMBERS if context.national else RAW_SOURCE_MEMBERS)
     if context.scenario is not None:
         required.extend(SCENARIO_REPORT_MEMBERS)
     required = list(dict.fromkeys(required))
@@ -795,7 +914,9 @@ def build_technical_zip(
             temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6
         ) as archive:
             for path in _candidate_files(
-                source_root, include_raw_sources=include_raw_sources
+                source_root,
+                include_raw_sources=include_raw_sources,
+                national=context.national,
             ):
                 relative = path.relative_to(source_root).as_posix()
                 _add_path(archive, relative, path, files)
@@ -850,25 +971,20 @@ def build_technical_zip(
                 "generated_at": context.generated_at.isoformat(),
                 "reference_date": context.reference_date,
                 "data_aggregate_sha256": context.data_aggregate_sha256,
-                "dataset_version_ids": [
-                    str(item) for item in context.dataset_version_ids
-                ],
+                "dataset_version_ids": [str(item) for item in context.dataset_version_ids],
                 "source_mode": "confirm" if include_raw_sources else "skip",
                 "raw_sources_included": include_raw_sources,
                 "source_license_confirmed": include_raw_sources,
                 "scenario_required": context.scenario is not None,
-                "scenario_id": (
-                    str(context.scenario.scenario_id) if context.scenario else None
-                ),
+                "national": context.national,
+                "scenario_id": (str(context.scenario.scenario_id) if context.scenario else None),
                 "complete": bool(strict and not missing),
                 "missing": missing,
                 "model": context_manifest(context)["model"],
                 "cohort": context_manifest(context)["cohort"],
                 "scenario": context_manifest(context).get("scenario"),
                 "sources": context_manifest(context)["sources"],
-                "assumptions": (
-                    context.scenario.rationale_text if context.scenario else None
-                ),
+                "assumptions": (context.scenario.rationale_text if context.scenario else None),
                 "error_band_label": (
                     context.scenario.error_band_label if context.scenario else None
                 ),
@@ -969,9 +1085,7 @@ def verify_archive(archive_path: Path | str) -> dict:
                 if name not in names:
                     errors.append(f"archivo declarado ausente: {name}")
             if "CHECKSUMS.sha256" in names:
-                checksums = _parse_checksums(
-                    archive.read("CHECKSUMS.sha256").decode("utf-8")
-                )
+                checksums = _parse_checksums(archive.read("CHECKSUMS.sha256").decode("utf-8"))
                 for name, expected in checksums.items():
                     if name not in names:
                         errors.append(f"checksum de archivo ausente: {name}")
@@ -980,7 +1094,10 @@ def verify_archive(archive_path: Path | str) -> dict:
 
             source_mode = str(manifest.get("source_mode", "confirm"))
             raw_names = [
-                name for name in names if name.startswith("data/raw/ccpc/")
+                name
+                for name in names
+                if name.startswith("data/raw/ccpc/")
+                or name.startswith("data/raw/ccpc-national/")
                 or name.startswith("data/raw/gis/")
             ]
             if source_mode == "skip":
@@ -993,7 +1110,10 @@ def verify_archive(archive_path: Path | str) -> dict:
                     if member not in names:
                         errors.append(f"falta el archivo de fuentes: {member}")
             else:
-                for member in RAW_SOURCE_MEMBERS:
+                source_members = (
+                    NATIONAL_RAW_SOURCE_MEMBERS if manifest.get("national") else RAW_SOURCE_MEMBERS
+                )
+                for member in source_members:
                     if member not in names:
                         errors.append(f"falta el original confirmado: {member}")
 
@@ -1033,7 +1153,9 @@ __all__ = [
     "DeliveryManifest",
     "FORBIDDEN_PARTS",
     "ModelFacts",
+    "NATIONAL_RAW_SOURCE_MEMBERS",
     "RAW_SOURCE_MEMBERS",
+    "REQUIRED_NATIONAL_MEMBERS",
     "REQUIRED_MEMBERS",
     "SCENARIO_REPORT_MEMBERS",
     "ScenarioFacts",

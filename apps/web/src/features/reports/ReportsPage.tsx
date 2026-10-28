@@ -37,6 +37,9 @@ const KIND_LABELS: Record<ReportKind, string> = {
   methodology_pdf: "Reporte metodológico · PDF",
   executive_pdf: "Presentación ejecutiva · PDF",
   technical_zip: "Paquete técnico · ZIP",
+  district_observed_pdf: "Ficha distrital · Observado 2024",
+  territory_fiche_pdf: "Ficha estatal/municipal · Observado 2024",
+  national_geojson: "Capa GeoJSON nacional",
 };
 
 const INSTITUTIONAL: readonly ReportKind[] = [
@@ -65,6 +68,9 @@ const KIND_ICONS: Record<ReportKind, LucideIcon> = {
   methodology_pdf: kindIcon("methodology_pdf"),
   executive_pdf: kindIcon("executive_pdf"),
   technical_zip: kindIcon("technical_zip"),
+  district_observed_pdf: FileText,
+  territory_fiche_pdf: FileText,
+  national_geojson: Map,
 };
 
 function formatBytes(value: number): string {
@@ -184,6 +190,96 @@ export function ReportsPage() {
     <div className="page reports-page">
       <ReportsHeading />
       <GeographyNotice />
+
+      <section className="summary-card" aria-labelledby="national-exports-heading">
+        <div className="card-heading">
+          <div>
+            <h2 id="national-exports-heading">Exportaciones nacionales</h2>
+            <p>
+              Agregados de las 32 entidades y 2,477 municipios. Cada archivo conserva
+              nivel, plan territorial, fuentes, versión y diccionario; límite de 20,000 filas.
+            </p>
+          </div>
+        </div>
+        <ExportActions
+          caption="Agregados municipales nacionales · todos los estados"
+          request={{ level: "municipality", state_code: "all" }}
+          actions={[
+            { kind: "history_csv", label: "Historial nacional CSV" },
+            { kind: "history_xlsx", label: "Historial nacional XLSX" },
+          ]}
+          onGenerated={() =>
+            void queryClient.invalidateQueries({ queryKey: queryKeys.reports() })
+          }
+        />
+        {filters.stateCode !== "all" ? (
+          <ExportActions
+            caption={filters.territoryId ? "Ficha municipal seleccionada" : "Ficha estatal seleccionada"}
+            request={{
+              level: "municipality",
+              state_code: filters.stateCode,
+              territory_id: filters.territoryId,
+              year: 2024,
+            }}
+            actions={[
+              {
+                kind: "territory_fiche_pdf",
+                label: filters.territoryId
+                  ? "Ficha municipal Observado 2024 · PDF"
+                  : "Ficha estatal Observado 2024 · PDF",
+              },
+            ]}
+            onGenerated={() =>
+              void queryClient.invalidateQueries({ queryKey: queryKeys.reports() })
+            }
+          />
+        ) : null}
+        {filters.level === "federal_district" && filters.territoryId ? (
+          <ExportActions
+            caption="Perfil del distrito seleccionado · plan DERFE2023"
+            request={{
+              level: "federal_district",
+              district_plan: "DERFE2023",
+              territory_id: filters.territoryId,
+              year: 2024,
+            }}
+            actions={[
+              {
+                kind: "district_observed_pdf",
+                label: "Ficha distrital Observado 2024 · PDF",
+                description: "Incluye cobertura; no contiene predicción ni escenario 2027.",
+              },
+            ]}
+            onGenerated={() =>
+              void queryClient.invalidateQueries({ queryKey: queryKeys.reports() })
+            }
+          />
+        ) : null}
+        {filters.stateCode !== "all" ? (
+          <ExportActions
+            caption="Capa espacial del estado seleccionado · no descarga geometría nacional completa"
+            request={{
+              level: filters.level,
+              state_code: filters.stateCode,
+              district_plan:
+                filters.level === "federal_district" ? "DERFE2023" : undefined,
+            }}
+            actions={[
+              {
+                kind: "national_geojson",
+                label: `GeoJSON ${filters.level === "federal_district" ? "distrital" : "municipal"} · ${filters.stateCode}`,
+                description:
+                  filters.level === "federal_district"
+                    ? "Geometrías y observación 2024 con cobertura; no contiene predicción distrital."
+                    : "Geometrías municipales de una entidad; incluye nivel y fuentes.",
+              },
+            ]}
+            onGenerated={() =>
+              void queryClient.invalidateQueries({ queryKey: queryKeys.reports() })
+            }
+          />
+        ) : null}
+      </section>
 
       <section className="summary-card" aria-labelledby="history-exports-heading">
         <div className="card-heading">
@@ -336,7 +432,7 @@ export function ReportsPage() {
 function ReportsHeading() {
   return (
     <div className="page-heading">
-      <p className="eyebrow">Entrega institucional · Jalisco</p>
+      <p className="eyebrow">Entrega institucional · Nacional</p>
       <h1>Reportes y exportaciones</h1>
       <p className="page-heading__lead">
         Descargue historia agregada y escenarios con metadatos, fuentes y hashes.

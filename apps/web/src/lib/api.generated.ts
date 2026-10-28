@@ -631,7 +631,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip" | "district_observed_pdf" | "territory_fiche_pdf" | "national_geojson";
             /**
              * Format
              * @enum {string}
@@ -681,13 +681,19 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip";
+            kind: "history_csv" | "history_xlsx" | "model_evidence_csv" | "model_evidence_xlsx" | "scenario_csv" | "scenario_geojson" | "scenario_pdf" | "scenario_map_png" | "scenario_map_pdf" | "methodology_pdf" | "executive_pdf" | "technical_zip" | "district_observed_pdf" | "territory_fiche_pdf" | "national_geojson";
             /** Scenario Id */
             scenario_id?: string | null;
             /** Territory Id */
             territory_id?: string | null;
             /** Year */
             year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
+            /** Level */
+            level?: "municipality" | "federal_district";
+            /** District Plan */
+            district_plan?: "DERFE2021" | "DERFE2023" | null;
+            /** State Code */
+            state_code?: string;
         };
         /**
          * ScenarioDTO

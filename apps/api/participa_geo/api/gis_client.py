@@ -437,6 +437,7 @@ class GeoServerClient:
         *,
         count: int = MAX_COUNT,
         bbox: Bounds | None = None,
+        state_code: str | None = None,
     ) -> bytes:
         """Fetch one WFS GetFeature (internal filters built from UUID/year)."""
         params: dict[str, str] = {
@@ -457,6 +458,12 @@ class GeoServerClient:
             params["cql_filter"] = cql
         if bbox is not None:
             params["bbox"] = f"{bbox.minx},{bbox.miny},{bbox.maxx},{bbox.maxy}"
+        if state_code is not None:
+            if layer.value not in NATIONAL_LAYERS or not (
+                state_code.isdigit() and len(state_code) == 2
+            ):
+                raise ValueError("state_code inválido para capa nacional")
+            params["cql_filter"] = f"state_code = '{state_code}'"
         status, _, body = self.forward("wfs", params)
         if status != 200:
             raise GeoServerError(f"GetFeature failed with status {status}")

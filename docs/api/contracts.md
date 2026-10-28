@@ -323,17 +323,31 @@ Cuerpo cerrado (`extra="forbid"`); no admite URL, ruta, plantilla ni texto libre
   "kind": "scenario_csv",
   "scenario_id": "00000000-0000-0000-0000-000000000010",
   "territory_id": null,
-  "year": null
+  "year": null,
+  "level": "municipality",
+  "district_plan": null,
+  "state_code": "all"
 }
 ```
 
 `kind` es el enum cerrado: `history_csv`, `history_xlsx`,
 `model_evidence_csv`, `model_evidence_xlsx`, `scenario_csv`,
 `scenario_geojson`, `scenario_pdf`, `scenario_map_png`, `scenario_map_pdf`,
-`methodology_pdf`, `executive_pdf`, `technical_zip`.
+`methodology_pdf`, `executive_pdf`, `technical_zip`, `district_observed_pdf`,
+`territory_fiche_pdf`, `national_geojson`.
 
 - `scenario_id` es obligatorio para `scenario_*`; en otros tipos se rechaza.
-- `territory_id`/`year` sólo aplican a `history_*`.
+- `territory_id`/`year` aplican a historia y fichas observadas.
+- Todas las peticiones incluyen `level` (predeterminado `municipality`),
+  `district_plan` y `state_code` (`all` para agregado nacional). La ficha
+  `territory_fiche_pdf` presenta municipio o agregado estatal observado 2024.
+  La ficha distrital requiere `level=federal_district`, `district_plan=DERFE2023`
+  y un `territory_id`; se titula “Observado 2024” y muestra cobertura.
+- `national_geojson` requiere un estado concreto (`state_code` de dos dígitos) y
+  hasta 1,000 geometrías reales por nivel. El nivel distrital usa DERFE2023 e
+  incorpora conteos/cobertura observados en 2024, nunca una predicción.
+- Las exportaciones admiten hasta 20,000 filas. Historia distrital sólo publica
+  DERFE2023/2024; reportes predictivos y escenarios distritales 2027 se rechazan.
 - `model_evidence_*` exporta features 2027, exclusiones por corte y
   contribuciones aditivas M0/M1 por municipio del modelo publicado.
 - Las exportaciones pequeñas son síncronas (sin cola, sin `pending`).
@@ -345,7 +359,7 @@ Cuerpo cerrado (`extra="forbid"`); no admite URL, ruta, plantilla ni texto libre
   nuevas por minuto (extensión `retry_after_seconds`).
 - `503 unavailable` si GIS falla al componer mapas o si se agota la cuota de
   1 GiB de datos generados (`quota_exceeded`).
-- Límites: historia ≤750 filas, escenario exactamente 125; mapas 1200×900,
+- Límites: exportación ≤20,000 filas, escenarios municipales nacionales; mapas 1200×900,
   timeout GIS 5 s, total 30 s, archivo pequeño ≤20 MiB.
 
 Respuesta `ReportArtifactDTO` (nunca incluye una ruta local):

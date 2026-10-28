@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse
 
 from participa_geo.api.deps import SessionDep
 from participa_geo.api.errors import ProblemException, problem
+from participa_geo.api.gis_client import AllowedLayer, GeoServerClient, GeoServerError
 from participa_geo.api.metadata import build_meta
 from participa_geo.api.schemas.common import Page
 from participa_geo.api.schemas.history import HistoryDTO
@@ -35,6 +36,11 @@ from participa_geo.db.repository import Repository
 from participa_geo.reporting.delivery import repo_root
 from participa_geo.reporting.geojson import GeoJSONExportError, export_scenario_geojson
 from participa_geo.reporting.maps import MapRenderError, render_scenario_map
+from participa_geo.reporting.national import (
+    export_national_geojson,
+    generate_district_observed_fiche,
+    generate_observed_territory_fiche,
+)
 from participa_geo.reporting.pdf import generate_scenario_pdf
 from participa_geo.reporting.store import (
     ExportLimitError,
@@ -94,24 +100,43 @@ def _problem(
 
 def _source_metadata() -> dict[str, Any]:
     """Read the provenance and model manifest for export metadata."""
-    processed = repo_root() / "data" / "processed"
+    root = repo_root()
+    processed = root / "data" / "processed"
+    national = processed / "national"
+    if (national / "model" / "manifest.json").is_file():
+        processed = national
     sources: list[dict] = []
-    provenance_path = processed / "provenance.json"
+    provenance_name = "national-ingest.json" if processed == national else "provenance.json"
+    provenance_path = processed / provenance_name
     if provenance_path.is_file():
         try:
             body = json.loads(provenance_path.read_text(encoding="utf-8"))
-            sources = [
-                {
-                    "year": item.get("year"),
-                    "source_url": item.get("source_url"),
-                    "member": item.get("member"),
-                    "sha256": item.get("sha256"),
-                    "municipality_count": item.get("municipality_count"),
-                }
-                for item in sorted(
-                    body.get("sources", []), key=lambda row: int(row.get("year", 0))
-                )
-            ]
+            if processed == national:
+                sources = [
+                    {
+                        "year": item.get("year"),
+                        "source_url": item.get("source_url"),
+                        "member": item.get("zip"),
+                        "sha256": item.get("zip_sha256"),
+                        "municipality_count": body.get("municipality_count"),
+                    }
+                    for item in sorted(
+                        body.get("sources", []), key=lambda row: int(row.get("year", 0))
+                    )
+                ]
+            else:
+                sources = [
+                    {
+                        "year": item.get("year"),
+                        "source_url": item.get("source_url"),
+                        "member": item.get("member"),
+                        "sha256": item.get("sha256"),
+                        "municipality_count": item.get("municipality_count"),
+                    }
+                    for item in sorted(
+                        body.get("sources", []), key=lambda row: int(row.get("year", 0))
+                    )
+                ]
         except (OSError, ValueError, TypeError):
             sources = []
     model_meta: dict[str, Any] = {}
@@ -139,6 +164,9 @@ def _cache_key(
 ) -> str:
     payload: dict[str, Any] = {
         "kind": body.kind,
+        "level": body.level,
+        "district_plan": body.district_plan,
+        "state_code": body.state_code,
         "territory_id": str(body.territory_id) if body.territory_id else None,
         "year": body.year,
         "scenario_id": str(body.scenario_id) if body.scenario_id else None,
@@ -174,7 +202,10 @@ def _history_meta(repo: Repository, body: ReportRequest, *, kind: str):
             "territory_id": str(body.territory_id) if body.territory_id else None,
             "year": body.year,
             "page": 1,
-            "page_size": 750,
+            "level": body.level,
+            "district_plan": body.district_plan,
+            "state_code": body.state_code,
+            "page_size": 20_000,
         },
     )
 
@@ -184,11 +215,13 @@ def _history_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
         territory_id=body.territory_id,
         year=body.year,
         page=1,
-        page_size=750,
+        page_size=20_000,
+        level=body.level,
+        state_code=body.state_code,
     )
-    if total > 750:
+    if total > 20_000:
         raise ReportValidationError(
-            "La exportación histórica supera el límite de 750 filas; aplique un filtro."
+            "La exportación supera el límite nacional de 20,000 filas; aplique un filtro."
         )
     return [
         HistoryDTO(
@@ -208,6 +241,10 @@ def _history_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
             eligible=record.eligible,
             identity_status=record.identity_status,
             footprint_status=record.footprint_status,
+            level=record.level,
+            territory_code=record.territory_code,
+            district_plan=record.district_plan,
+            coverage_share=record.coverage_share,
         )
         for record in records
     ]
@@ -237,9 +274,15 @@ def _scenario_meta(repo: Repository, scenario: ScenarioDTO, body: ReportRequest)
 
 def _filename(body: ReportRequest, scenario_id: UUID | None) -> str:
     if body.kind == "history_csv":
-        return f"participa-geo-historial-{body.year or 'jalisco'}.csv"
+        return f"participa-geo-historial-{body.level}-{body.state_code}-{body.year or 'todos'}.csv"
     if body.kind == "history_xlsx":
-        return f"participa-geo-historial-{body.year or 'jalisco'}.xlsx"
+        return f"participa-geo-historial-{body.level}-{body.state_code}-{body.year or 'todos'}.xlsx"
+    if body.kind == "district_observed_pdf":
+        return f"participa-geo-distrito-observado-2024-{body.territory_id}.pdf"
+    if body.kind == "territory_fiche_pdf":
+        return f"participa-geo-ficha-observada-2024-{body.territory_id or body.state_code}.pdf"
+    if body.kind == "national_geojson":
+        return f"participa-geo-{body.level}-{body.state_code}.geojson"
     suffix = {
         "scenario_csv": "csv",
         "scenario_geojson": "geojson",
@@ -305,9 +348,15 @@ def create_report(
             fmt = "csv" if body.kind.endswith("_csv") else "xlsx"
 
             def builder() -> bytes:
+                national_model_dir = repo_root() / "data" / "processed" / "national" / "model"
+                model_dir = (
+                    national_model_dir
+                    if (national_model_dir / "model.json").is_file()
+                    else repo_root() / "data" / "processed" / "model"
+                )
                 return export_model_evidence(
                     fmt,
-                    repo_root() / "data" / "processed" / "model",
+                    model_dir,
                     meta,
                     sources=sources,
                 )
@@ -322,6 +371,124 @@ def create_report(
                 cache_key=_cache_key(body, meta),
                 client_key=client,
                 model_run_id=model_run_id,
+            )
+            response.status_code = (
+                status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
+            )
+            return artifact
+
+        if body.kind == "national_geojson":
+            meta = build_meta(
+                dataset_version_ids=repo.get_dataset_version_ids(),
+                model_run_id=repo.get_published_model_run_id(),
+                geographic_warning=GEOGRAPHIC_WARNING,
+                filters={
+                    "report_kind": body.kind,
+                    "level": body.level,
+                    "district_plan": body.district_plan,
+                    "state_code": body.state_code,
+                },
+            )
+            layer = (
+                AllowedLayer.districts_2023
+                if body.level == "federal_district"
+                else AllowedLayer.municipalities
+            )
+            client_gis = GeoServerClient(request.app.state.settings.gis_base_url)
+            raw_geojson = client_gis.get_features(
+                layer, None, None, count=1000, state_code=body.state_code
+            )
+            feature_collection = json.loads(raw_geojson)
+            observations: list[HistoryDTO] = []
+            if body.level == "federal_district":
+                records, total = repo.get_history(
+                    territory_id=None,
+                    year=2024,
+                    page=1,
+                    page_size=1000,
+                    level="federal_district",
+                    state_code=body.state_code,
+                )
+                if total > 1000:
+                    raise ReportValidationError("la exportación distrital excede 1,000 geometrías")
+                observations = [
+                    HistoryDTO(
+                        territory_id=row.territory_id,
+                        year=row.year,
+                        name=row.name,
+                        municipality_code=row.municipality_code,
+                        level=row.level,
+                        territory_code=row.territory_code,
+                        district_plan=row.district_plan,
+                        ln=row.ln,
+                        sv=row.sv,
+                        nv=row.nv,
+                        ns=row.ns,
+                        participation_pct=row.participation_pct,
+                        abstention_pct=row.abstention_pct,
+                        unknown_share=row.unknown_share,
+                        ns_lower_pct=row.ns_lower_pct,
+                        ns_upper_pct=row.ns_upper_pct,
+                        eligible=row.eligible,
+                        coverage_share=row.coverage_share,
+                    )
+                    for row in records
+                ]
+
+            def builder() -> bytes:
+                return export_national_geojson(
+                    feature_collection,
+                    level=body.level,
+                    state_code=body.state_code,
+                    meta=meta,
+                    observations=observations,
+                    sources=sources,
+                )
+
+            artifact = store.get_or_create(
+                body,
+                builder=builder,
+                filename=_filename(body, None),
+                media_type=MEDIA_TYPE_BY_FORMAT["geojson"],
+                sources=sources,
+                cache_key=_cache_key(body, meta),
+                client_key=client,
+                model_run_id=meta.model_run_id,
+            )
+            response.status_code = (
+                status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
+            )
+            return artifact
+
+        if body.kind in {"district_observed_pdf", "territory_fiche_pdf"}:
+            meta = build_meta(
+                dataset_version_ids=repo.get_dataset_version_ids(),
+                geographic_warning=GEOGRAPHIC_WARNING,
+                filters={
+                    "report_kind": body.kind,
+                    "level": body.level,
+                    "district_plan": body.district_plan,
+                    "territory_id": str(body.territory_id) if body.territory_id else None,
+                    "observed_year": 2024,
+                },
+            )
+            rows = _history_rows(repo, body.model_copy(update={"year": 2024}))
+            if len(rows) != 1:
+                raise LookupError(str(body.territory_id))
+            observed = rows[0]
+            fiche_builder = (
+                generate_district_observed_fiche
+                if body.kind == "district_observed_pdf"
+                else generate_observed_territory_fiche
+            )
+            artifact = store.get_or_create(
+                body,
+                builder=lambda: fiche_builder(observed),
+                filename=_filename(body, None),
+                media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
+                sources=sources,
+                cache_key=_cache_key(body, meta),
+                client_key=client,
             )
             response.status_code = (
                 status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
@@ -354,9 +521,7 @@ def create_report(
                 reference = _resolve(request.app.state.settings.reference_geojson_path)
 
                 def builder() -> bytes:
-                    return export_scenario_geojson(
-                        scenario, reference, meta, sources=sources
-                    )
+                    return export_scenario_geojson(scenario, reference, meta, sources=sources)
 
                 media_type = MEDIA_TYPE_BY_FORMAT["geojson"]
             elif body.kind == "scenario_pdf":
@@ -427,6 +592,14 @@ def create_report(
             title="Servicio no disponible",
             detail=f"No se pudo generar el mapa real: {exc}",
         ) from None
+    except GeoServerError as exc:
+        raise _problem(
+            request,
+            status_code=503,
+            code="unavailable",
+            title="Servicio no disponible",
+            detail=f"No se pudo obtener GeoJSON nacional: {exc}",
+        ) from None
     except LookupError:
         raise _problem(
             request,
@@ -452,9 +625,7 @@ def create_report(
             detail=f"No se pudo generar el archivo: {exc}",
         ) from None
 
-    response.status_code = (
-        status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
-    )
+    response.status_code = status.HTTP_200_OK if artifact.cached else status.HTTP_201_CREATED
     return artifact
 
 
@@ -477,9 +648,7 @@ def list_reports(
     )
 
 
-@router.get(
-    "/reports/{report_id}", response_model=ReportArtifactDTO, tags=["reports"]
-)
+@router.get("/reports/{report_id}", response_model=ReportArtifactDTO, tags=["reports"])
 def get_report(request: Request, report_id: UUID) -> ReportArtifactDTO:
     artifact = _store(request).get(report_id)
     if artifact is None:

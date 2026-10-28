@@ -2197,7 +2197,9 @@
               "scenario_map_pdf",
               "methodology_pdf",
               "executive_pdf",
-              "technical_zip"
+              "technical_zip",
+              "district_observed_pdf",
+              "territory_fiche_pdf"
             ],
             "title": "Kind"
           },
@@ -2309,7 +2311,9 @@
               "scenario_map_pdf",
               "methodology_pdf",
               "executive_pdf",
-              "technical_zip"
+              "technical_zip",
+              "district_observed_pdf",
+              "territory_fiche_pdf"
             ],
             "title": "Kind"
           },
@@ -2355,6 +2359,35 @@
               }
             ],
             "title": "Year"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "municipality",
+              "federal_district"
+            ],
+            "title": "Level",
+            "default": "municipality"
+          },
+          "district_plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DERFE2021",
+                  "DERFE2023"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Plan"
+          },
+          "state_code": {
+            "type": "string",
+            "title": "State Code",
+            "default": "all"
           }
         },
         "additionalProperties": false,
@@ -2480,7 +2513,7 @@
           "created_at"
         ],
         "title": "ScenarioDTO",
-        "description": "The persisted scenario plus the full 125-municipality comparison."
+        "description": "The persisted scenario plus the full published municipality comparison."
       },
       "ScenarioRequest": {
         "properties": {

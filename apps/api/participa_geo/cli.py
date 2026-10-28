@@ -227,9 +227,7 @@ def _model_load(args: argparse.Namespace) -> int:
     bundle_dir = Path(args.bundle_dir)
     with session_scope(writer_engine(settings)) as session:
         if args.model_command == "load-national":
-            observations = read_national_municipal_observations(
-                bundle_dir.parent
-            )
+            observations = read_national_municipal_observations(bundle_dir.parent)
             if len(observations) != 14779:
                 raise ValueError(
                     f"national aggregates must contain 14,779 rows, found {len(observations)}"
@@ -301,6 +299,11 @@ def run_delivery(
     settings = settings or Settings()
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if scenario_id is None:
+        return _run_national_delivery(
+            output_dir, team_slug, source_mode=source_mode, settings=settings
+        )
 
     with session_scope(api_engine(settings)) as session:
         scenario = ScenarioService(session).get(scenario_id)
@@ -429,6 +432,106 @@ def run_delivery(
     return summary
 
 
+def _run_national_delivery(output_dir: Path, team_slug: str, *, source_mode: str, settings) -> dict:
+    """Publish the national institutional package without inventing a scenario."""
+    from participa_geo.api.schemas.reports import MEDIA_TYPE_BY_FORMAT
+    from participa_geo.reporting.delivery import (
+        build_technical_zip,
+        load_delivery_context,
+        repo_root,
+        verify_archive,
+    )
+    from participa_geo.reporting.pdf import generate_executive, generate_methodology
+    from participa_geo.reporting.store import ReportStore
+
+    root = repo_root()
+    context = load_delivery_context()
+    methodology = generate_methodology(context)
+    executive = generate_executive(context)
+    district_csv_path = (
+        root / "data" / "processed" / "national" / "continuity" / "district-observations.csv"
+    )
+    if not district_csv_path.is_file():
+        raise RuntimeError(
+            "falta el artefacto observado 2024 de distritos; no se generan datos sintéticos"
+        )
+    district_csv = district_csv_path.read_bytes()
+    reports = {
+        "reports/methodology.pdf": methodology,
+        "reports/executive.pdf": executive,
+        "reports/district-observations.csv": district_csv,
+    }
+    for name, payload in reports.items():
+        _write_atomic(output_dir / Path(name).name, payload)
+    archive = output_dir / "technical.zip"
+    built = build_technical_zip(
+        context,
+        archive,
+        root=root,
+        reports=reports,
+        strict=True,
+        team_slug=team_slug,
+        include_raw_sources=source_mode == "confirm",
+    )
+    verification = verify_archive(archive)
+    if not verification.get("complete"):
+        raise RuntimeError("el paquete nacional no superó verify-delivery")
+    reports_root = Path(settings.reports_dir)
+    if not reports_root.is_absolute():
+        reports_root = root / reports_root
+    institutional_root = Path(settings.institutional_reports_dir)
+    if not institutional_root.is_absolute():
+        institutional_root = root / institutional_root
+    store = ReportStore(reports_root, institutional_dir=institutional_root)
+    store.publish_institutional(
+        "methodology_pdf",
+        methodology,
+        filename="methodology.pdf",
+        media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
+        sources={"model_run_id": str(context.model.model_run_id), "source_mode": source_mode},
+        model_run_id=context.model.model_run_id,
+    )
+    store.publish_institutional(
+        "executive_pdf",
+        executive,
+        filename="executive.pdf",
+        media_type=MEDIA_TYPE_BY_FORMAT["pdf"],
+        sources={"model_run_id": str(context.model.model_run_id), "source_mode": source_mode},
+        model_run_id=context.model.model_run_id,
+    )
+    store.publish_institutional(
+        "technical_zip",
+        archive.read_bytes(),
+        filename="technical.zip",
+        media_type=MEDIA_TYPE_BY_FORMAT["zip"],
+        sources={"model_run_id": str(context.model.model_run_id), "source_mode": source_mode},
+        model_run_id=context.model.model_run_id,
+    )
+    summary = {
+        "team_slug": team_slug,
+        "model_run_id": str(context.model.model_run_id),
+        "output_dir": str(output_dir),
+        "source_mode": source_mode,
+        "technical_zip": {
+            "path": str(archive),
+            "sha256": built.sha256,
+            "size_bytes": built.size_bytes,
+            "file_count": built.file_count,
+        },
+        "verification": verification,
+        "files": {
+            name: {"bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+            for name, payload in reports.items()
+        },
+        "scope": "national; municipalities forecast 2027; districts observed 2024 only",
+    }
+    _write_atomic(
+        output_dir / "DELIVERY.json",
+        (json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
+    )
+    return summary
+
+
 def _delivery_sources(context) -> dict:
     """Source/model metadata carried by the CLI scenario exports."""
     return {
@@ -476,7 +579,7 @@ def _deliver(args: argparse.Namespace) -> int:
     from uuid import UUID
 
     try:
-        scenario_id = UUID(args.scenario_id)
+        scenario_id = UUID(args.scenario_id) if args.scenario_id else None
     except ValueError:
         print("scenario-id debe ser un UUID")
         return 2
@@ -730,8 +833,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     deliver.add_argument(
         "--scenario-id",
-        required=True,
-        help="UUID de un escenario persistido y elegible.",
+        required=False,
+        help="UUID de escenario persistido (opcional; sin él genera la entrega nacional).",
     )
     deliver.add_argument(
         "--output-dir",
@@ -749,7 +852,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Confirmar que se revisaron las condiciones de redistribución y que "
-            "se incluyen los seis CSV y el ZIP GIS originales en el paquete."
+            "se incluyen las seis fuentes CCPC y los 32 ZIP cartográficos nacionales."
         ),
     )
     source_group.add_argument(

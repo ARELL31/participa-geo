@@ -15,7 +15,7 @@ from uuid import UUID
 import pytest
 
 from participa_geo.reporting.delivery import (
-    REQUIRED_MEMBERS,
+    REQUIRED_NATIONAL_MEMBERS,
     SCENARIO_REPORT_MEMBERS,
     DeliveryContext,
     DeliveryError,
@@ -109,8 +109,7 @@ def test_technical_zip_excludes_private_files(tmp_path):
         assert not any("node_modules" in name for name in names)
         assert not any("__pycache__" in name for name in names)
         assert not any(
-            name == ".env"
-            or (name.startswith(".env.") and name != ".env.example")
+            name == ".env" or (name.startswith(".env.") and name != ".env.example")
             for name in names
         )
         assert not any("cartas" in name for name in names)
@@ -137,9 +136,10 @@ def test_verify_detects_tampered_member(tmp_path):
     )
 
     tampered = tmp_path / "tampered.zip"
-    with zipfile.ZipFile(archive) as source, zipfile.ZipFile(
-        tampered, "w", compression=zipfile.ZIP_DEFLATED
-    ) as target:
+    with (
+        zipfile.ZipFile(archive) as source,
+        zipfile.ZipFile(tampered, "w", compression=zipfile.ZIP_DEFLATED) as target,
+    ):
         for item in source.infolist():
             payload = source.read(item.filename)
             if item.filename == "README.md":
@@ -153,7 +153,7 @@ def test_verify_detects_tampered_member(tmp_path):
 def _complete_fixture_root(tmp_path: Path) -> Path:
     root = _fixture_root(tmp_path)
     generated_prefixes = ("dictionaries/", "sources/", "reports/", "data/raw/")
-    for relative in REQUIRED_MEMBERS:
+    for relative in REQUIRED_NATIONAL_MEMBERS:
         if relative.startswith(generated_prefixes):
             continue
         path = root / relative
@@ -203,6 +203,7 @@ def test_clean_room_bootstrap_members_are_required(tmp_path):
         reports={
             "reports/methodology.pdf": b"%PDF-1.4\n",
             "reports/executive.pdf": b"%PDF-1.4\n",
+            "reports/district-observations.csv": b"district,observed_year\n01,2024\n",
         },
     )
     with zipfile.ZipFile(archive) as package:
@@ -238,6 +239,7 @@ def test_complete_zip_requires_and_verifies_scenario_reports(tmp_path):
     reports = {
         "reports/methodology.pdf": b"%PDF-1.4\n",
         "reports/executive.pdf": b"%PDF-1.4\n",
+        "reports/district-observations.csv": b"district,observed_year\n01,2024\n",
         **{name: b"scenario-report\n" for name in SCENARIO_REPORT_MEMBERS},
     }
     manifest = build_technical_zip(
@@ -253,9 +255,10 @@ def test_complete_zip_requires_and_verifies_scenario_reports(tmp_path):
     assert verify_archive(archive)["complete"] is True
 
     broken = tmp_path / "broken.zip"
-    with zipfile.ZipFile(archive) as source, zipfile.ZipFile(
-        broken, "w", compression=zipfile.ZIP_DEFLATED
-    ) as target:
+    with (
+        zipfile.ZipFile(archive) as source,
+        zipfile.ZipFile(broken, "w", compression=zipfile.ZIP_DEFLATED) as target,
+    ):
         for item in source.infolist():
             if item.filename == "reports/scenario-map.png":
                 continue
@@ -445,14 +448,11 @@ def test_cli_delivery_builds_verified_package_with_real_scenario(
         assert not any("node_modules" in name for name in names)
         assert not any("cartas" in name for name in names)
         assert not any(
-            name == ".env"
-            or (name.startswith(".env.") and name != ".env.example")
+            name == ".env" or (name.startswith(".env.") and name != ".env.example")
             for name in names
         )
 
-    scenario_csv = (tmp_path / "delivery" / "scenario.csv").read_text(
-        encoding="utf-8-sig"
-    )
+    scenario_csv = (tmp_path / "delivery" / "scenario.csv").read_text(encoding="utf-8-sig")
     assert "dataset_version_ids=[" in scenario_csv
     assert "# dataset_version_ids=[]" not in scenario_csv
     assert "# sources=" in scenario_csv

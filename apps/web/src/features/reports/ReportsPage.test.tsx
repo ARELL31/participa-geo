@@ -75,6 +75,12 @@ describe("ReportsPage", () => {
     );
     expect(csvButton).toBeEnabled();
     expect(
+      await screen.findByRole("button", { name: "Historial nacional CSV" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: /Ficha distrital.*2024/i }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Descargar historial XLSX" }),
     ).toBeEnabled();
     expect(
