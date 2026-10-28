@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 
 from participa_geo.ingestion.schema import (
@@ -8,6 +10,7 @@ from participa_geo.ingestion.schema import (
     MunicipalityKey,
     MunicipalObservation,
 )
+from participa_geo.prediction.artifacts import compute_model_run_id
 from participa_geo.prediction.cohorts import TerritoryIdentity
 from participa_geo.prediction.national import build_national_cohort, train_national
 
@@ -108,6 +111,13 @@ def test_national_training_uses_state_fixed_effects_and_emits_insufficient_rows(
     assert bundle.total_count == 41
     assert bundle.candidate_count == sum(p.eligible for p in bundle.predictions)
     assert bundle.model_payload["fixed_effect_states"] == [f"{n:02d}" for n in range(2, 33)]
+    state_metrics = bundle.evaluation_payload["state_metrics"]
+    for family in ("m0", "m1"):
+        for year in ("2021", "2024"):
+            assert state_metrics[family][year]
+            for metrics in state_metrics[family][year].values():
+                assert set(metrics) == {"mae", "rmse", "bias", "n"}
+                assert metrics["n"] > 0
     insufficient = next(p for p in bundle.predictions if p.municipality_code == "999")
     assert insufficient.estimate is None
     assert insufficient.risk == "insufficient"
@@ -138,6 +148,48 @@ def test_national_training_uses_state_fixed_effects_and_emits_insufficient_rows(
 def test_national_training_rejects_district_level():
     with pytest.raises(ValueError, match="municipality only"):
         train_national([], level="federal_district", identity_statuses={})
+
+
+def test_2021_m1_fit_and_validation_metrics_are_in_hashed_model_identity(monkeypatch):
+    from participa_geo.prediction import national
+
+    observations = []
+    identities = {}
+    for number in range(40):
+        state, code = f"{number % 32 + 1:02d}", f"{number + 1:03d}"
+        identities[(state, code)] = _identity()
+        for year in (2009, 2012, 2015, 2018, 2021, 2024):
+            nv = 250 + number % 20
+            observations.append(
+                MunicipalObservation(
+                    key=MunicipalityKey(state, code),
+                    year=year,
+                    ln=1250,
+                    sv=950 - number % 20,
+                    nv=nv,
+                    ns=50,
+                    municipality_name=f"{state}-{code}",
+                    young_share=0.2,
+                    senior_share=0.1,
+                    rural_share=0.4,
+                )
+            )
+
+    captured_identity = {}
+    original_compute = national.compute_model_run_id
+
+    def capture_identity(identity):
+        captured_identity.update(deepcopy(identity))
+        return original_compute(identity)
+
+    monkeypatch.setattr(national, "compute_model_run_id", capture_identity)
+    bundle = train_national(observations, identity_statuses=identities)
+
+    candidate = captured_identity["candidate_m1_2021"]
+    assert candidate["metrics"] == bundle.evaluation_payload["metrics"]["m1"]["2021"]
+    changed_identity = deepcopy(captured_identity)
+    changed_identity["candidate_m1_2021"]["coefficients"][0] += 0.01
+    assert compute_model_run_id(changed_identity) != bundle.model_run_id
 
 
 def test_national_training_builds_and_consumes_mgs_identity_statuses(monkeypatch):

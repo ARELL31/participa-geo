@@ -240,6 +240,22 @@ def _metrics(dataset: NationalCohort, prediction: np.ndarray) -> ModelMetrics:
     )
 
 
+def _state_metrics(dataset: NationalCohort, prediction: np.ndarray) -> dict[str, dict]:
+    """Compute unweighted evaluation metrics for each represented state."""
+    result = {}
+    for state in sorted({row.state_code for row in dataset.rows}):
+        indexes = [i for i, row in enumerate(dataset.rows) if row.state_code == state]
+        actual = np.asarray([dataset.rows[i].target for i in indexes], dtype=np.float64)
+        errors = prediction[indexes] - actual
+        result[state] = {
+            "mae": float(np.mean(np.abs(errors))),
+            "rmse": float(np.sqrt(np.mean(np.square(errors)))),
+            "bias": float(np.mean(errors)),
+            "n": len(indexes),
+        }
+    return result
+
+
 def train_national(
     observations: Sequence[MunicipalObservation],
     level: str = "municipality",
@@ -333,11 +349,17 @@ def train_national(
             "m1_2024": m1_2024.__dict__,
         },
         "m0": {"definition": "same municipal territory/type at t-6"},
-        "candidate_m1": {
+        "candidate_m1_2021": {
+            "intercept": fit_train.intercept,
+            "coefficients": list(fit_train.coefficients),
+            "scaler": {"mean": list(fit_train.mean), "scale": list(fit_train.scale)},
+            "metrics": m1_2021.__dict__,
+        },
+        "candidate_m1_2024": {
             "intercept": fit_test.intercept,
-            "coefficients": fit_test.coefficients,
-            "scaler_mean": fit_test.mean,
-            "scaler_scale": fit_test.scale,
+            "coefficients": list(fit_test.coefficients),
+            "scaler": {"mean": list(fit_test.mean), "scale": list(fit_test.scale)},
+            "metrics": m1_2024.__dict__,
         },
         "band": band,
         "final_fit": {
@@ -405,6 +427,16 @@ def train_national(
             "m0": {"2021": m0_2021.__dict__, "2024": m0_2024.__dict__},
             "m1": {"2021": m1_2021.__dict__, "2024": m1_2024.__dict__},
         },
+        "state_metrics": {
+            "m0": {
+                "2021": _state_metrics(val, pred_m0_val),
+                "2024": _state_metrics(test, pred_m0_2024),
+            },
+            "m1": {
+                "2021": _state_metrics(val, pred_m1_val),
+                "2024": _state_metrics(test, pred_m1_2024),
+            },
+        },
         "band": {
             "amplitude_pp": band,
             "n_errors_2021": len(selected_errors),
@@ -440,11 +472,13 @@ def train_national(
             "intercept": fit_train.intercept,
             "coefficients": list(fit_train.coefficients),
             "scaler": {"mean": list(fit_train.mean), "scale": list(fit_train.scale)},
+            "metrics": m1_2021.__dict__,
         },
         "candidate_m1_2024": {
             "intercept": fit_test.intercept,
             "coefficients": list(fit_test.coefficients),
             "scaler": {"mean": list(fit_test.mean), "scale": list(fit_test.scale)},
+            "metrics": m1_2024.__dict__,
         },
         "identity_sha256": hashlib.sha256(
             json.dumps(selected["identity"], sort_keys=True).encode()

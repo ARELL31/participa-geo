@@ -141,3 +141,48 @@ application source behavior was changed beyond making the migration-chain test
 expect the new Alembic head `0012`; the national import/runtime environment
 does make that legacy 125-feature integration assumption no longer match the
 loaded GeoServer data.
+
+## Fix round 1 — review follow-up
+
+Included the 2021-validation M1 candidate fit (trained on the 2015 and 2018
+cohorts) and its 2021 M1 evaluation metrics explicitly in the canonical payload
+passed to `compute_model_run_id`. The persisted `model.json` records the same
+candidate fit and metrics. A regression test captures that canonical payload,
+changes one 2021-fit coefficient, and verifies the computed model run ID
+changes. The test also verifies the hashed 2021 candidate metrics match the
+persisted 2021 M1 evaluation. The 2024 validation candidate fit/evaluation is
+also explicit in the canonical payload.
+
+Added `evaluation.json.state_metrics` for all represented states, both M0/M1
+families, and 2021/2024 evaluation cuts. Each state entry reports unweighted
+MAE, RMSE, bias (prediction minus actual), and sample count `n`. All 32 states
+have entries for both evaluation years and both families in the real run. For
+example, selected M0 State 01 has 2021 MAE/RMSE/bias **20.0855/21.1441/20.0855
+pp** (`n=11`) and 2024 **3.7770/6.0286/3.7364 pp** (`n=10`). Complete metrics
+are in `data/processed/national/model/evaluation.json`.
+
+Real retraining, twice, completed with stable updated
+`model_run_id=0e288804-1c44-523e-a4a3-7a7db70e8c77`, family M0, 1,623 eligible
+candidates, and 2,477 prediction records. Model metrics and coverage are
+unchanged from the prior fix: M0 2021/2024 MAE **12.1854/5.5602 pp**, M1
+**12.3743/8.7546 pp**; selected P90 band **28.8979 pp** and 2024 empirical
+coverage **1,317/1,319 (99.8484%)**. Verified the model/manifest/prediction run
+IDs agree, the 2021 M1 metrics match between model and evaluation artifacts,
+and all four manifest-listed artifact SHA-256 hashes match their files.
+
+Verification:
+
+- TDD RED: `tests/unit/national/test_national_model.py` initially failed on
+  missing `state_metrics` and `candidate_m1_2021` in the hashed input.
+- TDD GREEN/focused: `sg docker -c 'docker compose run --rm --no-deps api
+  python -m pytest tests/unit/national tests/integration/national -q'` —
+  **66 passed**.
+- Ruff on the modified model and unit tests — **All checks passed**.
+- Real command, twice:
+  `sg docker -c 'docker compose run --rm --no-deps api python -m participa_geo.cli train-national-municipal'`
+  — both returned model run ID `0e288804-1c44-523e-a4a3-7a7db70e8c77`.
+- Full suite: **184 passed, 19 failed, 82 errors**. Failures/errors remain
+  attributable to missing Jalisco MVP raw/processed files and Jalisco test DB
+  fixtures; the GeoServer test expects 125 Jalisco features while the shared
+  service contains 2,477 imported national municipality features. These do
+  not involve the changed national run identity or state-level metrics.
