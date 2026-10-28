@@ -239,7 +239,11 @@ def simulate_scenario(
     results: list[ScenarioResultDTO] = []
 
     for prediction in sorted(
-        predictions, key=lambda item: item.territory_code or item.municipality_code or ""
+        predictions,
+        key=lambda item: (
+            item.state_code,
+            item.territory_code or item.municipality_code or "",
+        ),
     ):
         baseline = prediction.estimated_abstention_pct
         eligible = prediction.eligible and baseline is not None

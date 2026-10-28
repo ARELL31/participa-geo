@@ -1071,6 +1071,7 @@ export interface operations {
             query?: {
                 page?: number;
                 page_size?: number;
+                level?: "municipality" | "federal_district";
             };
             header?: never;
             path?: never;
@@ -1100,7 +1101,9 @@ export interface operations {
     };
     get_model_api_v1_models__model_run_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                level?: "municipality" | "federal_district";
+            };
             header?: never;
             path: {
                 model_run_id: string;
@@ -1233,6 +1236,8 @@ export interface operations {
     list_recommendations_api_v1_recommendations_get: {
         parameters: {
             query?: {
+                level?: "municipality" | "federal_district";
+                state_code?: string;
                 model_run_id?: string | null;
                 target_year?: 2027;
                 territory_id?: string | null;

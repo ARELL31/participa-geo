@@ -35,3 +35,17 @@ Previously verified against the populated national database/API:
 - National model loading includes the 14,779 municipal-year aggregate observations needed for history and summaries.
 - The national model bundle lacks `risk_unstable`; the loader defaults this field to `false`.
 - Latest-version selection is qualified by both year and state because dataset versions are state-scoped; this prevents partial national totals.
+
+## Fix round 1 — Task 7 review findings
+
+- Added explicit `level` filtering to `/recommendations` and `/models` (including model detail). District model/recommendation requests now return 409 `district_model_unavailable`; invalid and repeated/mixed `level` values return 422. Recommendations also pass `level` and `state_code` through to the prediction query.
+- Restricted model listing/details and prediction/recommendation model selection to the latest municipal model with the full 2,477-territory, 32-state prediction set. Other/legacy runs are hidden from `/models` and return 404 when requested for predictions or recommendations. The DB contract regression inserts a legacy run and verifies it is inaccessible.
+- Fixed test DB teardown ordering by dropping the migration-created partitioned facts and geography tables before `Base.metadata.drop_all`. Reworked the contract fixture to seed from national aggregate/model artifacts, retaining the state-14 data assertions while removing dependencies on absent Jalisco-only files.
+- Fixed deterministic national scenario result ordering and persisted scenario reconstruction, preserving the GET-after-POST equality contract across duplicate municipal codes in different states.
+- Updated OpenAPI, generated TypeScript types, API contract text, and TypeScript fixtures for required level fields.
+
+Verification for this fix round:
+
+- `sg docker -c 'docker compose run --rm --no-deps api python -m pytest tests/contract/test_read_api.py tests/contract/test_scenario_api.py -q'`: **34 passed** (one existing Starlette/httpx deprecation warning).
+- Ruff on changed API/test Python files: **passed** (`All checks passed`).
+- Web TypeScript check in the pinned Node 24 Docker deps image: **passed** (`npm run typecheck`).

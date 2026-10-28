@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
@@ -41,11 +41,25 @@ def to_model_dto(record: ModelRecord) -> ModelDTO:
 
 @router.get("/models", response_model=Page[ModelDTO], tags=["models"])
 def list_models(
+    request: Request,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=500)] = 25,
+    level: Literal["municipality", "federal_district"] = "municipality",
     *,
     session: SessionDep,
 ) -> Page[ModelDTO]:
+    if len(request.query_params.getlist("level")) > 1:
+        raise ProblemException(
+            problem(
+                status=422,
+                code="validation_error",
+                title="Parámetros no válidos",
+                detail="El nivel debe especificarse una sola vez.",
+                instance=request.url.path,
+            )
+        )
+    if level == "federal_district":
+        raise _district_model_unavailable(request)
     repo = Repository(session)
     records, total = repo.get_models(page=page, page_size=page_size)
     items = [to_model_dto(r) for r in records]
@@ -53,15 +67,31 @@ def list_models(
     meta = build_meta(
         dataset_version_ids=repo.get_dataset_version_ids(),
         model_run_id=model_run_id,
-        filters={"page": page, "page_size": page_size},
+        filters={"level": level, "page": page, "page_size": page_size},
     )
     return Page(items=items, page=page, page_size=page_size, total=total, meta=meta)
 
 
 @router.get("/models/{model_run_id}", response_model=ModelDTO, tags=["models"])
 def get_model(
-    model_run_id: UUID, request: Request, *, session: SessionDep
+    model_run_id: UUID,
+    request: Request,
+    level: Literal["municipality", "federal_district"] = "municipality",
+    *,
+    session: SessionDep,
 ) -> ModelDTO:
+    if len(request.query_params.getlist("level")) > 1:
+        raise ProblemException(
+            problem(
+                status=422,
+                code="validation_error",
+                title="Parámetros no válidos",
+                detail="El nivel debe especificarse una sola vez.",
+                instance=request.url.path,
+            )
+        )
+    if level == "federal_district":
+        raise _district_model_unavailable(request)
     record = Repository(session).get_model(model_run_id)
     if record is None:
         raise ProblemException(
@@ -74,3 +104,15 @@ def get_model(
             )
         )
     return to_model_dto(record)
+
+
+def _district_model_unavailable(request: Request) -> ProblemException:
+    return ProblemException(
+        problem(
+            status=409,
+            code="district_model_unavailable",
+            title="Modelo distrital no disponible",
+            detail="No hay un modelo predictivo distrital publicado.",
+            instance=request.url.path,
+        )
+    )

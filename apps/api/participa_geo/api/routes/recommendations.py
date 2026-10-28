@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
@@ -45,6 +45,8 @@ def to_recommendation_dto(record: PredictionRecord) -> RecommendationDTO:
 )
 def list_recommendations(
     request: Request,
+    level: Literal["municipality", "federal_district"] = "municipality",
+    state_code: Annotated[str, Query(pattern=r"^(\d{2}|all)$")] = "14",
     model_run_id: UUID | None = None,
     target_year: TargetYearQuery = 2027,
     territory_id: UUID | None = None,
@@ -53,20 +55,45 @@ def list_recommendations(
     *,
     session: SessionDep,
 ) -> Page[RecommendationDTO]:
-    repo = Repository(session)
-    if model_run_id is None:
-        model_run_id = repo.get_published_model_run_id()
-        if model_run_id is None:
-            raise ProblemException(
-                problem(
-                    status=409,
-                    code="conflict",
-                    title="Estado en conflicto",
-                    detail="No se ha cargado ningún modelo.",
-                    instance=request.url.path,
-                )
+    if len(request.query_params.getlist("level")) > 1:
+        raise ProblemException(
+            problem(
+                status=422,
+                code="validation_error",
+                title="Parámetros no válidos",
+                detail="El nivel debe especificarse una sola vez.",
+                instance=request.url.path,
             )
-    elif repo.get_model(model_run_id) is None:
+        )
+    if level == "federal_district":
+        raise ProblemException(
+            problem(
+                status=409,
+                code="district_model_unavailable",
+                title="Modelo distrital no disponible",
+                detail=(
+                    "Sólo hay observaciones distritales de 2024; "
+                    "no hay recomendaciones predictivas."
+                ),
+                instance=request.url.path,
+            )
+        )
+
+    repo = Repository(session)
+    published_model_run_id = repo.get_published_model_run_id()
+    if published_model_run_id is None:
+        raise ProblemException(
+            problem(
+                status=409,
+                code="conflict",
+                title="Estado en conflicto",
+                detail="No se ha cargado ningún modelo municipal nacional.",
+                instance=request.url.path,
+            )
+        )
+    if model_run_id is None:
+        model_run_id = published_model_run_id
+    elif model_run_id != published_model_run_id:
         raise ProblemException(
             problem(
                 status=404,
@@ -83,6 +110,8 @@ def list_recommendations(
         territory_id=territory_id,
         page=page,
         page_size=page_size,
+        level=level,
+        state_code=state_code,
     )
     items = [to_recommendation_dto(record) for record in records]
     meta = build_meta(
@@ -90,6 +119,8 @@ def list_recommendations(
         model_run_id=model_run_id,
         filters={
             "model_run_id": str(model_run_id),
+            "level": level,
+            "state_code": state_code,
             "target_year": target_year,
             "territory_id": str(territory_id) if territory_id else None,
             "page": page,

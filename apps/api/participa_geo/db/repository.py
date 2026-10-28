@@ -650,28 +650,19 @@ class Repository:
         return [UUID(str(r)) for r in rows]
 
     def get_models(self, *, page: int, page_size: int) -> tuple[list[models.ModelRecord], int]:
-        """Return the loaded model runs (most recent first) plus the total."""
-        total = int(self.session.scalar(text("SELECT count(*) FROM model_run")))
-        rows = (
-            self.session.execute(
-                text(
-                    """
-                SELECT id, family, level, district_plan, parameters, features, cut_dates, hashes,
-                       dependencies, metrics, exclusions, created_at
-                FROM model_run
-                ORDER BY created_at DESC
-                LIMIT :limit OFFSET :offset
-                """
-                ),
-                {"limit": page_size, "offset": (page - 1) * page_size},
-            )
-            .mappings()
-            .all()
-        )
-        return [self._model_record(row) for row in rows], total
+        """Return only the published nationwide municipal model, if available."""
+        published_id = self.get_published_model_run_id()
+        if published_id is None:
+            return [], 0
+        record = self.get_model(published_id)
+        if record is None or page > 1:
+            return [], 1
+        return [record], 1
 
     def get_model(self, model_run_id: UUID) -> models.ModelRecord | None:
-        """Return one model run by id, or ``None`` when absent."""
+        """Return the published nationwide municipal model by id, if requested."""
+        if model_run_id != self.get_published_model_run_id():
+            return None
         row = (
             self.session.execute(
                 text(
@@ -690,9 +681,23 @@ class Repository:
         return self._model_record(row) if row else None
 
     def get_published_model_run_id(self) -> UUID | None:
-        """Return the most recently loaded model run id (the deployed model)."""
+        """Return the newest model with predictions for all 2,477 national municipalities."""
         row = self.session.execute(
-            text("SELECT id FROM model_run ORDER BY created_at DESC LIMIT 1")
+            text(
+                """
+                SELECT mr.id
+                FROM model_run mr
+                JOIN prediction p ON p.model_run_id = mr.id
+                JOIN territory_version tv ON tv.id = p.reference_territory_id
+                WHERE mr.level = 'municipality' AND mr.district_plan IS NULL
+                  AND p.level = 'municipality' AND p.district_plan IS NULL
+                GROUP BY mr.id, mr.created_at
+                HAVING count(DISTINCT p.reference_territory_id) = 2477
+                   AND count(DISTINCT tv.state_code) = 32
+                ORDER BY mr.created_at DESC
+                LIMIT 1
+                """
+            )
         ).first()
         return row[0] if row else None
 
@@ -910,7 +915,7 @@ class Repository:
                 FROM scenario_result s
                 JOIN territory_version t ON t.id = s.reference_territory_id
                 WHERE s.scenario_id = :scenario_id
-                ORDER BY t.territory_code
+                ORDER BY t.state_code, t.territory_code
                 """
                 ),
                 {"scenario_id": scenario_id},

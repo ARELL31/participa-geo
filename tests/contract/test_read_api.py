@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -140,6 +141,38 @@ def test_models_list_and_get(db_api_client, loaded_model_run_id):
     assert single.json()["model_run_id"] == str(loaded_model_run_id)
 
 
+def test_old_municipal_model_is_not_api_accessible(
+    db_api_client, postgis_session, loaded_model_run_id
+):
+    from participa_geo.db.models import ModelRun
+
+    old_model_id = uuid4()
+    postgis_session.add(ModelRun(id=old_model_id, family="legacy-jalisco"))
+    postgis_session.commit()
+
+    listed = db_api_client.get("/api/v1/models", params={"level": "municipality"})
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+    assert listed.json()["items"][0]["model_run_id"] == str(loaded_model_run_id)
+
+    detail = db_api_client.get(f"/api/v1/models/{old_model_id}")
+    assert detail.status_code == 404
+    assert detail.json()["code"] == "not_found"
+
+    predictions = db_api_client.get(
+        "/api/v1/predictions", params={"model_run_id": str(old_model_id)}
+    )
+    assert predictions.status_code == 404
+    assert predictions.json()["code"] == "not_found"
+
+
+def test_district_models_are_unavailable(api_client):
+    response = api_client.get("/api/v1/models", params={"level": "federal_district"})
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "district_model_unavailable"
+
+
 def test_predictions_default_to_published_model(db_api_client, loaded_model_run_id):
     response = db_api_client.get("/api/v1/predictions", params={"page_size": 1})
     assert response.status_code == 200
@@ -220,4 +253,6 @@ def test_openapi_matches_contract():
     assert predictions["page_size"]["schema"]["maximum"] == 500
     assert "level" in predictions
     assert "state_code" in predictions
+    assert "level" in _query_params(openapi, "/api/v1/models")
+    assert "level" in _query_params(openapi, "/api/v1/recommendations")
     assert "level" in _query_params(openapi, "/api/v1/participation/summary")

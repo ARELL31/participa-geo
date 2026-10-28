@@ -61,6 +61,16 @@ def list_predictions(
     *,
     session: SessionDep,
 ) -> Page[PredictionDTO]:
+    if len(request.query_params.getlist("level")) > 1:
+        raise ProblemException(
+            problem(
+                status=422,
+                code="validation_error",
+                title="Parámetros no válidos",
+                detail="El nivel debe especificarse una sola vez.",
+                instance=request.url.path,
+            )
+        )
     if level == "federal_district":
         raise ProblemException(
             problem(
@@ -72,19 +82,20 @@ def list_predictions(
             )
         )
     repo = Repository(session)
-    if model_run_id is None:
-        model_run_id = repo.get_published_model_run_id()
-        if model_run_id is None:
-            raise ProblemException(
-                problem(
-                    status=409,
-                    code="conflict",
-                    title="Estado en conflicto",
-                    detail="No se ha cargado ningún modelo.",
-                    instance=request.url.path,
-                )
+    published_model_run_id = repo.get_published_model_run_id()
+    if published_model_run_id is None:
+        raise ProblemException(
+            problem(
+                status=409,
+                code="conflict",
+                title="Estado en conflicto",
+                detail="No se ha cargado ningún modelo municipal nacional.",
+                instance=request.url.path,
             )
-    elif repo.get_model(model_run_id) is None:
+        )
+    if model_run_id is None:
+        model_run_id = published_model_run_id
+    elif model_run_id != published_model_run_id:
         raise ProblemException(
             problem(
                 status=404,

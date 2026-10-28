@@ -373,6 +373,20 @@
               "default": 25,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
           }
         ],
         "responses": {
@@ -415,6 +429,20 @@
               "type": "string",
               "format": "uuid",
               "title": "Model Run Id"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
             }
           }
         ],
@@ -660,6 +688,31 @@
         "summary": "List Recommendations",
         "operationId": "list_recommendations_api_v1_recommendations_get",
         "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "municipality",
+                "federal_district"
+              ],
+              "type": "string",
+              "default": "municipality",
+              "title": "Level"
+            }
+          },
+          {
+            "name": "state_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(\\d{2}|all)$",
+              "default": "14",
+              "title": "State Code"
+            }
+          },
           {
             "name": "model_run_id",
             "in": "query",

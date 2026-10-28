@@ -146,11 +146,11 @@ a sí mismo.
 | GET `/territories` | `state_code=14` (o `all`), `level=municipality`, `q<=80`, `page=1`, `page_size<=500`; `Page[TerritoryDTO]`. |
 | GET `/participation/history` | `level=municipality`, `state_code=14` (o `all`), `territory_id?:UUID`, `year?:enum`, `page_size<=500`; `Page[HistoryDTO]`. Distrito devuelve sólo observación 2024. |
 | GET `/participation/summary` | `level`, `year=2024`; 32 filas con conteos sumados, riesgo elegible/insuficiente y cobertura por entidad. El color usa abstención observada de conteos. |
-| GET `/models`, `/models/{id}` | Ejecuciones ya entrenadas; sin endpoint de entrenamiento. Sólo hay modelo municipal disponible. |
+| GET `/models`, `/models/{id}` | `level=municipality` (predeterminado); sólo expone el modelo municipal nacional publicado. Un nivel distrital devuelve 409 `district_model_unavailable`; ejecuciones antiguas/no publicadas devuelven 404. |
 | GET `/predictions` | `level=municipality`, `model_run_id?:UUID`, `target_year=2027`, `territory_id?:UUID`, `state_code=14` (o `all`); `page_size<=500`. Nivel distrito devuelve 409 `district_model_unavailable`. |
 | POST `/scenarios` | `level=municipality`, hasta 1,000 IDs, cuerpo hasta 128 KiB; `201` `ScenarioDTO`. Distritos devuelven 409 `district_model_unavailable`; no hay escenarios distritales. |
 | GET `/scenarios/{id}` | `200`/`404`. |
-| GET `/recommendations` | Filtros de predicción; reglas explicadas. |
+| GET `/recommendations` | `level=municipality`, `state_code=14` (o `all`); reglas explicadas para el modelo municipal nacional publicado. Distrito devuelve 409 `district_model_unavailable`; un nivel inválido o repetido devuelve 422. |
 | POST `/reports` | `ReportRequest`; `200` cache/`201` creado/`409`/`413`/`503`. |
 | GET `/reports/{id}`, `/reports/{id}/download` | Metadatos/estado y descarga; `404`/`409`. |
 | GET `/gis/wms`, `/gis/wfs` | Adaptador validado hacia GeoServer interno (sólo lectura). WMS nacional; WFS por entidad/bbox y máximo 1,000. No se aceptan CQL, REST, Transaction ni URLs. |

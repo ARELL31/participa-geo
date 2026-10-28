@@ -24,7 +24,10 @@ export function territory(
     id,
     name,
     state_code: "14",
+    level: "municipality",
+    territory_code: municipalityCode,
     municipality_code: municipalityCode,
+    district_plan: null,
     identity_status: "verified",
     footprint_status: "same",
     reference_date: "2025-12-15",
@@ -41,6 +44,8 @@ export function historyYear(
     year,
     name: territoryId ? `Municipio ${territoryId.slice(0, 4)}` : null,
     municipality_code: territoryId ? "001" : null,
+    level: "municipality",
+    territory_code: territoryId ? "001" : null,
     ln: 100_000,
     sv: 52_000,
     nv: 43_000,
@@ -181,6 +186,8 @@ export function modelRun(overrides: Partial<ModelDTO> = {}): ModelDTO {
   return {
     model_run_id: MODEL_RUN_ID,
     family: "M0",
+    level: "municipality",
+    district_plan: null,
     target_year: 2027,
     reference_date: "2025-12-15",
     features: [
@@ -320,6 +327,9 @@ export function prediction(overrides: Partial<PredictionDTO> = {}): PredictionDT
   return {
     territory_id: territoryUuid("999"),
     municipality_code: "999",
+    level: "municipality",
+    territory_code: "999",
+    district_plan: null,
     municipality_name: "MUNICIPIO 999",
     target_year: 2027,
     estimated_abstention_pct: 42,
@@ -415,8 +425,11 @@ export function scenarioResult(
     baseline === null || hypothetical === null ? 0 : baseline - hypothetical;
   return {
     territory_id: source.territory_id,
-    municipality_code: source.municipality_code,
+    municipality_code: source.municipality_code ?? null,
     municipality_name: source.municipality_name,
+    level: source.level,
+    territory_code: source.territory_code ?? source.municipality_code ?? null,
+    district_plan: source.district_plan ?? null,
     baseline_abstention_pct: baseline,
     hypothetical_abstention_pct: hypothetical,
     baseline_error_lower_pct: source.historical_error_lower_pct ?? null,
@@ -461,6 +474,8 @@ export function scenarioDTO(
     target_year: 2027,
     requested_reduction_pp: reduction,
     assumption_code: assumptionCode,
+    level: "municipality",
+    district_plan: null,
     assumption_version: "1.0",
     rationale_text:
       assumptionCode === "preventive_exploration"
@@ -473,7 +488,11 @@ export function scenarioDTO(
     selected_territory_ids: [...selectedIds],
     results: predictions
       .slice()
-      .sort((a, b) => a.municipality_code.localeCompare(b.municipality_code))
+      .sort((a, b) =>
+        (a.territory_code ?? a.municipality_code ?? "").localeCompare(
+          b.territory_code ?? b.municipality_code ?? "",
+        ),
+      )
       .map((item) => scenarioResult(item, reduction, selectedIds.has(item.territory_id))),
     created_at: "2026-10-26T12:00:00Z",
   };
@@ -546,7 +565,8 @@ export function recommendation(
             };
   return {
     territory_id: source.territory_id,
-    municipality_code: source.municipality_code,
+    municipality_code:
+      source.territory_code ?? source.municipality_code ?? "",
     municipality_name: source.municipality_name,
     target_year: 2027,
     risk:

@@ -11,8 +11,11 @@ tests all share one source of truth.
 
 from __future__ import annotations
 
+import json
 import os
+from datetime import date
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,7 +29,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 TEST_DB = "participa_geo_test"
 GIS_ARCHIVE = REPO_ROOT / "data" / "raw" / "gis" / "ine-jalisco-2025-12-15.zip"
 PROCESSED = REPO_ROOT / "data" / "processed"
-MODEL_DIR = REPO_ROOT / "data" / "processed" / "model"
+NATIONAL_PROCESSED = PROCESSED / "national"
+MODEL_DIR = NATIONAL_PROCESSED / "model"
 
 VIEWS = ["municipalities", "participation_history", "predictions", "scenario_results"]
 
@@ -152,6 +156,16 @@ def postgis_session(db_config: dict):
         for view in VIEWS:
             conn.execute(text(f"DROP VIEW IF EXISTS {view} CASCADE"))
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
+        # These migration-created tables are outside Base.metadata. Drop them
+        # before SQLAlchemy orders drops from its incomplete metadata graph.
+        conn.execute(text("DROP TABLE IF EXISTS fact_ccpc_section CASCADE"))
+        for table in (
+            "geo_section",
+            "geo_district_2023",
+            "geo_municipality",
+            "geo_state",
+        ):
+            conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
         Base.metadata.drop_all(conn)
 
     from alembic import command
@@ -162,19 +176,101 @@ def postgis_session(db_config: dict):
     cfg.set_main_option("sqlalchemy.url", migrator_url)
     command.upgrade(cfg, "head")
 
-    # Load observations + reference geometry as the writer role.
-    from participa_geo.db.repository import Repository, read_processed_observations
-    from pipelines.validation.geography import import_reference
+    # Seed the isolated test database from the checked-in national artifacts.
+    # This preserves Jalisco's state-14 contract values without depending on
+    # absent Jalisco-only processed/model files or the shared GeoServer DB.
+    from participa_geo.db.repository import Repository, read_national_municipal_observations
+    from participa_geo.territory import TerritoryKey, territory_id
 
     writer_url = _url(db_config, db_config["writer_user"], db_config["writer_password"])
     writer_engine = create_engine(writer_url, future=True)
     with Session(writer_engine) as session:
-        datasets, observations = read_processed_observations(PROCESSED)
+        ingest = json.loads((NATIONAL_PROCESSED / "national-ingest.json").read_text())
+        dataset_rows = [
+            {
+                "id": member["dataset_version_id"],
+                "year": source["year"],
+                "state_code": member["state_code"],
+                "source_url": source["source_url"],
+                "member": member["member"],
+                "sha256": member["sha256"],
+                "encoding": "utf-8-sig",
+            }
+            for source in ingest["sources"]
+            for member in source["csv_members"]
+            if member["state_code"] is not None
+        ]
+        session.execute(
+            text("""
+                INSERT INTO dataset_version
+                    (id, year, state_code, source_url, member, sha256, encoding)
+                VALUES (:id, :year, :state_code, :source_url, :member, :sha256, :encoding)
+            """),
+            dataset_rows,
+        )
+        observations = read_national_municipal_observations(NATIONAL_PROCESSED)
         repo = Repository(session)
-        for dataset in datasets:
-            repo.upsert_dataset(dataset)
         repo.upsert_observations(observations)
-        import_reference(GIS_ARCHIVE, session)
+
+        reference_by_key = {}
+        for observation in observations:
+            key = (observation.key.state_code, observation.key.municipality_code)
+            reference_by_key.setdefault(key, observation.municipality_name)
+        reference_ids = {
+            key: territory_id(TerritoryKey("municipality", key[0], key[1]))
+            for key in reference_by_key
+        }
+        session.execute(
+            text("""
+                INSERT INTO territory_version
+                    (id, system, state_code, level, territory_code, municipality_code,
+                     district_plan, name, reference_date, origin_year, geometry,
+                     source_srid, provenance)
+                VALUES (:id, 'ine', :state_code, 'municipality', :code, :code,
+                        NULL, :name, :reference_date, NULL, NULL, NULL,
+                        'national contract test reference')
+            """),
+            [
+                {
+                    "id": reference_ids[key],
+                    "state_code": key[0],
+                    "code": key[1],
+                    "name": name,
+                    "reference_date": date(2025, 12, 15),
+                }
+                for key, name in reference_by_key.items()
+            ],
+        )
+        correspondences = []
+        from participa_geo.ingestion.schema import observation_id
+
+        for observation in observations:
+            origin_id = observation_id(
+                observation.key.state_code,
+                observation.key.municipality_code,
+                observation.year,
+                observation.source_version_id,
+            )
+            reference_id = reference_ids[
+                (observation.key.state_code, observation.key.municipality_code)
+            ]
+            correspondences.append(
+                {
+                    "id": uuid5(NAMESPACE_URL, f"correspondence:{origin_id}:{reference_id}"),
+                    "origin_id": origin_id,
+                    "reference_id": reference_id,
+                }
+            )
+        session.execute(
+            text("""
+                INSERT INTO territory_correspondence
+                    (id, origin_territory_id, reference_territory_id, relation_type,
+                     identity_status, footprint_status, evidence)
+                VALUES (:id, :origin_id, :reference_id, 'same',
+                        'verified_catalogue', 'not_verified', '{"source":"national test fixture"}')
+            """),
+            correspondences,
+        )
         session.commit()
     writer_engine.dispose()
 

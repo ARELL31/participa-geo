@@ -689,6 +689,7 @@ class ScenarioResultRecord:
     selected: bool
     level: TerritoryLevel = "municipality"
     district_plan: DistrictPlan | None = None
+    territory_code: str | None = None
 
 
 __all__ = [

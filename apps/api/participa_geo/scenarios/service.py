@@ -181,6 +181,7 @@ def _to_result_records(
             selected=result.selected,
             level=result.level,
             district_plan=result.district_plan,
+            territory_code=result.territory_code,
         )
         for result in comparison.results
     ]

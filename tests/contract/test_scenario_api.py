@@ -85,8 +85,8 @@ def test_create_returns_full_persisted_comparison(db_api_client, loaded_model_ru
     assert "histórico" in scenario["error_band_label"].lower()
     assert "causal" in scenario["error_band_label"].lower()
 
-    # Exactly the 125-municipality universe is persisted, including nulls.
-    assert len(scenario["results"]) == 125
+    # The complete national municipality universe is persisted, including nulls.
+    assert len(scenario["results"]) == 2477
     by_id = {row["territory_id"]: row for row in scenario["results"]}
 
     for prediction in selected:
@@ -235,7 +235,9 @@ def test_eleventh_creation_in_a_minute_is_429(db_api_client):
 
 def test_recommendations_are_versioned_and_neutral(db_api_client):
     payload = _predictions(db_api_client)
-    response = db_api_client.get("/api/v1/recommendations", params={"page_size": 125})
+    response = db_api_client.get(
+        "/api/v1/recommendations", params={"level": "municipality", "page_size": 125}
+    )
 
     assert response.status_code == 200
     body = response.json()
@@ -266,6 +268,32 @@ def test_recommendations_are_versioned_and_neutral(db_api_client):
     codes = {r["code"] for r in item["recommendations"]}
     if "high_unknown_share" in (with_reasons.get("quality") or {}).get("reasons", []):
         assert "improve_data_quality" in codes
+
+
+def test_district_recommendations_are_unavailable_without_municipal_fallback(api_client):
+    response = api_client.get(
+        "/api/v1/recommendations", params={"level": "federal_district"}
+    )
+    assert response.status_code == 409
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "district_model_unavailable"
+
+
+def test_recommendations_reject_invalid_level(api_client):
+    response = api_client.get("/api/v1/recommendations", params={"level": "mixed"})
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "validation_error"
+
+
+def test_recommendations_reject_mixed_level_values(api_client):
+    response = api_client.get(
+        "/api/v1/recommendations",
+        params=[("level", "municipality"), ("level", "federal_district")],
+    )
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.json()["code"] == "validation_error"
 
 
 def test_recommendations_target_year_2027_accepted_and_2026_rejected(db_api_client):
