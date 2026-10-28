@@ -59,6 +59,17 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    external_connection = config.attributes.get("connection")
+    if external_connection is not None:
+        context.configure(
+            connection=external_connection,
+            target_metadata=target_metadata,
+            version_table_schema=config.attributes.get("version_table_schema"),
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+        return
+
     connectable = create_engine(_database_url(), poolclass=pool.NullPool)
 
     with connectable.connect() as connection:

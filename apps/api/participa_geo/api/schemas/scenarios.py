@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from participa_geo.territory import TerritoryLevel
+from participa_geo.territory import DistrictPlan, TerritoryLevel
 
 AssumptionCode = Literal["preventive_exploration", "model_sensitivity"]
 RiskLevel = Literal["low", "medium", "high", "insufficient"]
@@ -49,8 +49,11 @@ class ScenarioResultDTO(BaseModel):
     """One municipality's persisted A/B comparison (null when insufficient)."""
 
     territory_id: UUID
-    municipality_code: str
+    municipality_code: str | None
     municipality_name: str
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
     baseline_abstention_pct: float | None = None
     hypothetical_abstention_pct: float | None = None
     baseline_error_lower_pct: float | None = None
@@ -73,6 +76,8 @@ class ScenarioComparison(BaseModel):
     target_year: int
     requested_reduction_pp: float
     assumption_code: AssumptionCode
+    level: TerritoryLevel = "municipality"
+    district_plan: DistrictPlan | None = None
     assumption_version: str
     rationale_text: str
     rules_version: str

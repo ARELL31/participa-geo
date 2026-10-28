@@ -36,6 +36,7 @@ from participa_geo.scenarios.rules import (
     ScenarioInputError,
     simulate_scenario,
 )
+from participa_geo.territory import TerritoryKey, validate_scenario_territories
 
 
 class ScenarioRateLimitError(RuntimeError):
@@ -180,6 +181,8 @@ def _to_result_records(
             risk_a_unstable=result.risk_a_unstable,
             risk_b_unstable=result.risk_b_unstable,
             selected=result.selected,
+            level=result.level,
+            district_plan=result.district_plan,
         )
         for result in comparison.results
     ]
@@ -207,6 +210,35 @@ class ScenarioService:
                 "No se ha cargado el modelo publicado; no es posible crear escenarios."
             )
 
+        if request.level is not None and request.level != model.level:
+            raise ScenarioInputError(
+                [
+                    {
+                        "loc": ["body", "level"],
+                        "msg": "level debe coincidir con el modelo publicado.",
+                        "type": "value_error",
+                        "reason": "scenario_level_mismatch",
+                        "model_level": model.level,
+                        "requested_level": request.level,
+                    }
+                ]
+            )
+
+        if (model.level == "municipality" and model.district_plan is not None) or (
+            model.level == "federal_district"
+            and model.district_plan not in ("DERFE2021", "DERFE2023")
+        ):
+            raise ScenarioInputError(
+                [
+                    {
+                        "loc": ["body", "model_run_id"],
+                        "msg": "El modelo publicado no tiene un nivel/plan válido.",
+                        "type": "value_error",
+                        "reason": "model_scope_invalid",
+                    }
+                ]
+            )
+
         predictions, total = self.repository.get_predictions(
             model_run_id=published,
             target_year=request.target_year,
@@ -219,7 +251,64 @@ class ScenarioService:
                 "El universo publicado no contiene las 125 predicciones requeridas."
             )
 
+        predictions_by_id = {prediction.territory_id: prediction for prediction in predictions}
+        missing = [
+            {
+                "loc": ["body", "territory_ids"],
+                "msg": "El territorio no existe en el universo del modelo publicado.",
+                "type": "value_error",
+                "reason": "unknown_territory",
+                "territory_id": str(territory_id),
+            }
+            for territory_id in request.territory_ids
+            if territory_id not in predictions_by_id
+        ]
+        if missing:
+            raise ScenarioInputError(missing)
+
+        selected = [predictions_by_id[territory_id] for territory_id in request.territory_ids]
+        try:
+            validate_scenario_territories(
+                [
+                    TerritoryKey(
+                        level=prediction.level,
+                        state_code=prediction.state_code,
+                        code=prediction.territory_code or prediction.municipality_code or "",
+                        district_plan=prediction.district_plan,
+                    )
+                    for prediction in selected
+                ]
+            )
+        except ValueError as exc:
+            raise ScenarioInputError(
+                [
+                    {
+                        "loc": ["body", "territory_ids"],
+                        "msg": str(exc),
+                        "type": "value_error",
+                        "reason": "mixed_territory_scope",
+                    }
+                ]
+            ) from None
+
+        wrong_scope = [
+            {
+                "loc": ["body", "territory_ids"],
+                "msg": "Cada territorio debe coincidir con el nivel y plan del modelo.",
+                "type": "value_error",
+                "reason": "territory_model_scope_mismatch",
+                "territory_id": str(prediction.territory_id),
+            }
+            for prediction in predictions
+            if (prediction.level, prediction.district_plan) != (model.level, model.district_plan)
+        ]
+        if wrong_scope:
+            raise ScenarioInputError(wrong_scope)
+
         comparison = simulate_scenario(predictions, request)
+        comparison = comparison.model_copy(
+            update={"level": model.level, "district_plan": model.district_plan}
+        )
 
         scenario_id = uuid4()
         created_at = datetime.now(UTC)
@@ -236,6 +325,8 @@ class ScenarioService:
             model_sha256=_model_sha256(model),
             selection=[str(territory_id) for territory_id in comparison.selected_territory_ids],
             created_at=created_at,
+            level=model.level,
+            district_plan=model.district_plan,
         )
         results = _to_result_records(scenario_id, comparison)
 
@@ -265,6 +356,8 @@ class ScenarioService:
             target_year=scenario.target_year,
             requested_reduction_pp=scenario.requested_reduction_pp,
             assumption_code=scenario.assumption_code,
+            level=scenario.level,
+            district_plan=scenario.district_plan,
             assumption_version=scenario.assumption_version,
             rationale_text=scenario.rationale_text,
             rules_version=scenario.rules_version,
@@ -277,6 +370,9 @@ class ScenarioService:
                     "territory_id": result.territory_id,
                     "municipality_code": result.municipality_code,
                     "municipality_name": result.municipality_name,
+                    "level": result.level,
+                    "territory_code": result.territory_code,
+                    "district_plan": result.district_plan,
                     "baseline_abstention_pct": result.baseline_abstention_pct,
                     "hypothetical_abstention_pct": result.hypothetical_abstention_pct,
                     "baseline_error_lower_pct": result.baseline_error_lower_pct,

@@ -483,6 +483,8 @@ class ModelRecord:
     metrics: dict | None
     exclusions: dict | None
     created_at: datetime | None
+    level: TerritoryLevel = "municipality"
+    district_plan: DistrictPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -490,7 +492,7 @@ class PredictionRecord:
     """One persisted prediction (the DTO fields of ``/predictions``, no FastAPI)."""
 
     territory_id: UUID
-    municipality_code: str
+    municipality_code: str | None
     municipality_name: str
     target_year: int
     estimated_abstention_pct: float | None
@@ -501,6 +503,10 @@ class PredictionRecord:
     eligible: bool
     quality: dict | None
     model_run_id: UUID
+    level: TerritoryLevel = "municipality"
+    territory_code: str | None = None
+    district_plan: DistrictPlan | None = None
+    state_code: str = "14"
 
 
 @dataclass(frozen=True)
@@ -519,6 +525,8 @@ class ScenarioRecord:
     model_sha256: str
     selection: list[str]
     created_at: datetime
+    level: TerritoryLevel = "municipality"
+    district_plan: DistrictPlan | None = None
 
 
 @dataclass(frozen=True)
@@ -527,7 +535,7 @@ class ScenarioResultRecord:
 
     scenario_id: UUID
     territory_id: UUID
-    municipality_code: str
+    municipality_code: str | None
     municipality_name: str
     baseline_abstention_pct: float | None
     hypothetical_abstention_pct: float | None
@@ -542,6 +550,8 @@ class ScenarioResultRecord:
     risk_a_unstable: bool
     risk_b_unstable: bool
     selected: bool
+    level: TerritoryLevel = "municipality"
+    district_plan: DistrictPlan | None = None
 
 
 __all__ = [

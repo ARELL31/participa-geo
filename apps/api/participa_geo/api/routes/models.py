@@ -24,6 +24,8 @@ def to_model_dto(record: ModelRecord) -> ModelDTO:
     return ModelDTO(
         model_run_id=record.model_run_id,
         family=record.family,
+        level=record.level,
+        district_plan=record.district_plan,
         target_year=int(cut_dates.get("target_year", 2027)),
         reference_date=str(cut_dates.get("reference_date", "2025-12-15")),
         features=list(record.features or []),

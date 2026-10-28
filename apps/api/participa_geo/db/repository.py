@@ -383,7 +383,7 @@ class Repository:
         rows = self.session.execute(
             text(
                 """
-                SELECT id, family, parameters, features, cut_dates, hashes,
+                SELECT id, family, level, district_plan, parameters, features, cut_dates, hashes,
                        dependencies, metrics, exclusions, created_at
                 FROM model_run
                 ORDER BY created_at DESC
@@ -399,7 +399,7 @@ class Repository:
         row = self.session.execute(
             text(
                 """
-                SELECT id, family, parameters, features, cut_dates, hashes,
+                SELECT id, family, level, district_plan, parameters, features, cut_dates, hashes,
                        dependencies, metrics, exclusions, created_at
                 FROM model_run
                 WHERE id = :id
@@ -425,7 +425,7 @@ class Repository:
         page: int,
         page_size: int,
     ) -> tuple[list[models.PredictionRecord], int]:
-        """Return prediction rows (stably ordered by municipality code)."""
+        """Return prediction rows (stably ordered by territory code)."""
         where = "p.model_run_id = :model_run_id AND p.target_year = :target_year"
         params: dict = {"model_run_id": model_run_id, "target_year": target_year}
         if territory_id is not None:
@@ -441,13 +441,14 @@ class Repository:
         list_sql = f"""
             SELECT p.reference_territory_id AS territory_id,
                    t.municipality_code, t.name AS municipality_name,
+                   t.level, t.territory_code, t.district_plan, t.state_code,
                    p.target_year, p.estimated_abstention_pct,
                    p.historical_error_lower_pct, p.historical_error_upper_pct,
                    p.risk, p.risk_unstable, p.eligible, p.quality, p.model_run_id
             FROM prediction p
             JOIN territory_version t ON t.id = p.reference_territory_id
             WHERE {where}
-            ORDER BY t.municipality_code
+            ORDER BY t.territory_code
             LIMIT :limit OFFSET :offset
         """
         params["limit"] = page_size
@@ -460,6 +461,8 @@ class Repository:
         return models.ModelRecord(
             model_run_id=row["id"],
             family=row["family"],
+            level=row["level"],
+            district_plan=row["district_plan"],
             parameters=row["parameters"],
             features=row["features"],
             cut_dates=row["cut_dates"],
@@ -485,6 +488,10 @@ class Repository:
             eligible=row["eligible"],
             quality=row["quality"],
             model_run_id=row["model_run_id"],
+            level=row["level"],
+            territory_code=row["territory_code"],
+            district_plan=row["district_plan"],
+            state_code=row["state_code"],
         )
 
     # -- scenario writes / reads ------------------------------------------
@@ -495,6 +502,8 @@ class Repository:
             pg_insert(models.Scenario.__table__).values(
                 id=scenario.scenario_id,
                 model_run_id=scenario.model_run_id,
+                level=scenario.level,
+                district_plan=scenario.district_plan,
                 target_year=scenario.target_year,
                 reduction_pp=scenario.requested_reduction_pp,
                 assumption_code=scenario.assumption_code,
@@ -527,6 +536,8 @@ class Repository:
                 ),
                 "scenario_id": scenario_id,
                 "reference_territory_id": result.territory_id,
+                "level": result.level,
+                "district_plan": result.district_plan,
                 "baseline_abstention_pct": result.baseline_abstention_pct,
                 "hypothetical_abstention_pct": result.hypothetical_abstention_pct,
                 "baseline_error_lower_pct": result.baseline_error_lower_pct,
@@ -555,7 +566,8 @@ class Repository:
         row = self.session.execute(
             text(
                 """
-                SELECT id AS scenario_id, model_run_id, target_year, reduction_pp,
+                SELECT id AS scenario_id, model_run_id, target_year, level, district_plan,
+                       reduction_pp,
                        assumption_code, assumption_version, rationale_text,
                        rules_version, input_sha256, model_sha256, selection,
                        created_at
@@ -572,6 +584,8 @@ class Repository:
             scenario_id=row["scenario_id"],
             model_run_id=row["model_run_id"],
             target_year=row["target_year"],
+            level=row["level"],
+            district_plan=row["district_plan"],
             requested_reduction_pp=float(row["reduction_pp"]),
             assumption_code=row["assumption_code"],
             assumption_version=row["assumption_version"],
@@ -588,6 +602,7 @@ class Repository:
                 """
                 SELECT s.scenario_id, s.reference_territory_id AS territory_id,
                        t.municipality_code, t.name AS municipality_name,
+                       s.level, t.territory_code, s.district_plan,
                        s.baseline_abstention_pct, s.hypothetical_abstention_pct,
                        s.baseline_error_lower_pct, s.baseline_error_upper_pct,
                        s.hypothetical_error_lower_pct,
@@ -598,7 +613,7 @@ class Repository:
                 FROM scenario_result s
                 JOIN territory_version t ON t.id = s.reference_territory_id
                 WHERE s.scenario_id = :scenario_id
-                ORDER BY t.municipality_code
+                ORDER BY t.territory_code
                 """
             ),
             {"scenario_id": scenario_id},
@@ -610,6 +625,9 @@ class Repository:
                 territory_id=result["territory_id"],
                 municipality_code=result["municipality_code"],
                 municipality_name=result["municipality_name"],
+                level=result["level"],
+                territory_code=result["territory_code"],
+                district_plan=result["district_plan"],
                 baseline_abstention_pct=result["baseline_abstention_pct"],
                 hypothetical_abstention_pct=result["hypothetical_abstention_pct"],
                 baseline_error_lower_pct=result["baseline_error_lower_pct"],

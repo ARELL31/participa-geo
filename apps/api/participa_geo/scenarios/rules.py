@@ -238,7 +238,9 @@ def simulate_scenario(
     reduction = request.reduction_pp
     results: list[ScenarioResultDTO] = []
 
-    for prediction in sorted(predictions, key=lambda item: item.municipality_code):
+    for prediction in sorted(
+        predictions, key=lambda item: item.territory_code or item.municipality_code or ""
+    ):
         baseline = prediction.estimated_abstention_pct
         eligible = prediction.eligible and baseline is not None
         selected = prediction.territory_id in selected_ids
@@ -274,6 +276,9 @@ def simulate_scenario(
                 territory_id=prediction.territory_id,
                 municipality_code=prediction.municipality_code,
                 municipality_name=prediction.municipality_name,
+                level=prediction.level,
+                territory_code=prediction.territory_code or prediction.municipality_code,
+                district_plan=prediction.district_plan,
                 baseline_abstention_pct=baseline,
                 hypothetical_abstention_pct=hypothetical,
                 baseline_error_lower_pct=baseline_lower,
@@ -295,6 +300,8 @@ def simulate_scenario(
         target_year=request.target_year,
         requested_reduction_pp=reduction,
         assumption_code=request.assumption_code,
+        level=request.level or (predictions[0].level if predictions else "municipality"),
+        district_plan=predictions[0].district_plan if predictions else None,
         assumption_version=assumption.version,
         rationale_text=assumption.text,
         rules_version=SCENARIO_RULES_VERSION,
