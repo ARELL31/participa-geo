@@ -198,6 +198,22 @@ def _train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _train_national_municipal(args: argparse.Namespace) -> int:
+    from participa_geo.db.session import session_scope, writer_engine
+    from participa_geo.settings import Settings
+    from pipelines.training.national import train_national_municipal
+
+    settings = Settings()
+    with session_scope(writer_engine(settings)) as session:
+        bundle = train_national_municipal(Path(args.processed_dir), Path(args.output_dir), session)
+    print(
+        f"trained national municipal family {bundle.family} "
+        f"(model_run_id {bundle.model_run_id}): {bundle.candidate_count} candidates, "
+        f"{bundle.total_count} municipality records written to {args.output_dir}"
+    )
+    return 0
+
+
 def _model_load(args: argparse.Namespace) -> int:
     from participa_geo.db.repository import load_model_bundle
     from participa_geo.db.session import session_scope, writer_engine
@@ -652,6 +668,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directorio de artefactos del modelo (p. ej. data/processed/model).",
     )
     train.set_defaults(handler=_train)
+
+    train_national = subparsers.add_parser(
+        "train-national-municipal",
+        help="Entrenar el modelo municipal nacional 2027 con identidad verificada.",
+    )
+    train_national.add_argument(
+        "--processed-dir",
+        default="data/processed/national",
+        help="Generación nacional de observaciones agregadas.",
+    )
+    train_national.add_argument(
+        "--output-dir",
+        default="data/processed/national/model",
+        help="Directorio de artefactos del modelo nacional.",
+    )
+    train_national.set_defaults(handler=_train_national_municipal)
 
     model = subparsers.add_parser(
         "model",
