@@ -568,3 +568,21 @@ prueba nacional-crítica.
   `DELIVERY.json` conserva el SHA-256/tamaño del ZIP como sidecar (no se incluye
   dentro del propio archivo). Se verificó la inclusión de la migración `0014`,
   los tests/regresiones de distrito, los artefactos 2024 y esta documentación.
+
+## 16. Corrección de endpoint de pruebas de rendimiento (2026-10-28)
+
+- Diagnóstico: el módulo `tests/integration/national/test_performance.py` usaba
+  `127.0.0.1:8000`, que no es el endpoint accesible desde un contenedor efímero
+  de test. Se reprodujo `ConnectionRefusedError` en los dos casos API antes de
+  modificarlo. La prueba ahora permite configurar `NATIONAL_API_BASE_URL` y
+  usa `http://web:80` por omisión, pasando por el proxy `/api` de nginx; paths,
+  muestras y límites de latencia no cambiaron.
+- Comando dentro de la red Compose:
+  `sg docker -c 'docker compose run --rm --no-deps --entrypoint pytest api -q tests/integration/national/test_performance.py'`
+  → **6 passed, 1 warning**. Suite completa:
+  `sg docker -c 'docker compose exec -T api ruff check . && docker compose exec -T api pytest -q -rs'`
+  → Ruff pasó; **262 passed, 76 skipped, 1 warning**. Skips legacy aceptados;
+  la advertencia es Starlette/TestClient.
+- Sólo cambió configuración de tests y documentación, sin modificación del
+  producto. No se repitió cleanroom completo para este ajuste test-only. El ZIP
+  final se regeneró y se volvió a verificar después de incluir estos archivos.

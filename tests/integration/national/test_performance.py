@@ -10,7 +10,7 @@ from urllib.request import urlopen
 
 import pytest
 
-BASE_URL = os.environ.get("NATIONAL_ACCEPTANCE_API", "http://127.0.0.1:8000")
+BASE_URL = os.environ.get("NATIONAL_API_BASE_URL", "http://web:80").rstrip("/")
 WMS = (
     "/api/v1/gis/wms?service=WMS&version=1.1.1&request=GetMap"
     "&layers=participa_geo_national:states&styles="

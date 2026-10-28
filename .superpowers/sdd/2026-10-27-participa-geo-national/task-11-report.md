@@ -201,3 +201,23 @@ pasan. El stack nacional mantiene readiness 200.
 - Estado sigue `DONE_WITH_CONCERNS`: GitHub Actions no ejecutado y revisión
   humana metodológica/cartas pendiente. No se generó ninguna predicción
   distrital 2027.
+
+## Corrección de verificación — endpoint de pruebas de rendimiento (2026-10-28)
+
+- La revisión final detectó que el módulo de rendimiento usaba loopback del
+  contenedor y una variable antigua. `BASE_URL` ahora lee
+  `NATIONAL_API_BASE_URL` y por defecto usa `http://web:80` (proxy nginx de
+  Compose); los paths y umbrales permanecen intactos.
+- La falla se reprodujo antes del cambio en un contenedor efímero Compose: los
+  dos casos API recibieron `ConnectionRefusedError` al acceder a 127.0.0.1:8000.
+  Ejecución corregida dentro de la red nacional:
+  `sg docker -c 'docker compose run --rm --no-deps --entrypoint pytest api -q tests/integration/national/test_performance.py'`
+  → **6 passed, 1 warning**. Suite backend completa:
+  `sg docker -c 'docker compose exec -T api ruff check . && docker compose exec -T api pytest -q -rs'`
+  → Ruff pasó; **262 passed, 76 skipped, 1 warning**.
+- Cambio sólo en configuración de pruebas/documentación; ningún producto,
+  modelo o artefacto predictivo cambió. No se repitió cleanroom completo por
+  esta corrección test-only. El ZIP se regeneró y verificó tras actualizar los
+  tests/docs: `complete: true`, 318 miembros, 461,140,408 bytes; SHA-256
+  `f8beafd005d7b563f572b62a8c8c6347aa64428b2da09a67ea7af746cc5141e1`.
+  También figura en `dist/national/DELIVERY.json`.
