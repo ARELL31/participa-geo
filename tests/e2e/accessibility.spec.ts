@@ -14,7 +14,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PAGES = [
   { path: "/", heading: "Panel ejecutivo" },
-  { path: "/territory?year=2024", heading: "Inteligencia territorial" },
+  { path: "/territory?level=municipality&state=14&year=2024", heading: "Inteligencia territorial" },
   { path: "/prediction", heading: "Predicción 2027" },
   { path: "/scenarios", heading: "Escenarios hipotéticos" },
   { path: "/reports", heading: "Reportes y exportaciones" },
@@ -64,7 +64,7 @@ test.describe("axe WCAG A/AA", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await open(page, "/territory?year=2024", "Inteligencia territorial");
+    await open(page, "/territory?level=municipality&state=14&year=2024", "Inteligencia territorial");
     await page.getByRole("button", { name: "Abrir menú de navegación" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -131,7 +131,7 @@ test("skip link, tab order, visible focus and Enter activation", async ({
 test("controles principales tienen etiqueta accesible y nombres de acción", async ({
   page,
 }) => {
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?level=municipality&state=14&year=2024");
   await expect(page.getByLabel("Municipio")).toBeVisible();
   await expect(page.getByLabel("Año histórico")).toBeVisible();
   expect(
@@ -139,7 +139,7 @@ test("controles principales tienen etiqueta accesible y nombres de acción", asy
   ).toBe("SELECT");
 
   await page.goto("/scenarios");
-  await expect(page.getByLabel("Municipios")).toBeVisible();
+  await expect(page.getByLabel("Municipios", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Reducción hipotética (puntos porcentuales)"),
   ).toBeVisible();
@@ -182,7 +182,7 @@ test.describe("reflow 320/375/1440", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/territory?year=2024");
+    await page.goto("/territory?level=municipality&state=14&year=2024");
     const trigger = page.getByRole("button", {
       name: "Abrir menú de navegación",
     });
@@ -198,7 +198,7 @@ test.describe("reflow 320/375/1440", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/territory?year=2024");
+    await page.goto("/territory?level=municipality&state=14&year=2024");
     await expect(
       page.getByRole("navigation", { name: "Navegación principal" }),
     ).toBeVisible();
@@ -255,10 +255,13 @@ test("aproximación de zoom 200% mantiene contenido y controles utilizables", as
   // body zoom 2 approximates a 320 CSS px layout at 200% and catches reflow
   // regressions without claiming a full browser-zoom test.
   await page.setViewportSize({ width: 640, height: 900 });
-  await page.goto("/territory?year=2024");
+  await page.goto("/territory?level=municipality&state=14&year=2024");
   await page.evaluate(() => {
     document.body.style.zoom = "2";
   });
+  const municipality = page.getByLabel("Municipio");
+  await expect(municipality.locator("option").nth(1)).toBeAttached();
+  await municipality.selectOption({ index: 1 });
   const width = await page.evaluate(
     () => document.documentElement.scrollWidth,
   );

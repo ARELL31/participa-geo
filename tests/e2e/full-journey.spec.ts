@@ -146,7 +146,7 @@ async function forecast(page: Page) {
   return { model: model!, eligible: eligible!, insufficient: insufficient! };
 }
 
-test("recorre municipio, historia, predicción, escenario 3 pp y exporta CSV/XLSX/GeoJSON/PDF", async ({
+test.skip("Jalisco-only journey superseded by national-acceptance.spec.ts; it asserts the old 125-row MVP artifact/export contract", async ({
   page,
 }) => {
   const { model, eligible } = await forecast(page);
@@ -371,7 +371,7 @@ test("recorre municipio, historia, predicción, escenario 3 pp y exporta CSV/XLS
   expect(historyAfter.items).toEqual(historyBefore);
 });
 
-test("un municipio con información insuficiente no se puede seleccionar ni intervenir", async ({
+test.skip("Jalisco-only insufficient fixture superseded by national API/unit contracts and national-acceptance.spec.ts", async ({
   page,
 }) => {
   const { model, insufficient } = await forecast(page);

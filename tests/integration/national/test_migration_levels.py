@@ -169,7 +169,7 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
                 "001",
                 None,
             )
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0012"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0013"
             assert (
                 connection.scalar(
                     text("SELECT relkind FROM pg_class WHERE oid = 'fact_ccpc_section'::regclass")
@@ -206,13 +206,15 @@ def test_actual_alembic_chain_from_empty_schema_preserves_legacy_identity(
             )
             assert (
                 connection.scalar(
-                    text(
-                        "SELECT count(*) FROM information_schema.columns "
-                        "WHERE table_name='district_reconstruction_coverage' "
-                        "AND column_name IN ('mgs_only_section_count', "
-                        "'section_universe_gap_count')"
+                        text(
+                            "SELECT count(*) FROM information_schema.columns "
+                            "WHERE table_schema = :schema "
+                            "AND table_name='district_reconstruction_coverage' "
+                            "AND column_name IN ('mgs_only_section_count', "
+                            "'section_universe_gap_count')"
+                        ),
+                        {"schema": schema},
                     )
-                )
                 == 2
             )
     finally:

@@ -1,5 +1,13 @@
 # Resultados de verificación — PARTICIPA-GEO
 
+> **Aceptación nacional Task 11 (actualizada 2026-10-28):** estado
+> `DONE_WITH_CONCERNS`. El stack nacional real cumple los límites medidos de
+> rendimiento; backend y Playwright quedan verdes con pruebas Jalisco obsoletas
+> explícitamente superseded. El ZIP nacional está completo y hasheado. El ensayo
+> cleanroom se ejecutó desde el ZIP pero **se bloquea** al faltar en éste los
+> insumos de continuidad distrital requeridos por `district rebuild`/`gis import`
+> (detalle §12); no se declara reproducción completa.
+
 **Fecha de la corrida:** 2026-10-27 (UTC), rama `feat/participa-geo-mvp`.
 **Alcance:** aceptación técnica del MVP local. No es un despliegue público, no
 es una certificación AA y no sustituye la revisión humana ni la firma/envío de
@@ -300,3 +308,96 @@ final independiente quedó cerrada (12/12 hallazgos atendidos). Quedan como
 condiciones humanas la revisión de redacción, las cartas y el envío; la
 redistribución de fuentes fue confirmada por el usuario para este paquete con
 `--confirm-source-license` y atribución/checksums.
+
+## 12. Aceptación nacional Task 11 — 2026-10-28
+
+### CI y pruebas
+
+- `.github/workflows/ci.yml` configura Ruff, todas las pruebas unitarias,
+  contratos nacionales de distrito/health/OpenAPI sin DB, ESLint, TypeScript,
+  Vitest y build. GitHub Actions **no se ejecutó**; la configuración no se
+  presenta como resultado de un run remoto.
+- Suite backend completa, contra el stack real: **243 passed, 76 skipped, 1
+  warning** (`StarletteDeprecationWarning`, `httpx`/TestClient), 243.13 s.
+  Los skips de Jalisco que ahora están marcados en `tests/conftest.py` reemplazan
+  fixtures obsoletos de 125 municipios/filas; las rutas nacionales equivalentes
+  sí se ejecutan. Dos skips adicionales conservan razón: falta el GeoJSON MVP
+  para scenario delivery/GeoJSON histórico.
+- Suite Playwright real: **16 passed, 2 skipped** (1.6 min). Incluye cobertura
+  nacional, resumen de 32 entidades, `page_size=500`, perfil DERFE2023 observado
+  2024, distrito predicción/escenario 409, rechazo de WFS nacional completo,
+  cambio de nivel y todas las pruebas de teclado, axe y reflow. Los dos journeys
+  Jalisco 125-row de `full-journey.spec.ts` están marcados `test.skip` con
+  reemplazos explícitos en `national-acceptance.spec.ts` y contratos nacionales.
+- Web Docker test (sin source volume): ESLint y typecheck pasaron; Vitest **10
+  archivos / 67 tests** pasaron; build de producción pasó. Se conserva aviso
+  informativo de MapLibre >500 kB; Vitest muestra requests MSW no manejadas en
+  casos que siguen pasando.
+- Ruff `check .`: pasó. Contratos seleccionados de CI sin DB: health **5 passed**,
+  lectura nacional **3 passed / 19 deselected**, escenarios/nivel **5 passed / 8
+  deselected**. `docker compose config --quiet`: pasó.
+- Los checks de accesibilidad no son certificación WCAG/AA.
+
+### Rendimiento medido, API `127.0.0.1:8081`
+
+Primera solicitud medida y luego 30 solicitudes calientes (WMS 10):
+
+| Operación | Primera | p95 caliente | Umbral | Resultado |
+|---|---:|---:|---:|---|
+| WMS GetMap 1200×900 | 0.9581 s | 0.9504 s | frío ≤5 / caliente ≤2.5 s | pasa |
+| WFS estado 14, `count=1000` | 0.3094 s | 0.3428 s | ≤3 s | pasa; ≤1,000 features |
+| API municipio state14, page500 | 0.0275 s | 0.0245 s | ≤500 ms | pasa |
+| Resumen 32 entidades | 0.0306 s | 0.0239 s | ≤1 s | pasa |
+
+La optimización en `Repository.get_participation_summary` reemplaza la selección
+correlacionada por fila por una selección `DISTINCT ON` del último dataset por
+entidad. Las pruebas automáticas de los umbrales están en
+`tests/integration/national/test_performance.py` (**4 passed**). Mediciones
+locales, no garantías generales.
+
+### ZIP nacional
+
+- CLI `deliver --output-dir dist/national --confirm-source-license` y
+  `verify-delivery` completaron con `complete: true`, 311 miembros verificados,
+  `scenario_required: false`, sources mode `confirm`.
+- `dist/national/technical.zip`: el tamaño/SHA-256 exactos del build final están
+  en el `DELIVERY.json` contiguo y en el informe Task 11. Incluye 6 archivos
+  CCPC y 32 MGS ZIP; el manifiesto/checksums reporta atribución y hash. La
+  verificación de contenido confirmó ausencia de `.env`, `.git`,
+  cartas/credenciales o datos personales. Distrito es observado 2024; no hay
+  artefacto de predicción distrital.
+
+### Ensayo cleanroom: bloqueado por insumos fuera del ZIP
+
+Se extrajo el ZIP de aceptación al directorio nuevo
+`/tmp/opencode/participa-geo-national-cleanroom-20261028T190000Z`, con proyecto
+`participa_geo_national_cleanroom`, volúmenes propios y web `8082`. Los 312
+checksums de `CHECKSUMS.sha256` dieron `OK`; las imágenes API/web se construyeron
+desde el código extraído. DB subió y Alembic migró de cero hasta `0013`.
+
+- `ingest-national` leyó los 6 CCPC (192 CSV), procesó y cargó en PostGIS
+  **54,872,712 facts**, con 14,779 observaciones municipales (2,477 en 2024),
+  300 distritos versionados y 44,154 `DEF` vacíos.
+- `db load --processed-dir .../national-cleanroom` falló con
+  `FileNotFoundError: .../provenance.json`: ese comando consume el formato legado
+  MVP; `ingest-national` es el cargador nacional (incluye carga PostGIS).
+- `district rebuild` falló antes de procesar con
+  `ContinuityError: official historical CSV not found:
+  /workspace/data/raw/continuity/official-section-history.csv`. El ZIP no contiene
+  dicho CSV, el ACCDB INE ni `district-headquarters.txt`.
+- `gis import-national` confirmó la falta de `district-headquarters.txt`:
+  `official district-headquarters catalogue must contain 300 unique labels,
+  found 0`. En consecuencia, no fue posible entrenar/reconstruir el bundle en
+  cleanroom; el intento de train anterior al import terminó con
+  `incomplete MGS municipality reference: 0/2477 municipalities across 0/32 states`.
+- Por tanto no se afirma readiness, GIS publish, WMS/WFS, API nacional ni
+  equivalencia `atol=1e-8` en cleanroom. El ZIP contiene datos procesados y el
+  bundle publicado usados por el producto, pero no todos los insumos fuente
+  intermedios necesarios para recalcular la continuidad/catalogación desde cero.
+
+La limpieza debe limitarse a `docker compose -p
+participa_geo_national_cleanroom ... down --volumes`; no se tocó ni se eliminaron
+volúmenes del proyecto nacional o MVP. La reproducción integral requiere que el
+responsable de fuentes decida si añadir y atribuir los insumos de continuidad al
+paquete o aprobar un contrato de rebuild que consuma evidencia derivada
+versionada. Hasta entonces: **DONE_WITH_CONCERNS**.

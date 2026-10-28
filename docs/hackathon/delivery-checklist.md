@@ -8,14 +8,14 @@ verificarse con comandos; la segunda no se automatiza.
 - [x] `docker compose config --quiet` sale 0.
 - [x] Backend: `docker compose run --rm api pytest -q` termina sin fallos.
 - [x] Web: `docker compose run --rm --no-deps web-test npm run test -- --run`.
-- [x] E2E: `docker compose --profile tools run --rm --no-deps web-e2e npx playwright test`.
+- [x] E2E nacional real: `docker compose --profile test run --rm e2e npx playwright test --config tests/e2e/playwright.config.ts` (accesibilidad incluida; dos journeys MVP Jalisco explícitamente superseded).
 - [x] `deliver` se ejecutó con **un** modo explícito de fuentes:
       `--confirm-source-license` (originales incluidos) o `--skip-sources`
       (sólo URL/checksums). Sin ninguno de los dos, el comando falla.
 - [x] `deliver` nacional termina y produce `technical.zip`, `methodology.pdf`,
       `executive.pdf` y observaciones distritales 2024. Mapas/escenarios sólo
       existen para el nivel municipal y no se generan como distritos 2027.
-- [x] `verify-delivery --archive .../technical.zip` devuelve `complete: true` y
+- [x] `verify-delivery --archive dist/national/technical.zip` devuelve `complete: true` y
       todos los checksums coinciden; un paquete incompleto sale con código
       distinto de cero.
 - [x] En modo `--confirm-source-license`, el ZIP incluye los seis ZIP CCPC
@@ -38,7 +38,13 @@ verificarse con comandos; la segunda no se automatiza.
       leyenda/corte y no hay placeholder si GIS falla.
 - [x] El reporte y la presentación se generan desde artefactos/BD; una fecha de
       generación distinta no cambia los resultados.
-- [x] El paquete funciona sin depender de `/tmp/opencode`.
+- [x] Los checksums del paquete pasan y la ingesta nacional (54,872,712 facts)
+      se reproduce desde el ZIP en cleanroom.
+- [ ] Rebuild cleanroom integral pendiente: faltan en el ZIP ACCDB/CSV de historia
+      seccional y `district-headquarters.txt`; el bloqueo está documentado, no se
+      declara aceptación cleanroom completa.
+- [x] WMS/WFS/page500/resumen 32 medidos bajo umbrales; cifras exactas en el
+      informe de verificación.
 
 Evidencia: `docs/hackathon/verification-results.md` (comandos, fechas, salida y
 cobertura). La aceptación técnica no sustituye los pasos humanos de la sección B.
@@ -46,8 +52,8 @@ cobertura). La aceptación técnica no sustituye los pasos humanos de la secció
 Comando de verificación:
 
 ```sh
-docker compose run --rm api python -m participa_geo.cli verify-delivery \
-  --archive dist/hackathon/technical.zip
+  docker compose exec -T api python -m participa_geo.cli verify-delivery \
+  --archive /workspace/dist/national/technical.zip
 ```
 
 ## B. Pasos humanos (no automatizados)
@@ -75,3 +81,6 @@ docker compose run --rm api python -m participa_geo.cli verify-delivery \
 - Versión de modelo, corte, escenario, supuestos y hashes de entrada.
 - Fecha/hora de generación (metadato variable; no se exige ZIP binariamente
   idéntico).
+- Rendimiento medido WMS/WFS/API/resumen nacional y ensayo limpio con su
+  proyecto Compose, hashes, comandos y límites exactos en
+  `docs/hackathon/verification-results.md`.

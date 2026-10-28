@@ -1,9 +1,9 @@
 # Despliegue local y operación
 
-Estado: **despliegue local de loopback, sin autenticación ni exposición
-pública**. Este documento describe el único modo soportado por el MVP: un host
-con Docker/Compose y el stack aislado en `127.0.0.1`. No se abre firewall, no se
-publica el socket Docker y no se configura TLS ni un dominio público.
+Estado: **despliegue local nacional de loopback, sin autenticación ni exposición
+pública**. El producto cubre municipios nacionales y observación distrital 2024;
+no existe predicción distrital 2027. No se abre firewall, no se publica el
+socket Docker ni se configura TLS o un dominio público.
 
 ## 1. Arquitectura desplegada
 
@@ -33,7 +33,7 @@ web (nginx) ── /api/* ──► api (FastAPI, :8000, sólo red interna)
 |---|---|
 | Docker Engine / Compose | 29.9.2 / 5.6.1 (probados) |
 | Memoria del host | 7.7 GiB; stack ocioso ≈ 1.26 GiB (api 185 MiB, GeoServer 958 MiB, db 103 MiB, web 10 MiB) |
-| Disco | ≈ 6.5 GB de imágenes y ≈ 177 MB de volúmenes; el ZIP con fuentes ≈ 33 MB |
+| Paquete nacional confirmado | ≈439 MiB comprimidos; seis CCPC y 32 MGS ZIP |
 | CPU | no se fija límite; el entrenamiento y los PDFs son las cargas más largas |
 | Navegador | Chromium reciente (Playwright 1.64.1 para la suite) |
 
@@ -223,7 +223,49 @@ expone el socket de Docker.
   distribuidos ni sobreviven a un reinicio.
 - GeoServer es obligatorio para mapa y `deliver`; la degradación es explícita
   (`503`/error visible y alternativa tabular), no un mapa falso.
-- El modelo es un piloto con 125 municipios, 85 elegibles y 40 insuficientes;
-  el año objetivo es 2027 y la referencia cartográfica es 2025-12-15.
-- La igualdad histórica de límites no está verificada
-  (`footprint_status=not_verified`).
+- El modelo nacional incluye 2,477 municipios (1,623 elegibles; 854 insuficientes)
+  para 2027. Los 300 distritos sólo muestran observado 2024/DERFE2023 con
+  cobertura explícita; no se predice ni se crean escenarios distritales.
+- WMS nacional y WFS acotado por entidad/bbox (máximo 1,000 elementos); no se
+  ofrece descarga WFS nacional completa.
+
+## 10. Rendimiento y aceptación nacional (Task 11)
+
+Medición local del stack nacional real, desde loopback `127.0.0.1:8081`; GetMap
+de 1200×900, una primera llamada y 30 llamadas calientes para API/WFS (10 para
+WMS). Resultados en la corrida del 2026-10-28:
+
+| Operación | Primera (s) | p95 caliente (s) | Límite | Resultado |
+|---|---:|---:|---:|---|
+| WMS nacional GetMap 1200×900 | 0.9581 | 0.9504* | 5.0 frío / 2.5 caliente | Pasa |
+| WFS estado 14, count 1,000 | 0.3094 | 0.3428 | 3.0 | Pasa |
+| API municipios entidad 14, page 500 | 0.0275 | 0.0245 | 0.500 | Pasa |
+| Resumen nacional de 32 entidades | 0.0306 | 0.0239 | 1.0 | Pasa |
+
+*WMS caliente medido con 10 repeticiones. Prueba automatizada reproducible:
+`tests/integration/national/test_performance.py`; suite Playwright de aceptación:
+`tests/e2e/national-acceptance.spec.ts`. Las cifras son mediciones de este
+entorno, no garantías de producción.
+
+La consulta de resumen se optimizó para elegir una vez el dataset municipal más
+reciente por entidad, en lugar de ejecutar una subconsulta correlacionada por
+fila observada.
+
+### Ensayo limpio nacional
+
+El paquete final se extrae a un directorio nuevo bajo
+`/tmp/opencode/participa-geo-national-cleanroom-<timestamp>`. El proyecto Compose
+se llama `participa_geo_national_cleanroom` y el puerto web es 8082; usa volúmenes
+propios y nunca reutiliza ni borra volúmenes del proyecto nacional o del MVP.
+Se valida `CHECKSUMS.sha256`, readiness, API, WMS/WFS y la prohibición de
+predicción/escenario distrital; al finalizar se elimina sólo el proyecto
+cleanroom. El detalle y cualquier limitación verificable se registra en
+`docs/hackathon/verification-results.md`.
+
+**Límite conocido del paquete de Task 11:** el ZIP incluye los 6 CCPC y 32 MGS
+fuente, pero no el ACCDB/CSV de historia seccional ni el catálogo de cabeceras
+distritales. El ensayo 2026-10-28 ejecutó migración e ingestión completa, pero
+`district rebuild` y `gis import-national` se detuvieron por esos archivos
+ausentes; no se declaró una reproducción cleanroom integral. Hace falta autorizar
+y atribuir esos insumos o cambiar el contrato de rebuild antes de repetir la
+aceptación cleanroom completa.

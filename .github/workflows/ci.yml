@@ -34,15 +34,12 @@ jobs:
       - name: Ruff
         run: uv run ruff check .
 
-      # The full integration suite needs the packaged official data, PostGIS,
-      # GeoServer and the published model. Those artifacts are git-ignored and
-      # are exercised in the local/clean-room acceptance run recorded in
-      # docs/hackathon/verification-results.md. This job never reports them as
-      # passed when their prerequisites are absent.
-      - name: Unit and no-database contract tests
+      - name: Unit tests (national and retained compatibility)
         run: |
-          uv run pytest -q tests/unit --ignore=tests/unit/test_exports.py
+          uv run pytest -q tests/unit
           uv run pytest -q tests/contract/test_health.py
+          uv run pytest -q tests/contract/test_read_api.py -k "district_models_are_unavailable or federal_district_predictions_fail_with_stable_409 or openapi_matches_contract"
+          uv run pytest -q tests/contract/test_scenario_api.py -k "district_scenario_returns_unavailable_conflict or district_recommendations_are_unavailable_without_municipal_fallback or recommendations_reject_invalid_level or recommendations_reject_mixed_level_values or openapi_declares_scenario_contract"
 
   frontend:
     name: TypeScript lint, typecheck, Vitest and build
@@ -76,3 +73,7 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      # Playwright acceptance requires the national compose stack and licensed
+      # local source artifacts; it is run during the documented clean-room
+      # acceptance, not represented as a GitHub Actions result.

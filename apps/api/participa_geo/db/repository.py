@@ -57,21 +57,22 @@ class Repository:
                 text("""
             WITH states AS (
                 SELECT state_code, name FROM api_state_catalogue
+            ), latest_municipal_datasets AS (
+                SELECT DISTINCT ON (dv.state_code) dv.id, dv.state_code
+                FROM dataset_version dv
+                JOIN observation od ON od.dataset_version_id = dv.id
+                WHERE od.level = 'municipality' AND od.year = :year
+                ORDER BY dv.state_code, dv.created_at DESC, dv.id DESC
             ), observed AS (
                 SELECT state_code, SUM(ln)::bigint AS ln, SUM(sv)::bigint AS sv,
                        SUM(nv)::bigint AS nv, SUM(ns)::bigint AS ns
                 FROM (
                     SELECT t.state_code, o.ln, o.sv, o.nv, o.ns
                     FROM observation o
-                    JOIN dataset_version dv ON dv.id=o.dataset_version_id
+                    JOIN latest_municipal_datasets dv ON dv.id=o.dataset_version_id
                     JOIN territory_version t ON t.id = o.origin_territory_id
                     WHERE :level = 'municipality' AND o.level = 'municipality'
-                      AND o.year = :year AND dv.id = (
-                        SELECT dv2.id FROM dataset_version dv2
-                        JOIN observation o2 ON o2.dataset_version_id = dv2.id
-                        WHERE o2.year = o.year AND dv2.state_code = t.state_code
-                        ORDER BY dv2.created_at DESC, dv2.id DESC LIMIT 1
-                      )
+                      AND o.year = :year AND dv.state_code = t.state_code
                     UNION ALL
                     SELECT a.state_code, a.ln, a.sv, a.nv, a.ns
                     FROM agg_municipality_district_year a
