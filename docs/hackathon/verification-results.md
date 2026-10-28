@@ -498,8 +498,8 @@ prueba nacional-crítica.
   y Vitest **10 archivos / 67 tests** pasan; el aviso MSW es conocido y los
   tests aprobaron. Se conserva el aviso informativo de chunk MapLibre >500 kB.
 - El ZIP se regeneró/verificó con esta documentación. Limpieza del proyecto
-  cleanroom comprobada (sin contenedores ni volúmenes); sólo queda registrar el
-  commit de esta continuación.
+  cleanroom comprobada (sin contenedores ni volúmenes); esta aceptación está
+  registrada en el historial del repositorio.
 - Ruff `check .`, `docker compose config --quiet` y `git diff --check` pasan.
 - GitHub Actions no se ejecutó. El stack nacional conserva sus volúmenes y su
   readiness 200 tras Playwright y después del teardown cleanroom.

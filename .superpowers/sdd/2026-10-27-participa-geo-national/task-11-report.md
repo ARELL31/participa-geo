@@ -84,8 +84,8 @@ pasan. El stack nacional mantiene readiness 200.
 - Estado: **DONE_WITH_CONCERNS**. La fuente INE fue autorizada para esta entrega
   con atribución, URLs y checksums; no se infiere una licencia general de
   redistribución pública.
-- ZIP final `dist/national/technical.zip`: **461,133,213 bytes**, SHA-256
-  `7f1524b99ed4e17f64c87fd78b419816ae4e6756861c9e3479409313366db636`,
+- ZIP final `dist/national/technical.zip`: **461,133,205 bytes**, SHA-256
+  `54fc5d513d44715d6bd49ffd51df9da81fdd8820ec2a69987331bacb393b5cb8`,
   `complete: true`, 315 miembros verificados y 317 entradas de manifiesto.
   Incluye 6 CCPC, 32 MGS, ACCDB, CSV histórico derivado, catálogo de cabeceras y
   `scripts/export_official_section_history.sh`; fuentes/hash revisados y escaneo
