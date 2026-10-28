@@ -224,9 +224,7 @@ def export_scenario_csv(
     *,
     sources: dict | None = None,
 ) -> bytes:
-    """Export the 125 persisted A/B rows, matching the API values exactly."""
-    if len(scenario.results) != 125:
-        raise ValueError("el escenario debe contener exactamente 125 resultados")
+    """Export every persisted scenario A/B row, matching API values exactly."""
     buffer = io.StringIO()
     metadata = meta.model_copy(
         update={"filters": {**meta.filters, "scenario_id": str(scenario.scenario_id)}}

@@ -6,6 +6,7 @@ import { GlobalFiltersContext } from "../../app/filters";
 import { NationalPanel } from "./NationalPanel";
 import { server } from "../../test/server";
 import { http, HttpResponse } from "msw";
+import { forecastCohort, modelsHandler, predictionsHandler } from "../../test/fixtures";
 
 function renderPanel(
   stateCode = "all",
@@ -50,11 +51,41 @@ const summaries = Array.from({ length: 32 }, (_, index) => ({
 }));
 
 describe("NationalPanel", () => {
+  it("derives national municipal coverage from the complete prediction cohort", async () => {
+    const predictions = forecastCohort();
+    const params: URLSearchParams[] = [];
+    server.use(
+      modelsHandler(),
+      http.get("*/api/v1/predictions", ({ request }) => {
+        params.push(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          items: predictions,
+          total: predictions.length,
+          page: 1,
+          page_size: 500,
+          meta: {},
+        });
+      }),
+      http.get("*/api/v1/participation/summary", () => HttpResponse.json(summaries)),
+      http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
+    );
+
+    renderPanel();
+
+    expect(await screen.findByText("85 de 125")).toBeVisible();
+    expect(screen.getByTestId("national-high-risk")).toHaveTextContent(
+      String(predictions.filter((item) => item.eligible && item.risk === "high").length),
+    );
+    expect(params[0]?.get("state_code")).toBe("all");
+  });
+
   it("shows 32 entity summaries, retaining unavailable observations as unavailable", async () => {
     server.use(
       http.get("*/api/v1/participation/summary", () =>
         HttpResponse.json(summaries),
       ),
+      modelsHandler(),
+      predictionsHandler(),
       http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
     );
     renderPanel();
@@ -69,6 +100,8 @@ describe("NationalPanel", () => {
       http.get("*/api/v1/participation/summary", () =>
         HttpResponse.json(summaries),
       ),
+      modelsHandler(),
+      predictionsHandler(),
       http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
     );
     const { setFilters } = renderPanel();
@@ -83,6 +116,8 @@ describe("NationalPanel", () => {
         summaryRequests.push(new URL(request.url).searchParams);
         return HttpResponse.json(summaries);
       }),
+      modelsHandler(),
+      predictionsHandler(),
       http.get("*/api/v1/gis/wfs", () => HttpResponse.json({
         type: "FeatureCollection",
         features: [

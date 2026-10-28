@@ -74,7 +74,7 @@ test("district national mode shows observed 2024 coverage without prediction or 
   const summaryUrl = new URL(summary.url());
   expect(summaryUrl.searchParams.get("level")).toBe("federal_district");
   expect(summaryUrl.searchParams.get("year")).toBe("2024");
-  await expect(page.getByRole("status")).toContainText("Sin modelo 2027");
+  await expect(page.locator(".page-heading__lead")).toContainText("Sin modelo 2027");
   const table = page.getByRole("table", { name: "Resumen por entidad" });
   await expect(table.getByRole("columnheader", { name: "Abstención observada" })).toBeVisible();
   await expect(table.getByRole("columnheader", { name: "Cobertura" })).toBeVisible();
@@ -98,7 +98,7 @@ test("district profile is plan 2023, observed 2024 only, with bounded map and ag
   await expect(page.getByRole("heading", { name: `${district!.name} · marco 2023` })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Observado 2024" })).toBeVisible();
   await expect(page.getByText(history.items[0]?.abstention_pct === null ? "Información insuficiente" : `${history.items[0]!.abstention_pct!.toFixed(1)} %`)).toBeVisible();
-  await expect(page.getByText("Cobertura")).toBeVisible();
+  await expect(page.getByText("Cobertura", { exact: true })).toBeVisible();
   await expect(page.getByRole("table", { name: "Municipios que intersectan el distrito" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Predicción 2027|Escenario/i })).toHaveCount(0);
   await expect(page.locator(".territory-page")).not.toContainText(/Predicción 2027|banda de confianza/i);

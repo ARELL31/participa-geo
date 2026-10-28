@@ -88,7 +88,7 @@ class ScenarioComparison(BaseModel):
 
 
 class ScenarioDTO(ScenarioComparison):
-    """The persisted scenario plus the full 125-municipality comparison."""
+    """The persisted scenario plus the full published municipality comparison."""
 
     scenario_id: UUID
     model_sha256: str

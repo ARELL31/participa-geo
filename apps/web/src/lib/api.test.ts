@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { ElectionYear } from "../app/filters";
-import { ApiProblem, fetchHistory, fetchNationalStateFeatures, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
+import { ApiProblem, fetchAllPredictions, fetchHistory, fetchNationalStateFeatures, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
 import {
   historyYear,
   page,
@@ -70,6 +70,34 @@ describe("fetchPredictions target year contract", () => {
     const response = await fetchPredictions();
     expect(seen).toEqual(["2027"]);
     expect(response.items[0]?.target_year).toBe(2027);
+  });
+
+  it("fetches every prediction page before reporting national cohort values", async () => {
+    const requestedPages: string[] = [];
+    server.use(
+      http.get("*/api/v1/predictions", ({ request }) => {
+        const url = new URL(request.url);
+        const currentPage = url.searchParams.get("page") ?? "1";
+        requestedPages.push(currentPage);
+        const start = (Number(currentPage) - 1) * 500;
+        const items = Array.from({ length: Math.min(500, 1001 - start) }, (_, index) =>
+          prediction({ municipality_code: String(start + index + 1).padStart(5, "0") }),
+        );
+        return HttpResponse.json({
+          ...page(items),
+          page: Number(currentPage),
+          page_size: 500,
+          total: 1001,
+        });
+      }),
+    );
+
+    const response = await fetchAllPredictions({ pageSize: 500 });
+
+    expect(requestedPages).toEqual(["1", "2", "3"]);
+    expect(response.items).toHaveLength(1001);
+    expect(response.total).toBe(1001);
+    expect(response.items.at(-1)?.municipality_code).toBe("01001");
   });
 });
 

@@ -27,3 +27,13 @@ The crosswalk is exposed through the read-only `GET /territories/{territory_id}/
 ## Outstanding Concern
 
 Re-run the failed Vitest cases serially and complete the API contract and Playwright checks in an environment with the project’s Docker stack available before treating the full validation matrix as green.
+
+## Fix round 1
+
+- Fixed national prediction coverage and executive risk counts to use the complete 2,477-row cohort; the executive page retains its observed 2024 summary separately.
+- Made scenario municipality retrieval state-scoped (Jalisco by default), added bounded searchable selection, and preserved scenario creation with national persisted A/B results.
+- Scenario CSV now exports all persisted rows. GeoJSON uses only the verified 125-feature Jalisco reference subset; missing GIS reference data produces an explicit unavailable response while retaining the A/B table.
+- Updated national prediction/scenario/export and district-observed-only regression checks.
+- Verification: web Vitest 67 passed; typecheck, lint, production build, and real-stack Playwright 21 passed. Focused API CSV/GeoJSON regressions passed (2 tests).
+- The full API pytest run was attempted but is not green in the current compose test environment (245 passed, 48 failed, 7 errors). Failures include test fixtures expecting legacy `/workspace/data/processed/model` artifacts while this stack provides `/workspace/data/processed/national/model`, as well as integration database/GIS data and schema mismatches. No unrelated backend/data changes were made to address these environment-dependent failures.
+- This verification supersedes the earlier outstanding concern for web and Playwright checks; only the API-suite environment failures above remain.

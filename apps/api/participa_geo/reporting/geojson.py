@@ -14,6 +14,7 @@ from typing import Any
 from participa_geo.api.schemas.common import DatasetMeta
 from participa_geo.api.schemas.reports import REPORT_RULES_VERSION
 from participa_geo.api.schemas.scenarios import ScenarioDTO
+from participa_geo.territory import TerritoryKey, territory_id
 
 _GEOMETRY_TYPES = frozenset({"Polygon", "MultiPolygon"})
 
@@ -89,22 +90,34 @@ def export_scenario_geojson(
     *,
     sources: dict | None = None,
 ) -> bytes:
-    """Build the 125-feature scenario GeoJSON with A/B values and nulls."""
-    if len(scenario.results) != 125:
-        raise GeoJSONExportError("el escenario debe contener exactamente 125 resultados")
+    """Build the bounded reference GeoJSON using persisted A/B values.
+
+    Scenarios persist the full national cohort, while the verified geometry
+    reference currently covers Jalisco only. Match the reference features to
+    their state-scoped stable territory IDs and export that supported subset.
+    """
     reference = load_reference(reference_path)
-    results = {result.municipality_code.zfill(3): result for result in scenario.results}
-    if set(results) != set(reference):
-        missing = sorted(set(reference) - set(results))
-        extra = sorted(set(results) - set(reference))
+    results = {result.territory_id: result for result in scenario.results}
+    reference_results: dict[str, Any] = {}
+    for code, feature in reference.items():
+        properties = feature.get("properties") or {}
+        state_code = str(properties.get("entidad", "14")).zfill(2)
+        reference_id = territory_id(
+            TerritoryKey("municipality", state_code, code)
+        )
+        result = results.get(reference_id)
+        if result is not None:
+            reference_results[code] = result
+    if set(reference_results) != set(reference):
+        missing = sorted(set(reference) - set(reference_results))
         raise GeoJSONExportError(
-            f"la referencia y el escenario no coinciden (faltan={missing[:5]}, sobran={extra[:5]})"
+            f"la referencia y el escenario no coinciden (faltan={missing[:5]})"
         )
 
     features: list[dict[str, Any]] = []
     for code in sorted(reference):
         original = reference[code]
-        result = results[code]
+        result = reference_results[code]
         baseline = result.baseline_abstention_pct
         hypothetical = (
             result.hypothetical_abstention_pct if baseline is not None else None

@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GeographyNotice } from "../../components/GeographyNotice";
 import { PageState } from "../../components/PageState";
-import { useGlobalFilters } from "../../app/filters";
+import { useGlobalFilters, type StateCode } from "../../app/filters";
 import {
   createScenario,
   fetchModels,
   fetchMunicipalityFeatures,
-  fetchPredictions,
+  fetchAllPredictions,
   fetchScenario,
   queryKeys,
   type PredictionDTO,
@@ -77,6 +77,10 @@ export function ScenarioPage() {
   const { level, stateCode } = useGlobalFilters();
   const queryClient = useQueryClient();
   const [scenarioId, setScenarioId] = useState<string | null>(readScenarioId);
+  const [scenarioStateOverride, setScenarioStateOverride] =
+    useState<StateCode | null>(null);
+  const scenarioStateCode =
+    scenarioStateOverride ?? (stateCode === "all" ? "14" : stateCode);
   const [values, setValues] = useState<ScenarioFormValues>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -92,12 +96,16 @@ export function ScenarioPage() {
   const model = modelsQuery.data?.items[0];
 
   const predictionsQuery = useQuery({
-    queryKey: queryKeys.predictions(model?.model_run_id ?? null, level, stateCode),
+    queryKey: queryKeys.predictions(
+      model?.model_run_id ?? null,
+      level,
+      scenarioStateCode,
+    ),
     queryFn: ({ signal }) =>
-      fetchPredictions({
+      fetchAllPredictions({
         modelRunId: model?.model_run_id ?? null,
         level,
-        stateCode,
+        stateCode: scenarioStateCode,
         pageSize: 500,
         signal,
       }),
@@ -141,10 +149,10 @@ export function ScenarioPage() {
   const insufficientCount = predictions.length - eligible.length;
 
   const featuresQuery = useQuery({
-    queryKey: queryKeys.municipalFeatures(stateCode),
+    queryKey: queryKeys.municipalFeatures(scenarioStateCode),
     queryFn: ({ signal }) =>
-      fetchMunicipalityFeatures(stateCode, signal),
-    enabled: level === "municipality" && stateCode !== "all" && Boolean(scenario),
+      fetchMunicipalityFeatures(scenarioStateCode, signal),
+    enabled: level === "municipality" && Boolean(scenario),
     staleTime: 60_000,
   });
 
@@ -307,7 +315,7 @@ export function ScenarioPage() {
     );
   }
 
-  if (eligible.length === 0) {
+  if (eligiblePredictions(predictions).length === 0) {
     return (
       <div className="page scenario-page">
         <ScenarioHeading />
@@ -341,6 +349,7 @@ export function ScenarioPage() {
       </section>
 
       <ScenarioForm
+        stateCode={scenarioStateCode}
         eligible={eligible}
         insufficientCount={insufficientCount}
         values={values}
@@ -351,6 +360,10 @@ export function ScenarioPage() {
             : null)
         }
         submitting={mutation.isPending}
+        onStateChange={(nextState) => {
+          setScenarioStateOverride(nextState);
+          handleChange({ selectedTerritoryIds: [] });
+        }}
         onChange={handleChange}
         onReview={handleReview}
       />
@@ -531,7 +544,7 @@ export function ScenarioPage() {
               <div>
                 <h2 id="scenario-exports-heading">Exportar este escenario</h2>
                 <p>
-                  Descargue los 125 resultados persistidos, el GeoJSON con la
+                  Descargue los {scenario.results.length.toLocaleString("es-MX")} resultados persistidos, el GeoJSON con la
                   referencia 2025, un PDF del escenario o los mapas A/B generados
                   por GeoServer. Los mapas conservan la misma leyenda y el mismo
                   corte; si GIS falla, la exportación falla de forma explícita.
@@ -553,13 +566,13 @@ export function ScenarioPage() {
                   kind: "scenario_geojson",
                   label: "Exportar GeoJSON",
                   description:
-                    "125 geometrías EPSG:4326 de la referencia 2025-12-15.",
+                    `${scenario.results.length.toLocaleString("es-MX")} geometrías EPSG:4326 de la referencia 2025-12-15.`,
                 },
                 {
                   kind: "scenario_pdf",
                   label: "Exportar PDF",
                   description:
-                    "Resumen y anexo de los 125 resultados municipales.",
+                    `Resumen y anexo de los ${scenario.results.length.toLocaleString("es-MX")} resultados municipales.`,
                 },
                 {
                   kind: "scenario_map_png",

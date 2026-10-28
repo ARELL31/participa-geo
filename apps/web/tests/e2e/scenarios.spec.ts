@@ -45,7 +45,7 @@ async function forecast(page: Page) {
   expect(model, "a published model run must exist").toBeTruthy();
   const predictions = await apiJson<{ items: Prediction[] }>(
     page,
-    `/api/v1/predictions?model_run_id=${model!.model_run_id}&page=1&page_size=125`,
+    `/api/v1/predictions?model_run_id=${model!.model_run_id}&state_code=14&page=1&page_size=125`,
   );
   return { model: model!, predictions: predictions.items };
 }
@@ -78,7 +78,8 @@ test("creates a persisted 3pp scenario with A/B arithmetic and shared maps", asy
     page.getByText("Escenario hipotético — no implica efecto causal").first(),
   ).toBeVisible();
 
-  const municipalities = page.getByLabel("Municipios");
+  await expect(page.getByLabel("Entidad de municipios")).toHaveValue("14");
+  const municipalities = page.getByLabel("Municipios", { exact: true });
   await expect(municipalities).toBeVisible();
   await expect(
     municipalities.locator(`option[value="${insufficient!.territory_id}"]`),
@@ -113,7 +114,7 @@ test("creates a persisted 3pp scenario with A/B arithmetic and shared maps", asy
   const created = await createResponse;
   expect(created.status()).toBe(201);
   const scenario = (await created.json()) as Scenario;
-  expect(scenario.results).toHaveLength(125);
+  expect(scenario.results).toHaveLength(2477);
 
   await expect(page).toHaveURL(new RegExp(`scenario_id=${scenario.scenario_id}`));
   await expect(
@@ -184,6 +185,10 @@ test("creates a persisted 3pp scenario with A/B arithmetic and shared maps", asy
     persisted.results.find((result) => result.territory_id === eligible!.territory_id)
       ?.selected,
   ).toBe(true);
+  expect(
+    persisted.results.find((result) => result.territory_id === eligible!.territory_id)
+      ?.hypothetical_abstention_pct,
+  ).toBeCloseTo(Math.max(0, eligible!.estimated_abstention_pct! - 3), 6);
   expect(model.family).toBe("M0");
 });
 
@@ -195,7 +200,7 @@ test("rejects an insufficient municipality with 422 and never offers it in the f
   expect(insufficient).toBeTruthy();
 
   await page.goto("/scenarios");
-  const municipalities = page.getByLabel("Municipios");
+  const municipalities = page.getByLabel("Municipios", { exact: true });
   await expect(
     municipalities.locator(`option[value="${insufficient!.territory_id}"]`),
   ).toHaveCount(0);
@@ -250,7 +255,7 @@ test("shows a 422 problem detail and retains the form values", async ({ page }) 
   );
 
   await page.goto("/scenarios");
-  const municipalities = page.getByLabel("Municipios");
+  const municipalities = page.getByLabel("Municipios", { exact: true });
   await municipalities.selectOption([eligible!.territory_id]);
   const reduction = page.getByLabel(
     "Reducción hipotética (puntos porcentuales)",
@@ -292,8 +297,17 @@ test("keeps the A/B table and an explicit error when GIS fails", async ({ page }
   expect(createdResponse.status()).toBe(201);
   const created = (await createdResponse.json()) as Scenario;
 
-  await page.route("**/api/v1/gis/wfs**", (route) => route.abort());
+  let failedWfsUrl = "";
+  await page.route("**/api/v1/gis/wfs**", (route) => {
+    failedWfsUrl = route.request().url();
+    return route.abort();
+  });
   await page.goto(`/scenarios?scenario_id=${created.scenario_id}`);
+
+  await expect.poll(() => failedWfsUrl).not.toBe("");
+  const wfsUrl = new URL(failedWfsUrl);
+  expect(wfsUrl.searchParams.get("typeNames")).toBe("participa_geo_national:municipalities");
+  expect(wfsUrl.searchParams.get("state_code")).toBe("14");
 
   await expect(
     page.getByText(

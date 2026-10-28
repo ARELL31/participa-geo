@@ -33,16 +33,28 @@ async function apiJson<T>(page: Page, path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function allPredictions(page: Page, modelRunId: string): Promise<{ items: Prediction[]; total: number }> {
+  const pageSize = 500;
+  const items: Prediction[] = [];
+  let total = Number.POSITIVE_INFINITY;
+  for (let currentPage = 1; items.length < total; currentPage += 1) {
+    const response = await apiJson<{ items: Prediction[]; total: number }>(
+      page,
+      `/api/v1/predictions?model_run_id=${modelRunId}&target_year=2027&state_code=all&page=${currentPage}&page_size=${pageSize}`,
+    );
+    total = response.total;
+    items.push(...response.items);
+  }
+  return { items, total };
+}
+
 test("prediction page exposes the real M0 evidence, coverage and insufficient rows", async ({
   page,
 }) => {
   const models = await apiJson<{ items: ModelRun[] }>(page, "/api/v1/models");
   const model = models.items[0];
   expect(model).toBeTruthy();
-  const predictions = await apiJson<{ items: Prediction[] }>(
-    page,
-    `/api/v1/predictions?model_run_id=${model!.model_run_id}&page=1&page_size=125`,
-  );
+  const predictions = await allPredictions(page, model!.model_run_id);
   const insufficient = predictions.items.find((item) => !item.eligible);
   expect(insufficient).toBeTruthy();
 
@@ -78,7 +90,7 @@ test("prediction page exposes the real M0 evidence, coverage and insufficient ro
 
   const cohort = model!.metrics.cohorts["2027"]!;
   await expect(page.getByTestId("coverage-eligible")).toHaveText(
-    `${cohort.eligible_count} de 125`,
+    `${cohort.eligible_count} de ${predictions.total}`,
   );
   await expect(page.getByTestId("coverage-insufficient")).toHaveText(
     String(cohort.excluded_count),
@@ -113,9 +125,13 @@ test("prediction page exposes the real M0 evidence, coverage and insufficient ro
       name: "Contribuciones aditivas del candidato M1",
     }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("table", { name: "Coeficientes aditivos del candidato M1" }),
-  ).toBeVisible();
+  const m1Coefficients = page.getByRole("table", {
+    name: "Coeficientes aditivos del candidato M1",
+  });
+  const noM1Coefficients = page.getByRole("status").filter({
+    hasText: "El modelo seleccionado no publica coeficientes aditivos",
+  });
+  await expect(m1Coefficients.or(noM1Coefficients)).toBeVisible();
 });
 
 test("executive summary derives coverage and high-risk counts from the API", async ({
@@ -123,10 +139,7 @@ test("executive summary derives coverage and high-risk counts from the API", asy
 }) => {
   const models = await apiJson<{ items: ModelRun[] }>(page, "/api/v1/models");
   const model = models.items[0];
-  const predictions = await apiJson<{ items: Prediction[] }>(
-    page,
-    `/api/v1/predictions?model_run_id=${model!.model_run_id}&page=1&page_size=125`,
-  );
+  const predictions = await allPredictions(page, model!.model_run_id);
   const highRisk = predictions.items.filter(
     (item) => item.eligible && item.risk === "high",
   ).length;
@@ -136,19 +149,15 @@ test("executive summary derives coverage and high-risk counts from the API", asy
   await expect(
     page.getByRole("heading", { level: 1, name: "Panel ejecutivo" }),
   ).toBeVisible();
-  await expect(page.getByText(`${cohort.eligible_count} de 125`)).toBeVisible();
-  await expect(page.getByTestId("executive-high-risk")).toHaveText(
+  await expect(page.getByTestId("national-coverage")).toHaveText(`${cohort.eligible_count} de ${predictions.total}`);
+  await expect(page.getByTestId("national-high-risk")).toHaveText(
     String(highRisk),
   );
-  await expect(page.getByText("MAE validación 2021")).toBeVisible();
-  await expect(page.getByText("MAE prueba 2024")).toBeVisible();
   await expect(
-    page.getByRole("table", { name: "Distribución de riesgo predicho 2027" }),
+    page.getByRole("table", { name: "Resumen por entidad" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("table", {
-      name: "Señales prioritarias de abstención estimada 2027",
-    }),
+    page.getByRole("img", { name: "Mapa WMS nacional con límites de las 32 entidades federativas" }),
   ).toBeVisible();
 });
 

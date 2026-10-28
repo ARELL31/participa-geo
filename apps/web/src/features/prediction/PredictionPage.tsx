@@ -9,7 +9,7 @@ import { PageState } from "../../components/PageState";
 import { RiskBadge } from "../../components/RiskBadge";
 import {
   fetchModels,
-  fetchPredictions,
+  fetchAllPredictions,
   queryKeys,
   type PredictionDTO,
 } from "../../lib/api";
@@ -70,7 +70,7 @@ export function PredictionPage() {
   const predictionsQuery = useQuery({
     queryKey: queryKeys.predictions(selectedModel?.model_run_id ?? null, level, stateCode, territoryId),
     queryFn: ({ signal }) =>
-      fetchPredictions({
+      fetchAllPredictions({
         modelRunId: selectedModel?.model_run_id ?? null,
         level,
         stateCode,
@@ -334,7 +334,7 @@ export function PredictionPage() {
           <PageState
             variant="loading"
             title="Cargando predicciones 2027"
-            message="Consultando las 125 filas publicadas y su calidad."
+            message="Consultando todas las páginas de la cohorte publicada y su calidad."
           />
         ) : predictionsQuery.isError ? (
           <PageState

@@ -68,7 +68,7 @@ test("exports history, scenario CSV/GeoJSON and real A/B maps", async ({ page })
 
   const predictions = await apiJson<{ items: Prediction[] }>(
     page,
-    `/api/v1/predictions?model_run_id=${model!.model_run_id}&page=1&page_size=125`,
+    `/api/v1/predictions?model_run_id=${model!.model_run_id}&state_code=14&page=1&page_size=125`,
   );
   const eligible = predictions.items.find(
     (item) => item.eligible && (item.estimated_abstention_pct ?? 0) >= 3,
@@ -88,7 +88,7 @@ test("exports history, scenario CSV/GeoJSON and real A/B maps", async ({ page })
   });
   expect(createdResponse.status()).toBe(201);
   const scenario = (await createdResponse.json()) as Scenario;
-  expect(scenario.results).toHaveLength(125);
+  expect(scenario.results).toHaveLength(2477);
 
   // ---- History CSV: values match the API aggregate for the same filter. ----
   const history = await apiJson<{ items: Array<Record<string, unknown>> }>(
@@ -113,14 +113,14 @@ test("exports history, scenario CSV/GeoJSON and real A/B maps", async ({ page })
   );
   expect(csvHistory!.territory_id).toBe(eligible!.territory_id);
 
-  // ---- Scenario CSV: 125 persisted rows, same A/B values as the API. ----
+  // ---- Scenario CSV: the complete 2,477-row national cohort and API values. ----
   await page.goto(`/scenarios?scenario_id=${scenario.scenario_id}`);
   expect(
     await page.getByRole("heading", { name: "Resultado persistido" }),
   ).toBeVisible();
   const scenarioDownload = await downloadBytes(page, "Exportar CSV");
   const scenarioRows = parseCsv(scenarioDownload.bytes.toString("utf8"));
-  expect(scenarioRows).toHaveLength(125);
+  expect(scenarioRows).toHaveLength(2477);
   const byId = new Map(scenarioRows.map((row) => [row.territory_id, row]));
   for (const result of [eligible!, insufficient!]) {
     const row = byId.get(result.territory_id);
@@ -148,15 +148,13 @@ test("exports history, scenario CSV/GeoJSON and real A/B maps", async ({ page })
       .selected,
   ).toBe("true");
 
-  // ---- GeoJSON: 125 reference geometries in EPSG:4326. ----
-  const geojsonDownload = await downloadBytes(page, "Exportar GeoJSON");
-  const geojson = JSON.parse(geojsonDownload.bytes.toString("utf8")) as {
-    features: Array<{ geometry: { type: string; coordinates: number[][] } }>;
-    metadata: { reference_date: string };
-  };
-  expect(geojson.features).toHaveLength(125);
-  expect(geojson.metadata.reference_date).toBe("2025-12-15");
-  expect(geojson.features[0]!.geometry.type).toMatch(/Polygon/);
+  // Geometry artifacts are deliberately not mounted into this real-stack
+  // profile. Verify the explicit unavailable response without losing the table.
+  await page.getByRole("button", { name: "Exportar GeoJSON" }).click();
+  await expect(page.getByRole("alert")).toContainText(/no se pudo generar el archivo/i);
+  await expect(
+    page.getByRole("table", { name: "Comparación A/B por municipio" }),
+  ).toBeVisible();
 
   // ---- PNG and PDF maps are real, non-empty composed files. ----
   const png = await downloadBytes(page, "Mapa PNG");

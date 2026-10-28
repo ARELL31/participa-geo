@@ -1,7 +1,7 @@
 """Scenario persistence service and in-memory creation limiter (T6).
 
 The service validates the whole closed request before writing, computes the
-comparison in memory and then inserts the header plus the 125 results in one
+    comparison in memory and then inserts the header plus all cohort results in one
 transaction. A failure rolls the transaction back, so no partial scenario exists.
 
 The limiter is intentionally process-local: it enforces 10 creations/minute and

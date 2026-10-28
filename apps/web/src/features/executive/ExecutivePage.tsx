@@ -9,7 +9,7 @@ import { PageState } from "../../components/PageState";
 import { RiskBadge } from "../../components/RiskBadge";
 import {
   fetchModels,
-  fetchPredictions,
+  fetchAllPredictions,
   fetchRecommendations,
   queryKeys,
 } from "../../lib/api";
@@ -56,8 +56,10 @@ export function ExecutivePage() {
   const predictionsQuery = useQuery({
     queryKey: queryKeys.predictions(model?.model_run_id ?? null),
     queryFn: ({ signal }) =>
-      fetchPredictions({
+      fetchAllPredictions({
         modelRunId: model?.model_run_id ?? null,
+        stateCode: "all",
+        pageSize: 500,
         signal,
       }),
     enabled: Boolean(model),
@@ -336,8 +338,9 @@ export function ExecutivePage() {
             <div>
               <h2 id="distribution-heading">Distribución de riesgo 2027</h2>
               <p>
-                Conteo por categoría publicada y porcentaje del total de 125
-                municipios, con etiqueta e icono.
+                Conteo por categoría publicada y porcentaje del total de{" "}
+                {summary.total.toLocaleString("es-MX")} municipios publicados,
+                con etiqueta e icono.
               </p>
             </div>
           </div>
@@ -453,7 +456,7 @@ export function ExecutivePage() {
 function ExecutiveHeading() {
   return (
     <div className="page-heading">
-      <p className="eyebrow">Observatorio · Jalisco</p>
+      <p className="eyebrow">Observatorio · México</p>
       <h1>Panel ejecutivo</h1>
       <p className="page-heading__lead">
         Cobertura, señales de riesgo y evidencia del modelo para 2027. Los

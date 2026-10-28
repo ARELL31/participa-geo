@@ -1,6 +1,8 @@
 import { FileWarning } from "lucide-react";
-import type { FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
+import type { StateCode } from "../../app/filters";
+import { MEXICAN_STATES } from "../../components/LevelSwitcher";
 import type { PredictionDTO } from "../../lib/api";
 
 export type AssumptionCode =
@@ -37,24 +39,47 @@ export function assumptionLabel(code: AssumptionCode | ""): string {
 }
 
 type ScenarioFormProps = {
+  stateCode: StateCode;
   eligible: PredictionDTO[];
   insufficientCount: number;
   values: ScenarioFormValues;
   error: string | null;
   submitting: boolean;
+  onStateChange(stateCode: StateCode): void;
   onChange(next: Partial<ScenarioFormValues>): void;
   onReview(): void;
 };
 
 export function ScenarioForm({
+  stateCode,
   eligible,
   insufficientCount,
   values,
   error,
   submitting,
+  onStateChange,
   onChange,
   onReview,
 }: ScenarioFormProps) {
+  const [search, setSearch] = useState("");
+  const visibleEligible = useMemo(() => {
+    const normalizedSearch = search
+      .trim()
+      .toLocaleLowerCase("es-MX")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    return eligible
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+        const text = `${item.municipality_code ?? ""} ${item.municipality_name ?? ""}`
+          .toLocaleLowerCase("es-MX")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        return text.includes(normalizedSearch);
+      })
+      .slice(0, 50);
+  }, [eligible, search]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onReview();
@@ -82,7 +107,32 @@ export function ScenarioForm({
         ) : null}
 
         <div className="form-field form-field--wide">
+          <label htmlFor="scenario-state">Entidad de municipios</label>
+          <select
+            id="scenario-state"
+            value={stateCode}
+            onChange={(event) => onStateChange(event.target.value as StateCode)}
+          >
+            {MEXICAN_STATES.map(([code, name]) => (
+              <option key={code} value={code}>
+                {name} · {code}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-field form-field--wide">
           <label htmlFor="scenario-municipalities">Municipios</label>
+          <label className="visually-hidden" htmlFor="scenario-municipality-search">
+            Buscar municipio
+          </label>
+          <input
+            id="scenario-municipality-search"
+            type="search"
+            placeholder="Buscar por nombre o código"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
           <select
             id="scenario-municipalities"
             multiple
@@ -92,21 +142,23 @@ export function ScenarioForm({
             value={values.selectedTerritoryIds}
             onChange={(event) =>
               onChange({
-                selectedTerritoryIds: Array.from(
-                  event.target.selectedOptions,
-                  (option) => option.value,
-                ),
+                selectedTerritoryIds: [
+                  ...values.selectedTerritoryIds.filter(
+                    (id) => !visibleEligible.some((item) => item.territory_id === id),
+                  ),
+                  ...Array.from(event.target.selectedOptions, (option) => option.value),
+                ],
               })
             }
           >
-            {eligible.map((item) => (
+            {visibleEligible.map((item) => (
               <option key={item.territory_id} value={item.territory_id}>
                 {item.municipality_code} · {item.municipality_name}
               </option>
             ))}
           </select>
           <p id="scenario-municipalities-hint" className="filter-hint">
-            Sólo se listan {eligible.length} municipios elegibles. {insufficientCount}{" "}
+            Mostrando hasta 50 de {eligible.length} municipios elegibles de la entidad seleccionada. {insufficientCount}{" "}
             municipios con información insuficiente no se pueden seleccionar.
           </p>
         </div>

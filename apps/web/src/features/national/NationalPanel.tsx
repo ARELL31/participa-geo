@@ -6,8 +6,10 @@ import { navigate, pathWithCurrentFilters } from "../../app/navigation";
 import { DataTable } from "../../components/DataTable";
 import { PageState } from "../../components/PageState";
 import {
+  fetchAllPredictions,
   fetchNationalStateFeatures,
   fetchHistory,
+  fetchModels,
   fetchParticipationSummary,
   fetchTerritories,
   queryKeys,
@@ -17,11 +19,30 @@ import {
   type TerritoryDTO,
 } from "../../lib/api";
 import { formatCount, formatRateOrInsufficient, formatShare } from "../territory/format";
+import { parseModelMetrics, summarizePredictions } from "../prediction/modelEvidence";
 
 export function NationalPanel() {
   const { level, stateCode, setFilters } = useGlobalFilters();
   const [mapFailed, setMapFailed] = useState(false);
   const summaryYear = 2024 as const;
+  const modelsQuery = useQuery({
+    queryKey: queryKeys.models(),
+    queryFn: ({ signal }) => fetchModels({ signal }),
+    enabled: stateCode === "all" && level === "municipality",
+    staleTime: 5 * 60_000,
+  });
+  const model = modelsQuery.data?.items[0];
+  const predictionsQuery = useQuery({
+    queryKey: queryKeys.predictions(model?.model_run_id ?? null),
+    queryFn: ({ signal }) => fetchAllPredictions({
+      modelRunId: model?.model_run_id ?? null,
+      stateCode: "all",
+      pageSize: 500,
+      signal,
+    }),
+    enabled: stateCode === "all" && level === "municipality" && Boolean(model),
+    staleTime: 60_000,
+  });
   const summaryQuery = useQuery({
     queryKey: queryKeys.summary(level, summaryYear),
     queryFn: ({ signal }) =>
@@ -90,15 +111,27 @@ export function NationalPanel() {
         {stateCode === "all" ? (
           <>
             {level === "municipality" ? (
-              <NationalMap
-                failed={mapFailed}
-                onError={() => setMapFailed(true)}
-                year={2024}
-                summaries={summaries}
-                features={stateFeaturesQuery.data}
-                featuresLoading={stateFeaturesQuery.isPending}
-                featuresError={stateFeaturesQuery.isError}
-              />
+              <>
+                <NationalPredictionFacts
+                  pending={modelsQuery.isPending || predictionsQuery.isPending}
+                  error={modelsQuery.isError || predictionsQuery.isError}
+                  summary={model && predictionsQuery.data
+                    ? summarizePredictions(predictionsQuery.data.items, parseModelMetrics(model.metrics))
+                    : null}
+                  highRisk={predictionsQuery.data?.items.filter(
+                    (prediction) => prediction.eligible && prediction.risk === "high",
+                  ).length ?? 0}
+                />
+                <NationalMap
+                  failed={mapFailed}
+                  onError={() => setMapFailed(true)}
+                  year={2024}
+                  summaries={summaries}
+                  features={stateFeaturesQuery.data}
+                  featuresLoading={stateFeaturesQuery.isPending}
+                  featuresError={stateFeaturesQuery.isError}
+                />
+              </>
             ) : null}
             <DataTable
               caption="Resumen por entidad"
@@ -150,6 +183,41 @@ export function NationalPanel() {
       </section>
       <p className="source-note">{level === "municipality" ? "La tasa estatal se obtiene al sumar conteos observados, no al promediar tasas territoriales. El mapa temático usa la observación municipal de 2024 y 32 geometrías estatales WFS; el WMS conserva los contornos de referencia." : "Las cifras distritales son observaciones agregadas de 2024. No hay un modelo 2027 publicado para este nivel."}</p>
     </div>
+  );
+}
+
+function NationalPredictionFacts({
+  pending,
+  error,
+  summary,
+  highRisk,
+}: {
+  pending: boolean;
+  error: boolean;
+  summary: ReturnType<typeof summarizePredictions> | null;
+  highRisk: number;
+}) {
+  if (pending) return <p role="status">Cargando cobertura predictiva nacional…</p>;
+  if (error) return <p role="alert">No se pudo cargar la cobertura predictiva nacional.</p>;
+  if (!summary) return <p role="status">No hay predicciones municipales publicadas.</p>;
+  return (
+    <dl className="kpi-grid" aria-label="Cobertura predictiva nacional">
+      <div className="kpi">
+        <dt>Cobertura de predicción</dt>
+        <dd data-testid="national-coverage">{summary.eligible} de {summary.total}</dd>
+        <dd className="kpi__note">{(summary.eligible / summary.total * 100).toFixed(1)} % de municipios elegibles.</dd>
+      </div>
+      <div className="kpi">
+        <dt>Riesgo alto</dt>
+        <dd data-testid="national-high-risk">{highRisk}</dd>
+        <dd className="kpi__note">Abstención estimada de 50 % o más entre elegibles.</dd>
+      </div>
+      <div className="kpi">
+        <dt>Información insuficiente</dt>
+        <dd>{summary.insufficient}</dd>
+        <dd className="kpi__note">No se imputa como cero ni riesgo bajo.</dd>
+      </div>
+    </dl>
   );
 }
 

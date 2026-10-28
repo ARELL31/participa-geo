@@ -136,16 +136,23 @@ describe("ScenarioPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not offer insufficient municipalities in the bounded checklist", async () => {
+  it("scopes municipality selection to Jalisco and bounds options with search", async () => {
     server.use(...baseHandlers());
     renderPage();
 
+    expect(await screen.findByLabelText("Entidad de municipios")).toHaveValue("14");
     const municipalities = await screen.findByLabelText("Municipios");
     const options = within(municipalities).getAllByRole("option");
-    expect(options).toHaveLength(85);
+    expect(options.length).toBeLessThanOrEqual(50);
     expect(
       within(municipalities).queryByRole("option", { name: /ACATIC/ }),
     ).not.toBeInTheDocument();
+    const search = screen.getByRole("searchbox", { name: "Buscar municipio" });
+    await userEvent.setup().type(search, "ACATLAN DE JUAREZ");
+    expect(within(municipalities).getAllByRole("option")).toHaveLength(1);
+    expect(
+      within(municipalities).getByRole("option", { name: /ACATLAN DE JUAREZ/ }),
+    ).toBeVisible();
     expect(
       screen.getByText(
         /40 municipios con información insuficiente no se pueden seleccionar/,

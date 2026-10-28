@@ -232,6 +232,7 @@ export async function fetchPredictions(
     stateCode?: string;
     territoryId?: string | null;
     modelRunId?: string | null;
+    page?: number;
     pageSize?: number;
     signal?: AbortSignal;
   } = {},
@@ -242,10 +243,27 @@ export async function fetchPredictions(
     state_code: options.stateCode ?? null,
     territory_id: options.territoryId ?? null,
     target_year: 2027,
-    page: 1,
+    page: options.page ?? 1,
     page_size: options.pageSize ?? 125,
   });
   return getJson<PredictionPage>(path, options.signal);
+}
+
+/** Fetch every page for aggregate client-side cohort counts and filters. */
+export async function fetchAllPredictions(
+  options: Parameters<typeof fetchPredictions>[0] = {},
+): Promise<PredictionPage> {
+  const pageSize = options.pageSize ?? 500;
+  const first = await fetchPredictions({ ...options, page: 1, pageSize });
+  const items = [...first.items];
+  const pageCount = Math.ceil(first.total / pageSize);
+
+  for (let page = 2; page <= pageCount; page += 1) {
+    const next = await fetchPredictions({ ...options, page, pageSize });
+    items.push(...next.items);
+  }
+
+  return { ...first, items };
 }
 
 export async function fetchRecommendations(

@@ -1,6 +1,6 @@
 import { useGlobalFilters } from "../app/filters";
 
-const STATES = [
+export const MEXICAN_STATES = [
   ["01", "Aguascalientes"], ["02", "Baja California"], ["03", "Baja California Sur"], ["04", "Campeche"],
   ["05", "Coahuila"], ["06", "Colima"], ["07", "Chiapas"], ["08", "Chihuahua"], ["09", "Ciudad de México"],
   ["10", "Durango"], ["11", "Guanajuato"], ["12", "Guerrero"], ["13", "Hidalgo"], ["14", "Jalisco"],
@@ -39,7 +39,7 @@ export function LevelSwitcher() {
           aria-describedby="state-filter-hint"
         >
           <option value="all">Todas las entidades</option>
-          {STATES.map(([code, name]) => (
+          {MEXICAN_STATES.map(([code, name]) => (
             <option key={code} value={code}>
               {name} · {code}
             </option>

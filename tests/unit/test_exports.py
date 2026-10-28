@@ -42,6 +42,7 @@ from participa_geo.reporting.tables import (
     export_model_evidence,
     export_scenario_csv,
 )
+from participa_geo.territory import TerritoryKey, territory_id
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = REPO_ROOT / "data" / "processed" / "model"
@@ -316,7 +317,7 @@ def _all_coordinates(geometry: dict):
 def test_scenario_csv_matches_api_values():
     scenario = _real_scenario()
     fields, rows = _csv_rows(export_scenario_csv(scenario, META))
-    assert len(rows) == 125
+    assert len(rows) == 2477
     assert "baseline_abstention_pct" in fields
     assert "hypothetical_abstention_pct" in fields
     by_code = {row["municipality_code"]: row for row in rows}
@@ -331,6 +332,130 @@ def test_scenario_csv_matches_api_values():
             assert float(row["baseline_abstention_pct"]) == pytest.approx(
                 result.baseline_abstention_pct
             )
+
+
+def test_scenario_csv_exports_every_persisted_national_row():
+    selected_id = UUID("00000000-0000-5000-8000-000000000001")
+    results = [
+        ScenarioResultDTO(
+            territory_id=selected_id if index == 0 else UUID(int=index + 1),
+            municipality_code=str(index + 1).zfill(5),
+            municipality_name=f"MUNICIPIO {index + 1:04d}",
+            baseline_abstention_pct=45.0 if index == 0 else 30.0,
+            hypothetical_abstention_pct=42.0 if index == 0 else 30.0,
+            requested_reduction_pp=3.0,
+            effective_reduction_pp=3.0 if index == 0 else 0.0,
+            risk_a="high",
+            risk_b="medium" if index == 0 else "low",
+            selected=index == 0,
+        )
+        for index in range(2477)
+    ]
+    scenario = ScenarioDTO(
+        scenario_id=UUID("00000000-0000-5000-8000-000000000002"),
+        model_run_id=META.model_run_id,
+        target_year=2027,
+        requested_reduction_pp=3.0,
+        assumption_code="preventive_exploration",
+        assumption_version="scenario-assumptions-1.0.0",
+        rationale_text="Prueba nacional de exportación.",
+        rules_version="scenario-rules-1.0.0",
+        input_sha256="0" * 64,
+        model_sha256="1" * 64,
+        selected_territory_ids=[selected_id],
+        results=results,
+        created_at=datetime(2026, 10, 28, tzinfo=UTC),
+    )
+
+    fields, rows = _csv_rows(export_scenario_csv(scenario, META))
+
+    assert len(rows) == 2477
+    assert "hypothetical_abstention_pct" in fields
+    assert rows[0]["territory_id"] == str(selected_id)
+    assert rows[0]["selected"] == "true"
+    assert float(rows[0]["baseline_abstention_pct"]) == 45.0
+    assert float(rows[0]["hypothetical_abstention_pct"]) == 42.0
+
+
+def test_national_scenario_geojson_uses_only_state_scoped_reference_rows(tmp_path):
+    geometry = {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+    }
+    features = [
+        {
+            "type": "Feature",
+            "geometry": geometry,
+            "properties": {"entidad": "14", "municipio": str(index).zfill(3)},
+        }
+        for index in range(1, 126)
+    ]
+    reference = tmp_path / "jalisco.geojson"
+    reference.write_text(
+        json.dumps({"type": "FeatureCollection", "features": features}),
+        encoding="utf-8",
+    )
+    results = []
+    for state in ("14", "01"):
+        for index in range(1, 126):
+            selected = state == "14" and index == 1
+            results.append(
+                ScenarioResultDTO(
+                    territory_id=territory_id(
+                        TerritoryKey("municipality", state, str(index))
+                    ),
+                    municipality_code=str(index).zfill(3),
+                    municipality_name=f"MUNICIPIO {state}-{index:03d}",
+                    baseline_abstention_pct=45.0,
+                    hypothetical_abstention_pct=42.0 if selected else 45.0,
+                    requested_reduction_pp=3.0,
+                    effective_reduction_pp=3.0 if selected else 0.0,
+                    risk_a="high",
+                    risk_b="medium" if selected else "high",
+                    selected=selected,
+                )
+            )
+    # The remaining rows represent other states in the full national cohort.
+    for index in range(2227):
+        results.append(
+            ScenarioResultDTO(
+                territory_id=UUID(int=10_000 + index),
+                municipality_code=str(index % 125 + 1).zfill(3),
+                municipality_name=f"RESTO NACIONAL {index:04d}",
+                baseline_abstention_pct=35.0,
+                hypothetical_abstention_pct=35.0,
+                requested_reduction_pp=3.0,
+                effective_reduction_pp=0.0,
+                risk_a="medium",
+                risk_b="medium",
+                selected=False,
+            )
+        )
+    selected_id = territory_id(TerritoryKey("municipality", "14", "001"))
+    scenario = ScenarioDTO(
+        scenario_id=UUID("00000000-0000-5000-8000-000000000010"),
+        model_run_id=META.model_run_id,
+        target_year=2027,
+        requested_reduction_pp=3.0,
+        assumption_code="preventive_exploration",
+        assumption_version="1.0.0",
+        rationale_text="Prueba de geometría acotada.",
+        rules_version="scenario-rules-1.0.0",
+        input_sha256="0" * 64,
+        model_sha256="1" * 64,
+        selected_territory_ids=[selected_id],
+        results=results,
+        created_at=datetime(2026, 10, 28, tzinfo=UTC),
+    )
+
+    body = json.loads(export_scenario_geojson(scenario, reference, META))
+
+    assert len(body["features"]) == 125
+    selected = next(feature for feature in body["features"] if feature["id"] == "001")
+    assert selected["properties"]["territory_id"] == str(selected_id)
+    assert selected["properties"]["selected"] is True
+    assert selected["properties"]["baseline_abstention_pct"] == 45.0
+    assert selected["properties"]["hypothetical_abstention_pct"] == 42.0
 
 
 def test_scenario_selected_means_do_not_use_all_eligible():
