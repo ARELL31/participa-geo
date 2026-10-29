@@ -228,6 +228,9 @@ def _history_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
 
 
 def _history_export_rows(repo: Repository, body: ReportRequest) -> list[HistoryDTO]:
+    if body.territory_id is not None:
+        return _history_rows(repo, body)
+
     records, total = repo.get_history_territories(
         year=body.year,
         page=1,

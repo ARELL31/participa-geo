@@ -11,9 +11,19 @@ const NOTICE =
 
 type Territory = { id: string; name: string; municipality_code: string };
 type History = { year: number; abstention_pct: number | null };
+type MunicipalObservation = {
+  year: number;
+  state_code: string;
+  municipality_code: string;
+  name: string;
+  participation_pct: number | null;
+  abstention_pct: number | null;
+};
 type StateSummary = { state_code: string; state_name: string; observed_abstention_pct: number | null };
 type DistrictTerritory = { id: string; name: string; territory_code: string; district_plan: string };
 type DistrictObservation = { territory_id: string; year: number; abstention_pct: number | null; coverage_share: number | null };
+type MunicipalFeature = { properties?: { state_code?: string; municipality_code?: string } };
+type StateFeature = { properties?: { state_code?: string } };
 
 async function apiJson<T>(page: Page, path: string): Promise<T> {
   const response = await page.request.get(path);
@@ -45,7 +55,10 @@ test("national summary has 32 entities and uses only the bounded 32-state chorop
   const jalisco = summaries.find((row) => row.state_code === "14");
   expect(jalisco).toBeTruthy();
 
-  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
+  const wfsDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/gis/wfs") && url.searchParams.get("typeNames") === "participa_geo_national:states" && response.status() === 200;
+  });
   const wmsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wms") && response.status() === 200);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Panel ejecutivo" })).toBeVisible();
@@ -93,7 +106,10 @@ test("district profile is plan 2023, observed 2024 only, with bounded map and ag
   expect(intersections.items.length).toBeGreaterThan(0);
   expect(intersections.items.every((row) => row.year === 2024 && row.district_plan === "DERFE2023" && row.section_count > 0 && row.section_share >= 0 && row.section_share <= 1)).toBeTruthy();
 
-  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
+  const wfsDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/gis/wfs") && url.searchParams.get("typeNames") === "participa_geo_national:districts_2023" && response.status() === 200;
+  });
   await page.goto(`/territory?level=federal_district&state=14&territory_id=${district!.id}`);
   await expect(page.getByRole("heading", { name: `${district!.name} · marco 2023` })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Observado 2024" })).toBeVisible();
@@ -116,7 +132,10 @@ test("municipal profile combines observed history with its published 2027 predic
   expect(acatic).toBeTruthy();
   const history = await apiJson<{ items: History[] }>(page, `/api/v1/participation/history?level=municipality&state_code=14&territory_id=${acatic!.id}&page=1&page_size=500`);
   const observed = history.items.find((row) => row.year === 2024)?.abstention_pct;
-  const wfsDone = page.waitForResponse((response) => response.url().includes("/api/v1/gis/wfs") && response.status() === 200);
+  const wfsDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/gis/wfs") && url.searchParams.get("typeNames") === "participa_geo_national:municipalities" && response.status() === 200;
+  });
 
   await page.goto(`/territory?level=municipality&state=14&territory_id=${acatic!.id}&year=2024`);
   await expect(page.getByRole("heading", { name: `${acatic!.name} · ${acatic!.municipality_code}` })).toBeVisible();
@@ -125,7 +144,10 @@ test("municipal profile combines observed history with its published 2027 predic
   const wfs = await wfsDone;
   expect(new URL(wfs.url()).searchParams.get("typeNames")).toBe("participa_geo_national:municipalities");
   expect(new URL(wfs.url()).searchParams.get("state_code")).toBe("14");
-  expect(new URL(wfs.url()).searchParams.get("count")).toBe("500");
+  expect(new URL(wfs.url()).searchParams.get("count")).toBe("1000");
+  const municipalFeatures = (await wfs.json()) as { features: MunicipalFeature[] };
+  expect(municipalFeatures.features).toHaveLength(125);
+  expect(municipalFeatures.features.every((feature) => feature.properties?.state_code === "14")).toBe(true);
   expect(new URL(wfs.url()).searchParams.has("year")).toBe(false);
 });
 
@@ -204,34 +226,67 @@ test("keyboard navigation reaches the module link and activates it with Enter", 
   await expect(page.getByRole("heading", { level: 1, name: "Inteligencia territorial" })).toBeVisible();
 });
 
-test("MapLibre renders the WMS map and loads only selected-state WFS municipalities", async ({
+test("MapLibre renders municipal GeoJSON with state outline and observed table data", async ({
   page,
 }) => {
-  const wfsDone = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/v1/gis/wfs") && response.status() === 200,
-  );
-  const wmsDone = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/v1/gis/wms") && response.status() === 200,
-  );
+  const wfsDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/gis/wfs") && url.searchParams.get("typeNames") === "participa_geo_national:municipalities" && response.status() === 200;
+  });
+  const outlineDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/gis/wfs") && url.searchParams.get("typeNames") === "participa_geo_national:states" && url.searchParams.get("state_code") === "14" && response.status() === 200;
+  });
+  const observationsDone = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith("/api/v1/participation/municipal-observations") && url.searchParams.get("state_code") === "14" && url.searchParams.get("year") === "2024" && response.status() === 200;
+  });
   await page.goto("/territory?state=14&year=2024");
 
   const wfsResponse = await wfsDone;
-  const wfsBody = (await wfsResponse.json()) as { features: unknown[] };
+  const wfsUrl = new URL(wfsResponse.url());
+  expect(wfsUrl.searchParams.get("count")).toBe("1000");
+  expect(wfsUrl.searchParams.get("state_code")).toBe("14");
+  const wfsBody = (await wfsResponse.json()) as { features: MunicipalFeature[] };
   expect(wfsBody.features).toHaveLength(125);
-  const wmsResponse = await wmsDone;
-  expect(wmsResponse.headers()["content-type"]).toContain("image/png");
+  expect(wfsBody.features.every((feature) => feature.properties?.state_code === "14")).toBe(true);
+
+  const outlineResponse = await outlineDone;
+  const outlineUrl = new URL(outlineResponse.url());
+  expect(outlineUrl.searchParams.get("count")).toBe("1");
+  const outlineBody = (await outlineResponse.json()) as { features: StateFeature[] };
+  expect(outlineBody.features).toHaveLength(1);
+  expect(outlineBody.features[0]?.properties?.state_code).toBe("14");
+
+  const observationsResponse = await observationsDone;
+  const observationsBody = (await observationsResponse.json()) as {
+    items: MunicipalObservation[];
+    total: number;
+  };
+  expect(observationsBody.total).toBe(125);
+  expect(observationsBody.items).toHaveLength(125);
+  expect(observationsBody.items.every((item) => item.state_code === "14" && item.year === 2024)).toBe(true);
 
   await expect(page.locator(".map-canvas canvas")).toBeVisible({
     timeout: 20_000,
   });
   await expect(page.getByText("Cargando mapa…")).toBeHidden();
+  await expect(page.getByRole("group", { name: "Leyenda de abstención observada" })).toBeVisible();
   await expect(
     page.getByText(
       "No se pudo mostrar el mapa. La tabla de municipios sigue disponible.",
     ),
   ).toBeHidden();
+
+  await page.getByRole("button", { name: "Ver tabla alternativa" }).click();
+  const table = page.getByRole("table", { name: "Municipios de la entidad seleccionada" });
+  await expect(table).toBeVisible();
+  await expect(table.locator("tbody tr")).toHaveCount(125);
+  const acatic = observationsBody.items.find((item) => item.municipality_code === "001");
+  expect(acatic).toBeTruthy();
+  const acaticRow = table.locator("tbody tr").filter({ hasText: "ACATIC" });
+  await expect(acaticRow).toContainText("001");
+  await expect(acaticRow).toContainText(rate(acatic!.abstention_pct));
 });
 
 test("the mobile sidebar opens as a dialog at 375px and returns focus", async ({
@@ -296,18 +351,26 @@ test("200% zoom approximation keeps the page usable without page overflow", asyn
   await expect(page.getByLabel("Año histórico")).toBeVisible();
 });
 
-test("a failed WMS keeps the map error and the tabular alternative", async ({
+test("a failed municipal WFS layer keeps its warning and accessible table fallback", async ({
   page,
 }) => {
-  await page.route("**/api/v1/gis/wms**", (route) => route.abort());
+  let wmsRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/v1/gis/wms")) wmsRequests += 1;
+  });
+  await page.route("**/api/v1/gis/wfs**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("typeNames") === "participa_geo_national:municipalities") {
+      return route.abort();
+    }
+    return route.continue();
+  });
   await page.goto("/territory?state=14&year=2024");
 
-  await expect(
-    page.getByText(
-      "No se pudo mostrar el mapa. La tabla de municipios sigue disponible.",
-    ),
-  ).toBeVisible({ timeout: 20_000 });
-  await expect(
-    page.getByRole("table", { name: "Municipios de la entidad seleccionada" }),
-  ).toBeVisible();
+  await expect(page.getByText("No se pudo cargar la capa interactiva de municipios"))
+    .toBeVisible();
+  const table = page.getByRole("table", { name: "Municipios de la entidad seleccionada" });
+  await expect(table).toBeVisible();
+  await expect(table).toContainText("No hay datos municipales para el año seleccionado.");
+  expect(wmsRequests).toBe(0);
 });

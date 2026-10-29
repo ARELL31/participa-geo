@@ -56,6 +56,43 @@ def test_history_state_uses_summed_counts(db_api_client):
     assert abs(row["participation_pct"] - (100 - EVIDENCE_2009_ABSTENTION_PCT)) < 1e-6
 
 
+def test_municipal_observations_requires_state_and_returns_only_observed_municipalities(db_api_client):
+    response = db_api_client.get(
+        "/api/v1/participation/municipal-observations",
+        params={"state_code": "14", "year": 2024, "page_size": 1},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 125
+    assert len(body["items"]) == 1
+    assert body["items"][0]["state_code"] == "14"
+    assert body["items"][0]["municipality_code"] == "001"
+    assert body["items"][0]["year"] == 2024
+    assert body["items"][0]["territory_id"] is not None
+
+    other_state = db_api_client.get(
+        "/api/v1/participation/municipal-observations",
+        params={"state_code": "09", "year": 2024},
+    )
+    assert other_state.status_code == 200
+    assert other_state.json()["items"][0]["state_code"] == "09"
+
+
+def test_municipal_observations_rejects_missing_state(db_api_client):
+    response = db_api_client.get(
+        "/api/v1/participation/municipal-observations", params={"year": 2024}
+    )
+    assert response.status_code == 422
+
+
+def test_municipal_observations_invalid_year_is_rejected(db_api_client):
+    response = db_api_client.get(
+        "/api/v1/participation/municipal-observations",
+        params={"state_code": "14", "year": 2023},
+    )
+    assert response.status_code == 422
+
+
 def test_insufficient_prediction_is_null(db_api_client):
     response = db_api_client.get("/api/v1/predictions", params={"page_size": 125})
     assert response.status_code == 200

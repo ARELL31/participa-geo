@@ -51,7 +51,7 @@ SCENARIO_KINDS = frozenset(
 INSTITUTIONAL_KINDS = frozenset({"methodology_pdf", "executive_pdf", "technical_zip"})
 
 #: Fixed version included in every cache key and metadata block.
-REPORT_RULES_VERSION = "report-rules-1.1.0"
+REPORT_RULES_VERSION = "report-rules-1.2.0"
 
 FORMAT_BY_KIND: dict[str, ReportFormat] = {
     "history_csv": "csv",

@@ -80,17 +80,19 @@ describe("NationalPanel", () => {
   });
 
   it("shows 32 entity summaries, retaining unavailable observations as unavailable", async () => {
+    const requests: URLSearchParams[] = [];
     server.use(
       http.get("*/api/v1/participation/summary", () =>
         HttpResponse.json(summaries),
       ),
       modelsHandler(),
       predictionsHandler(),
-      http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: [] })),
+      http.get("*/api/v1/gis/wfs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ type: "FeatureCollection", features: [] }); }),
     );
     renderPanel();
     const table = await screen.findByRole("table", { name: "Resumen por entidad" });
     expect(within(table).getAllByRole("row")).toHaveLength(33);
+    expect(requests.some((params) => params.get("count") === "32" && !params.has("state_code"))).toBe(true);
     expect(within(table).getByText("Información insuficiente")).toBeVisible();
     expect(within(table).getAllByText("5").length).toBeGreaterThan(0);
   });

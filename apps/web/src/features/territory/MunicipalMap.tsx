@@ -2,7 +2,6 @@ import { AlertTriangle, LoaderCircle, RefreshCw } from "lucide-react";
 import type {
   GeoJSONSource,
   Map as MapLibreMap,
-  RasterTileSource,
   StyleSpecification,
 } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
@@ -13,16 +12,13 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { DataTable } from "../../components/DataTable";
 import type { ElectionYear } from "../../app/filters";
+import { featureCollectionBounds } from "../scenarios/mapBounds";
 import {
-  wmsAbstentionTileUrl,
+  type HistoryDTO,
   type MunicipalityFeatureCollection,
+  type NationalStateFeatureCollection,
 } from "../../lib/api";
 import { formatRate, formatShare } from "./format";
-
-const JALISCO_BOUNDS: [[number, number], [number, number]] = [
-  [-105.8, 18.2],
-  [-101.4, 22.2],
-];
 
 function supportsWebGl(): boolean {
   if (typeof window === "undefined" || typeof WebGLRenderingContext === "undefined") {
@@ -46,28 +42,33 @@ type MunicipalityRow = {
 
 function rowsFromFeatures(
   features: MunicipalityFeatureCollection | undefined,
+  observations: HistoryDTO[] | undefined,
+  stateCode: string,
+  year: ElectionYear,
 ): MunicipalityRow[] {
   if (!features) return [];
+  const observed = new Map((observations ?? []).filter((row) => row.state_code === stateCode && row.year === year).map((row) => [row.municipality_code, row]));
   const rows: MunicipalityRow[] = [];
-  for (const feature of features.features) {
+  for (const feature of features.features.filter((item) => item.properties?.state_code === stateCode)) {
     const properties = feature.properties;
     if (!properties) continue;
     const code = properties.municipality_code;
     if (typeof code !== "string" || code === "") continue;
+    const observation = properties.state_code === stateCode ? observed.get(code) : undefined;
     rows.push({
       code,
       name: typeof properties.name === "string" ? properties.name : code,
       participationPct:
-        typeof properties.participation_pct === "number"
-          ? properties.participation_pct
+        typeof observation?.participation_pct === "number"
+          ? observation.participation_pct
           : null,
       abstentionPct:
-        typeof properties.abstention_pct === "number"
-          ? properties.abstention_pct
+        typeof observation?.abstention_pct === "number"
+          ? observation.abstention_pct
           : null,
       unknownShare:
-        typeof properties.unknown_share === "number"
-          ? properties.unknown_share
+        typeof observation?.unknown_share === "number"
+          ? observation.unknown_share
           : null,
     });
   }
@@ -76,18 +77,34 @@ function rowsFromFeatures(
 
 type MunicipalMapProps = {
   year: ElectionYear;
+  stateName: string;
   features: MunicipalityFeatureCollection | undefined;
+  observations: HistoryDTO[] | undefined;
+  stateOutline: NationalStateFeatureCollection | undefined;
+  observationsLoading: boolean;
+  observationsError: boolean;
+  stateOutlineLoading: boolean;
+  stateCode: string;
   featuresLoading: boolean;
   featuresError: boolean;
+  stateOutlineError: boolean;
   selectedMunicipalityCode: string | null;
   onSelectMunicipality(code: string): void;
 };
 
 export function MunicipalMap({
   year,
+  stateName,
   features,
+  observations,
+  stateOutline,
+  observationsLoading,
+  observationsError,
+  stateOutlineLoading,
+  stateCode,
   featuresLoading,
   featuresError,
+  stateOutlineError,
   selectedMunicipalityCode,
   onSelectMunicipality,
 }: MunicipalMapProps) {
@@ -97,6 +114,8 @@ export function MunicipalMap({
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(() => !supportsWebGl());
   const [tableOpen, setTableOpen] = useState(false);
+  const boundsRef = useRef<ReturnType<typeof featureCollectionBounds> | null>(null);
+  const effectiveObservations = observationsError ? undefined : observations;
 
   useEffect(() => {
     selectRef.current = onSelectMunicipality;
@@ -130,8 +149,8 @@ export function MunicipalMap({
           const instance = new maplibregl.Map({
             container,
             style,
-            center: [-103.45, 20.5],
-            zoom: 6.1,
+            center: [-102, 23],
+            zoom: 4,
             attributionControl: false,
             interactive: true,
           });
@@ -143,18 +162,6 @@ export function MunicipalMap({
           );
           instance.on("load", () => {
             if (disposed) return;
-            instance.fitBounds(JALISCO_BOUNDS, { padding: 24, duration: 0 });
-            instance.addSource("wms-abstention", {
-              type: "raster",
-              tiles: [wmsAbstentionTileUrl(year)],
-              tileSize: 256,
-            });
-            instance.addLayer({
-              id: "wms-abstention",
-              type: "raster",
-              source: "wms-abstention",
-              paint: { "raster-opacity": 0.9 },
-            });
             setMapReady(true);
           });
           instance.on("error", () => {
@@ -179,17 +186,28 @@ export function MunicipalMap({
       map?.remove();
       mapRef.current = null;
     };
-  }, [year, mapError]);
+  }, [mapError]);
 
   // Add or refresh the interactive WFS layer once the style is ready.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
-    const data = features ?? { type: "FeatureCollection", features: [] };
+    const observationByCode = new Map((effectiveObservations ?? []).filter((row) => row.state_code === stateCode && row.year === year).map((row) => [row.municipality_code, row]));
+    const stateFeatures = (features?.features ?? []).filter((feature) => feature.properties?.state_code === stateCode);
+    const data: MunicipalityFeatureCollection = {
+      type: "FeatureCollection",
+      features: stateFeatures.map((feature) => {
+        const code = feature.properties?.municipality_code;
+        const row = typeof code === "string" ? observationByCode.get(code) : undefined;
+        return { ...feature, properties: { ...feature.properties, abstention_pct: row?.abstention_pct ?? null, participation_pct: row?.participation_pct ?? null, unknown_share: row?.unknown_share ?? null } };
+      }),
+    };
     const existing = map.getSource("municipalities") as GeoJSONSource | undefined;
     if (existing) {
       existing.setData(data);
+      const outlineSource = map.getSource("state-outline") as GeoJSONSource | undefined;
+      outlineSource?.setData(stateOutline ? { ...stateOutline, features: stateOutline.features.filter((feature) => feature.properties?.state_code === stateCode) } : { type: "FeatureCollection", features: [] });
       return;
     }
 
@@ -201,7 +219,7 @@ export function MunicipalMap({
       id: "municipalities-hit",
       type: "fill",
       source: "municipalities",
-      paint: { "fill-color": "#6F1739", "fill-opacity": 0.02 },
+      paint: { "fill-color": ["case", ["==", ["get", "abstention_pct"], null], "#D8D6D3", ["interpolate", ["linear"], ["get", "abstention_pct"], 0, "#F7E8EE", 100, "#6F1739"]], "fill-opacity": 0.82 },
     });
     map.addLayer({
       id: "municipalities-outline",
@@ -209,11 +227,18 @@ export function MunicipalMap({
       source: "municipalities",
       paint: { "line-color": "#FFFFFF", "line-width": 0.8, "line-opacity": 0.85 },
     });
+    if (!map.getSource("state-outline")) {
+      map.addSource("state-outline", { type: "geojson", data: stateOutline ? { ...stateOutline, features: stateOutline.features.filter((feature) => feature.properties?.state_code === stateCode) } : { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "state-outline-halo", type: "line", source: "state-outline", paint: { "line-color": "#FFFFFF", "line-width": 5 } });
+      map.addLayer({ id: "state-outline-line", type: "line", source: "state-outline", paint: { "line-color": "#6F1739", "line-width": 2.5 } });
+    } else {
+      (map.getSource("state-outline") as GeoJSONSource).setData(stateOutline ? { ...stateOutline, features: stateOutline.features.filter((feature) => feature.properties?.state_code === stateCode) } : { type: "FeatureCollection", features: [] });
+    }
     map.addLayer({
       id: "municipalities-selected",
       type: "line",
       source: "municipalities",
-      filter: ["==", ["get", "municipality_code"], selectedMunicipalityCode ?? ""],
+      filter: ["==", ["get", "municipality_code"], ""],
       paint: { "line-color": "#6F1739", "line-width": 3 },
     });
 
@@ -230,7 +255,16 @@ export function MunicipalMap({
     map.on("mouseleave", "municipalities-hit", () => {
       map.getCanvas().style.cursor = "";
     });
-  }, [features, mapReady, selectedMunicipalityCode]);
+  }, [features, effectiveObservations, stateOutline, stateCode, year, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const outline = stateOutline ? { ...stateOutline, features: stateOutline.features.filter((feature) => feature.properties?.state_code === stateCode) } : undefined;
+    const bounds = outline?.features.length ? featureCollectionBounds(outline) : features?.features.length ? featureCollectionBounds({ ...features, features: features.features.filter((feature) => feature.properties?.state_code === stateCode) }) : null;
+    boundsRef.current = bounds;
+    if (bounds) map.fitBounds(bounds, { padding: 28, duration: 0 });
+  }, [stateOutline, stateCode, features, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -242,14 +276,22 @@ export function MunicipalMap({
         selectedMunicipalityCode ?? "",
       ]);
     }
-    const raster = map.getSource("wms-abstention") as RasterTileSource | undefined;
-    if (raster) {
-      raster.setTiles([wmsAbstentionTileUrl(year)]);
-    }
-  }, [selectedMunicipalityCode, year, mapReady]);
+  }, [selectedMunicipalityCode, mapReady]);
 
-  const rows = rowsFromFeatures(features);
-  const showTable = tableOpen || mapError || featuresError;
+  useEffect(() => {
+    const container = containerRef.current;
+    const map = mapRef.current;
+    if (!container || !map || !mapReady || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      map.resize();
+      if (boundsRef.current) map.fitBounds(boundsRef.current, { padding: 28, duration: 0 });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [mapReady]);
+
+  const rows = rowsFromFeatures(features, effectiveObservations, stateCode, year);
+  const showTable = tableOpen || mapError || featuresError || observationsError;
 
   return (
     <section className="map-card" aria-labelledby="map-heading">
@@ -257,8 +299,7 @@ export function MunicipalMap({
         <div>
           <h2 id="map-heading">Mapa de abstención municipal</h2>
           <p>
-            Capa WMS de referencia y selección municipal mediante WFS. No se
-            usan mosaicos externos.
+            {stateOutline?.features.find((feature) => feature.properties?.state_code === stateCode)?.properties?.name ?? stateName} · año {year}. Color por abstención observada; gris indica dato no disponible.
           </p>
         </div>
         {!mapError && !featuresError ? (
@@ -301,21 +342,26 @@ export function MunicipalMap({
             ref={containerRef}
             className="map-canvas"
             role="group"
-            aria-label={`Mapa de abstención municipal, año ${year}`}
+            aria-label={`Mapa de abstención municipal, entidad ${stateCode}, año ${year}`}
             aria-describedby="map-description"
           />
-          {!mapReady ? (
+          {!mapReady || featuresLoading || stateOutlineLoading || observationsLoading ? (
             <div className="map-loading" role="status">
               <LoaderCircle aria-hidden="true" size={20} strokeWidth={1.8} />
               Cargando mapa…
             </div>
           ) : null}
-          <p id="map-description" className="map-description">
-            El mapa es una referencia visual. La tabla equivalente permite
-            seleccionar municipios con teclado y ofrece los mismos valores.
-          </p>
         </div>
       )}
+
+      {!mapError ? <p id="map-description" className="map-description">
+        El mapa es una referencia visual. La tabla equivalente permite
+        seleccionar municipios con teclado y ofrece los mismos valores.
+      </p> : null}
+
+      <div className="map-legend" role="group" aria-label="Leyenda de abstención observada">
+        <span>0 %</span><span className="map-legend__scale" aria-hidden="true" /><span>100 %</span><span className="map-legend__neutral" />No disponible
+      </div>
 
       {featuresError ? (
         <div className="inline-alert inline-alert--warning" role="status">
@@ -327,9 +373,12 @@ export function MunicipalMap({
         </div>
       ) : null}
 
+      {observationsError ? <div className="inline-alert inline-alert--warning" role="alert"><AlertTriangle aria-hidden="true" size={20} /><p>No se pudieron cargar las observaciones del año. El mapa no mostrará tasas residuales; la tabla municipal sigue disponible.</p></div> : null}
+      {stateOutlineError ? <div className="inline-alert inline-alert--warning" role="status"><AlertTriangle aria-hidden="true" size={20} /><p>No se pudo cargar el contorno estatal; se encuadra la geometría municipal de respaldo.</p></div> : null}
+
       {showTable ? (
         <div id="municipality-table" className="map-table">
-          {featuresLoading ? (
+            {featuresLoading || observationsLoading ? (
             <p className="table-note" role="status">
               Cargando información municipal…
             </p>

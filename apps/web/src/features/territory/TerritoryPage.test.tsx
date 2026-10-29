@@ -11,6 +11,7 @@ import {
   historyYear,
   modelsHandler,
   municipalityFeature,
+  observationsHandler,
   page,
   predictionsHandler,
   TERRITORY_A,
@@ -31,7 +32,7 @@ function renderAt(search: string, setup?: () => void) {
   const query = new URLSearchParams(search);
   if (!query.has("state") && !query.has("state_code")) query.set("state", "14");
   window.history.replaceState({}, "", `/territory?${query.toString()}`);
-  server.use(modelsHandler(), predictionsHandler());
+  server.use(modelsHandler(), predictionsHandler(), observationsHandler([]));
   setup?.();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -59,6 +60,7 @@ describe("TerritoryPage", () => {
     renderAt(`?territory_id=${TERRITORY_A}&state=14&year=2024`, () => server.use(
       territoriesHandler(TERRITORIES),
       historyHandler((params) => [historyYear(params.get("territory_id"), 2024)]),
+      observationsHandler([historyYear(TERRITORY_A, 2024, { state_code: "14", municipality_code: "001" })]),
       http.get("*/api/v1/gis/wfs", ({ request }) => {
         wfsQueries.push(new URL(request.url).searchParams);
         return HttpResponse.json({ type: "FeatureCollection", features: [] });
@@ -75,10 +77,13 @@ describe("TerritoryPage", () => {
     );
     expect(await screen.findByText(/Información insuficiente para publicar una predicción 2027/)).toBeVisible();
     expect(screen.queryByText("0.0 %")).not.toBeInTheDocument();
-    await waitFor(() => expect(wfsQueries).toHaveLength(1));
-    expect(wfsQueries[0]?.get("state_code")).toBe("14");
-    expect(wfsQueries[0]?.get("count")).toBe("500");
-    expect(wfsQueries[0]?.get("state_code")).not.toBe("all");
+    await waitFor(() => expect(wfsQueries).toHaveLength(2));
+    const municipalityQuery = wfsQueries.find((params) => params.get("typeNames")?.endsWith(":municipalities"));
+    const outlineQuery = wfsQueries.find((params) => params.get("typeNames")?.endsWith(":states"));
+    expect(municipalityQuery?.get("state_code")).toBe("14");
+    expect(municipalityQuery?.get("count")).toBe("1000");
+    expect(outlineQuery?.get("state_code")).toBe("14");
+    expect(outlineQuery?.get("count")).toBe("1");
   });
 
   it("always shows the geography notice", () => {
@@ -108,6 +113,7 @@ describe("TerritoryPage", () => {
           }),
         );
       }),
+      observationsHandler([historyYear(TERRITORY_A, 2018, { state_code: "14", municipality_code: "001", abstention_pct: null, participation_pct: null })]),
       wfsHandler([featureFor(TERRITORY_A), featureFor(TERRITORY_B)]),
     );
     renderAt(`?territory_id=${TERRITORY_A}&year=2018`);

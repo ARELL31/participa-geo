@@ -79,3 +79,36 @@ def list_history(
         },
     )
     return Page(items=items, page=page, page_size=page_size, total=total, meta=meta)
+
+
+@router.get("/participation/municipal-observations", response_model=Page[HistoryDTO], tags=["participation"])
+def list_municipal_observations(
+    state_code: Annotated[str, Query(pattern=r"^(0[1-9]|[12][0-9]|3[0-2])$")],
+    year: ElectionYearQuery,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 500,
+    *,
+    session: SessionDep,
+) -> Page[HistoryDTO]:
+    repo = Repository(session)
+    records, total = repo.get_history_territories(
+        year=year, page=page, page_size=page_size, state_code=state_code
+    )
+    items = [
+        HistoryDTO(
+            territory_id=r.territory_id, year=r.year, name=r.name,
+            state_code=r.state_code, municipality_code=r.municipality_code,
+            level="municipality", territory_code=getattr(r, "territory_code", None),
+            ln=r.ln, sv=r.sv, nv=r.nv, ns=r.ns,
+            participation_pct=r.participation_pct, abstention_pct=r.abstention_pct,
+            unknown_share=r.unknown_share, ns_lower_pct=r.ns_lower_pct,
+            ns_upper_pct=r.ns_upper_pct, eligible=r.eligible,
+            identity_status=r.identity_status, footprint_status=r.footprint_status,
+        ) for r in records
+    ]
+    meta = build_meta(
+        dataset_version_ids=repo.get_dataset_version_ids(),
+        geographic_warning=GEOGRAPHIC_WARNING,
+        filters={"state_code": state_code, "year": year, "page": page, "page_size": page_size},
+    )
+    return Page(items=items, page=page, page_size=page_size, total=total, meta=meta)

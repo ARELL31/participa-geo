@@ -310,6 +310,96 @@
         }
       }
     },
+    "/api/v1/participation/municipal-observations": {
+      "get": {
+        "tags": [
+          "participation"
+        ],
+        "summary": "List Municipal Observations",
+        "operationId": "list_municipal_observations_api_v1_participation_municipal_observations_get",
+        "parameters": [
+          {
+            "name": "state_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0[1-9]|[12][0-9]|3[0-2])$",
+              "title": "State Code"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    2009,
+                    2012,
+                    2015,
+                    2018,
+                    2021,
+                    2024
+                  ],
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 500,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_HistoryDTO_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/participation/summary": {
       "get": {
         "tags": [
@@ -1168,6 +1258,17 @@
               }
             ],
             "title": "Municipality Code"
+          },
+          "state_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Code"
           },
           "level": {
             "type": "string",

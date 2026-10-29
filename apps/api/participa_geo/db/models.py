@@ -604,6 +604,7 @@ class HistoryRecord:
     level: TerritoryLevel = "municipality"
     territory_code: str | None = None
     district_plan: DistrictPlan | None = None
+    state_code: str | None = None
 
 
 @dataclass(frozen=True)

@@ -49,6 +49,7 @@ export type Page<T> = Omit<Schemas["Page_HistoryDTO_"], "items"> & {
 
 export type TerritoryPage = Page<TerritoryDTO>;
 export type HistoryPage = Page<HistoryDTO>;
+export type MunicipalObservationsPage = Page<HistoryDTO>;
 export type ModelPage = Page<ModelDTO>;
 export type PredictionPage = Page<PredictionDTO>;
 export type RecommendationPage = Page<RecommendationDTO>;
@@ -59,6 +60,7 @@ export type MunicipalityFeatureCollection = FeatureCollection<
   Geometry,
   GeoJsonProperties
 > & {
+  numberMatched?: number | string;
   features: Array<{
     type: "Feature";
     id?: string | number;
@@ -396,11 +398,37 @@ export async function fetchMunicipalityFeatures(
     typeNames: "participa_geo_national:municipalities",
     outputFormat: "application/json",
     srsName: "EPSG:4326",
-    count: 500,
+    count: 1000,
     level: "municipality",
     state_code: stateCode,
   });
-  return getJson<MunicipalityFeatureCollection>(path, signal);
+  const collection = await getJson<MunicipalityFeatureCollection>(path, signal);
+  const matched = collection.numberMatched === undefined ? undefined : Number(collection.numberMatched);
+  if (collection.features.length >= 1000 || (collection.numberMatched !== undefined && !Number.isFinite(matched)) || (matched !== undefined && matched > collection.features.length)) {
+    throw new Error("La respuesta WFS municipal puede estar truncada.");
+  }
+  return collection;
+}
+
+export async function fetchMunicipalObservations(
+  stateCode: string,
+  year: ElectionYear,
+  signal?: AbortSignal,
+): Promise<HistoryDTO[]> {
+  const items: HistoryDTO[] = [];
+  let page = 1;
+  let total = Number.POSITIVE_INFINITY;
+  while (items.length < total) {
+    const path = withQuery("/api/v1/participation/municipal-observations", {
+      state_code: stateCode, year, page, page_size: 500,
+    });
+    const response = await getJson<HistoryPage>(path, signal);
+    items.push(...response.items);
+    total = response.total;
+    if (response.items.length === 0 && items.length < total) throw new Error("La paginación de observaciones municipales terminó antes del total informado.");
+    page += 1;
+  }
+  return items;
 }
 
 /** Summary over all 32 entities; this endpoint is national by contract. */
@@ -446,9 +474,10 @@ export async function fetchDistrictFeatures(
   return getJson<DistrictFeatureCollection>(path, signal);
 }
 
-/** Bounded national outline request; the layer contains only 32 state features. */
+/** State outline request; state_code constrains the WFS response to one feature. */
 export async function fetchNationalStateFeatures(
   signal?: AbortSignal,
+  stateCode?: string,
 ): Promise<NationalStateFeatureCollection> {
   const path = withQuery("/api/v1/gis/wfs", {
     service: "WFS",
@@ -457,8 +486,9 @@ export async function fetchNationalStateFeatures(
     typeNames: "participa_geo_national:states",
     outputFormat: "application/json",
     srsName: "EPSG:4326",
-    count: 32,
-    bbox: "14.5,-118.5,32.8,-86.8",
+    count: stateCode ? 1 : 32,
+    bbox: stateCode ? undefined : "14.5,-118.5,32.8,-86.8",
+    state_code: stateCode,
   });
   return getJson<NationalStateFeatureCollection>(path, signal);
 }
@@ -517,10 +547,12 @@ export const queryKeys = {
     ["history", "series", { territoryId, level, stateCode }] as const,
   municipalFeatures: (stateCode = "14") =>
     ["gis", "wfs", "municipalities", stateCode] as const,
+  municipalObservations: (stateCode: string, year: ElectionYear) =>
+    ["municipal-observations", stateCode, year] as const,
   districtFeatures: (stateCode = "14") => ["gis", "wfs", "districts_2023", stateCode] as const,
   municipalityDistricts: (territoryId: string | null) => ["municipality-districts", territoryId] as const,
   summary: (level: TerritoryLevel, year: ElectionYear) => ["summary", level, year] as const,
-  nationalStateFeatures: () => ["gis", "wfs", "national_states"] as const,
+  nationalStateFeatures: (stateCode = "all") => ["gis", "wfs", "state", stateCode] as const,
   models: (level: TerritoryLevel = "municipality") => ["models", level] as const,
   predictions: (modelRunId: string | null, level: TerritoryLevel = "municipality", stateCode = "all", territoryId: string | null = null) =>
     ["predictions", { modelRunId, level, stateCode, territoryId, targetYear: 2027 }] as const,

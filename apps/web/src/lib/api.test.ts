@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { ElectionYear } from "../app/filters";
-import { ApiProblem, fetchAllPredictions, fetchHistory, fetchNationalStateFeatures, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
+import { ApiProblem, fetchAllPredictions, fetchHistory, fetchMunicipalObservations, fetchNationalStateFeatures, fetchParticipationSummary, fetchPredictions, fetchTerritories, fetchMunicipalityFeatures, wmsTerritoryUrl } from "./api";
 import {
   historyYear,
   page,
@@ -53,6 +53,33 @@ describe("fetchHistory year contract", () => {
     await expect(
       fetchHistory({ year: 2023 as unknown as ElectionYear }),
     ).rejects.toMatchObject({ status: 422, code: "validation_error" });
+  });
+});
+
+describe("fetchMunicipalObservations", () => {
+  it("paginates past the 500-row limit and scopes both requests by state and year", async () => {
+    const seen: URLSearchParams[] = [];
+    server.use(http.get("*/api/v1/participation/municipal-observations", ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      seen.push(params);
+      const pageNumber = Number(params.get("page"));
+      return HttpResponse.json({ items: Array.from({ length: pageNumber === 1 ? 500 : 70 }, (_, i) => ({ municipality_code: String(i), state_code: "20", year: 2024 })), total: 570, page: pageNumber, page_size: 500, meta: {} });
+    }));
+    const rows = await fetchMunicipalObservations("20", 2024);
+    expect(rows).toHaveLength(570);
+    expect(seen.map((params) => params.get("page"))).toEqual(["1", "2"]);
+    expect(seen.every((params) => params.get("state_code") === "20" && params.get("year") === "2024")).toBe(true);
+  });
+});
+
+describe("fetchMunicipalityFeatures WFS limit", () => {
+  it("rejects a full 1000-feature response instead of silently accepting truncation", async () => {
+    server.use(http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", features: Array.from({ length: 1000 }, () => ({ type: "Feature", geometry: null, properties: {} })) })));
+    await expect(fetchMunicipalityFeatures("20")).rejects.toThrow("truncada");
+  });
+  it("rejects a response whose count metadata says it was truncated", async () => {
+    server.use(http.get("*/api/v1/gis/wfs", () => HttpResponse.json({ type: "FeatureCollection", numberMatched: "unknown", features: [] })));
+    await expect(fetchMunicipalityFeatures("20")).rejects.toThrow("truncada");
   });
 });
 
@@ -135,7 +162,7 @@ describe("national API requests", () => {
       "participa_geo_national:municipalities",
     );
     expect(seen[2]?.params.has("year")).toBe(false);
-    expect(seen[2]?.params.get("count")).toBe("500");
+    expect(seen[2]?.params.get("count")).toBe("1000");
     expect(seen[2]?.params.get("state_code")).not.toBe("all");
     expect(wmsTerritoryUrl()).toContain("participa_geo_national%3Astates");
   });
@@ -154,7 +181,19 @@ describe("national API requests", () => {
     expect(seen[0]?.get("typeNames")).toBe("participa_geo_national:states");
     expect(seen[0]?.get("count")).toBe("32");
     expect(seen[0]?.get("bbox")).toBe("14.5,-118.5,32.8,-86.8");
-    expect(seen[0]?.get("state_code")).toBeNull();
+    expect(seen[0]?.has("state_code")).toBe(false);
     expect(seen[0]?.has("year")).toBe(false);
+  });
+
+  it("requests only one selected state outline", async () => {
+    const seen: URLSearchParams[] = [];
+    server.use(http.get("*/api/v1/gis/wfs", ({ request }) => {
+      seen.push(new URL(request.url).searchParams);
+      return HttpResponse.json({ type: "FeatureCollection", features: [] });
+    }));
+    await fetchNationalStateFeatures(undefined, "20");
+    expect(seen[0]?.get("state_code")).toBe("20");
+    expect(seen[0]?.get("count")).toBe("1");
+    expect(seen[0]?.has("bbox")).toBe(false);
   });
 });

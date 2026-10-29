@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/participation/municipal-observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Municipal Observations */
+        get: operations["list_municipal_observations_api_v1_participation_municipal_observations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/participation/summary": {
         parameters: {
             query?: never;
@@ -351,6 +368,8 @@ export interface components {
             name?: string | null;
             /** Municipality Code */
             municipality_code?: string | null;
+            /** State Code */
+            state_code?: string | null;
             /**
              * Level
              * @default municipality
@@ -1131,6 +1150,40 @@ export interface operations {
                 state_code?: string;
                 territory_id?: string | null;
                 year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_HistoryDTO_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_municipal_observations_api_v1_participation_municipal_observations_get: {
+        parameters: {
+            query: {
+                state_code: string;
+                year: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
                 page?: number;
                 page_size?: number;
             };

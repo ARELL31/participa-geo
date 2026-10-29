@@ -145,6 +145,7 @@ a sí mismo.
 |---|---|
 | GET `/territories` | `state_code=14` (o `all`), `level=municipality`, `q<=80`, `page=1`, `page_size<=500`; `Page[TerritoryDTO]`. |
 | GET `/participation/history` | `level=municipality`, `state_code=14` (o `all`), `territory_id?:UUID`, `year?:enum`, `page_size<=500`; `Page[HistoryDTO]`. Distrito devuelve sólo observación 2024. |
+| GET `/participation/municipal-observations` | `state_code` obligatorio (`01`–`32`, sin `all`), `year` obligatorio (2009/2012/2015/2018/2021/2024), `page=1`, `page_size<=500`; `Page[HistoryDTO]` con UUID, estado y código municipal. Devuelve observaciones por municipio, no un agregado estatal; el mapa une por estado+código y conserva tasas nulas. |
 | GET `/participation/summary` | `level`, `year=2024`; 32 filas con conteos sumados, riesgo elegible/insuficiente y cobertura por entidad. El color usa abstención observada de conteos. |
 | GET `/models`, `/models/{id}` | `level=municipality` (predeterminado); sólo expone el modelo municipal nacional publicado. Un nivel distrital devuelve 409 `district_model_unavailable`; ejecuciones antiguas/no publicadas devuelven 404. |
 | GET `/predictions` | `level=municipality`, `model_run_id?:UUID`, `target_year=2027`, `territory_id?:UUID`, `state_code=14` (o `all`); `page_size<=500`. Nivel distrito devuelve 409 `district_model_unavailable`. |

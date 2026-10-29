@@ -64,6 +64,7 @@ function baseHandlers() {
           ],
         },
         properties: {
+          state_code: "14",
           year: 2024,
           municipality_code: "001",
           name: "ACATIC",
@@ -89,6 +90,7 @@ function baseHandlers() {
           ],
         },
         properties: {
+          state_code: "14",
           year: 2024,
           municipality_code: "002",
           name: "ACATLAN DE JUAREZ",

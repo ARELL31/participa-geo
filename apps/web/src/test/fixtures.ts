@@ -63,6 +63,12 @@ export function historyYear(
   };
 }
 
+export function observationsHandler(rows: HistoryDTO[] = []) {
+  return http.get("*/api/v1/participation/municipal-observations", () =>
+    HttpResponse.json(page(rows)),
+  );
+}
+
 export function page<T>(
   items: T[],
   filters: Record<string, unknown> = {},
@@ -129,7 +135,7 @@ export type MunicipalityFeatureInput = {
   unknownShare: number | null;
 };
 
-export function municipalityFeature(input: MunicipalityFeatureInput) {
+export function municipalityFeature(input: MunicipalityFeatureInput & { stateCode?: string }) {
   return {
     type: "Feature" as const,
     id: `participation_history.${input.municipalityCode}`,
@@ -146,6 +152,7 @@ export function municipalityFeature(input: MunicipalityFeatureInput) {
       ],
     },
     properties: {
+      state_code: input.stateCode ?? "14",
       year: 2024,
       municipality_code: input.municipalityCode,
       name: input.name,

@@ -93,10 +93,11 @@ test("exports history, scenario CSV/GeoJSON and real A/B maps", async ({ page })
   // ---- History CSV: values match the API aggregate for the same filter. ----
   const history = await apiJson<{ items: Array<Record<string, unknown>> }>(
     page,
-    `/api/v1/participation/history?territory_id=${eligible!.territory_id}&year=2024&page=1&page_size=125`,
+    `/api/v1/participation/history?level=municipality&state_code=14&territory_id=${eligible!.territory_id}&year=2024&page=1&page_size=125`,
   );
+  expect(history.items).toHaveLength(1);
   await page.goto(
-    `/reports?territory_id=${eligible!.territory_id}&year=2024`,
+    `/reports?level=municipality&state=14&territory_id=${eligible!.territory_id}&year=2024`,
   );
   expect(
     await page.getByRole("heading", { level: 1, name: "Reportes y exportaciones" }),

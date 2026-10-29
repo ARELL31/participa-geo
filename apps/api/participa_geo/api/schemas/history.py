@@ -42,6 +42,7 @@ class HistoryDTO(BaseModel):
     year: int
     name: str | None = None
     municipality_code: str | None = None
+    state_code: str | None = None
     level: TerritoryLevel = "municipality"
     territory_code: str | None = None
     district_plan: DistrictPlan | None = None

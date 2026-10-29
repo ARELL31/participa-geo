@@ -146,6 +146,100 @@ def test_history_xlsx_export_contains_per_municipality_rows(db_api_client, tmp_p
     assert len({row[3] for row in rows[1:]}) == 125
 
 
+def test_history_csv_export_filters_to_selected_municipality(db_api_client, tmp_path):
+    db_api_client.app.state.report_store = _store(tmp_path)
+    territories = db_api_client.get(
+        "/api/v1/territories",
+        params={"state_code": "14", "level": "municipality", "page": 1, "page_size": 500},
+    ).json()["items"]
+    acatic = next(item for item in territories if item["municipality_code"] == "001")
+    history = db_api_client.get(
+        "/api/v1/participation/history",
+        params={
+            "level": "municipality",
+            "state_code": "14",
+            "territory_id": acatic["id"],
+            "year": 2024,
+            "page": 1,
+            "page_size": 1,
+        },
+    ).json()["items"]
+    assert len(history) == 1
+
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": "history_csv",
+            "level": "municipality",
+            "state_code": "14",
+            "territory_id": acatic["id"],
+            "year": 2024,
+        },
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    data_lines = [
+        line
+        for line in download.content.decode("utf-8-sig").splitlines()
+        if line and not line.startswith("#")
+    ]
+    rows = list(csv.DictReader(io.StringIO("\n".join(data_lines))))
+    assert len(rows) == 1
+    assert rows[0]["territory_id"] == acatic["id"]
+    assert rows[0]["municipality_code"] == "001"
+    assert rows[0]["year"] == "2024"
+    assert int(rows[0]["ln"]) == history[0]["ln"]
+
+
+def test_history_xlsx_export_filters_to_selected_municipality(db_api_client, tmp_path):
+    from openpyxl import load_workbook
+
+    db_api_client.app.state.report_store = _store(tmp_path)
+    territories = db_api_client.get(
+        "/api/v1/territories",
+        params={"state_code": "14", "level": "municipality", "page": 1, "page_size": 500},
+    ).json()["items"]
+    acatic = next(item for item in territories if item["municipality_code"] == "001")
+
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={
+            "kind": "history_xlsx",
+            "level": "municipality",
+            "state_code": "14",
+            "territory_id": acatic["id"],
+            "year": 2024,
+        },
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    sheet = load_workbook(io.BytesIO(download.content), read_only=True).active
+    rows = list(sheet.iter_rows(values_only=True))
+    assert len(rows) == 2
+    assert rows[0][0] == "territory_id"
+    assert rows[1][0] == acatic["id"]
+    assert rows[1][3] == "001"
+    assert rows[1][1] == 2024
+
+
+def test_history_csv_without_state_filter_keeps_national_rows(db_api_client, tmp_path):
+    db_api_client.app.state.report_store = _store(tmp_path)
+    response = db_api_client.post(
+        "/api/v1/reports",
+        json={"kind": "history_csv", "level": "municipality", "year": 2024},
+    )
+    assert response.status_code == 201, response.text
+    download = db_api_client.get(response.json()["download_url"])
+    data_lines = [
+        line
+        for line in download.content.decode("utf-8-sig").splitlines()
+        if line and not line.startswith("#")
+    ]
+    rows = list(csv.DictReader(io.StringIO("\n".join(data_lines))))
+    assert len(rows) == 2477
+    assert len({row["territory_id"] for row in rows}) == 2477
+
+
 def test_district_history_export_contains_observed_2024_rows(
     db_api_client, tmp_path, monkeypatch
 ):

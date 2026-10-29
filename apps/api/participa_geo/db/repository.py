@@ -32,11 +32,11 @@ _REFERENCE_DATE = REFERENCE_DATE  # "2025-12-15"
 #: Keep the read series to one observation per year while preserving every
 #: dataset version for audit: the most recently loaded version for that year.
 _LATEST_VERSION_FOR_YEAR = (
-    "dv.id = ("
-    "SELECT dv2.id FROM dataset_version dv2 "
+    "(dv.id, o.year, dv.state_code) IN ("
+    "SELECT DISTINCT ON (dv2.state_code, o2.year) dv2.id, o2.year, dv2.state_code "
+    "FROM dataset_version dv2 "
     "JOIN observation o2 ON o2.dataset_version_id = dv2.id "
-    "WHERE o2.year = o.year AND dv2.state_code = dv.state_code "
-    "ORDER BY dv2.created_at DESC, dv2.id DESC LIMIT 1)"
+    "ORDER BY dv2.state_code, o2.year, dv2.created_at DESC, dv2.id DESC)"
 )
 
 
@@ -552,7 +552,8 @@ class Repository:
         rows = (
             self.session.execute(
                 text(f"""
-                    SELECT t_ref.id AS territory_id, o.year, t_ref.name,
+                     SELECT t_ref.id AS territory_id, o.year, t_ref.name,
+                            t_ref.state_code,
                            t_ref.municipality_code, t_ref.territory_code,
                            o.ln, o.sv, o.nv, o.ns, o.participation_pct,
                            o.abstention_pct, o.unknown_share, o.ns_lower_pct,
@@ -646,6 +647,7 @@ class Repository:
                     year=2024,
                     name=row["name"],
                     municipality_code=None,
+                    state_code=row["state_code"],
                     ln=ln,
                     sv=sv,
                     nv=nv,
@@ -697,7 +699,7 @@ class Repository:
         total = int(self.session.scalar(text(count_sql), params))
 
         list_sql = f"""
-            SELECT t_ref.id AS territory_id, o.year, t_ref.name, t_ref.municipality_code,
+            SELECT t_ref.id AS territory_id, o.year, t_ref.name, t_ref.state_code, t_ref.municipality_code,
                    o.ln, o.sv, o.nv, o.ns,
                    o.participation_pct, o.abstention_pct, o.unknown_share,
                    o.ns_lower_pct, o.ns_upper_pct, o.eligible,
@@ -746,8 +748,9 @@ class Repository:
                    CASE WHEN :state_code <> 'all' THEN
                      (SELECT state.name FROM api_state_catalogue state
                       WHERE state.state_code = :state_code)
-                   END AS name,
-                   NULL AS municipality_code,
+                    END AS name,
+                    NULL AS municipality_code,
+                    NULLIF(:state_code, 'all') AS state_code,
                    SUM(o.ln) AS ln, SUM(o.sv) AS sv, SUM(o.nv) AS nv, SUM(o.ns) AS ns,
                    CASE WHEN SUM(o.sv) + SUM(o.nv) > 0
                         THEN (100.0 * SUM(o.sv) / (SUM(o.sv) + SUM(o.nv)))::float8
@@ -785,6 +788,7 @@ class Repository:
             year=row["year"],
             name=row["name"],
             municipality_code=row["municipality_code"],
+            state_code=row["state_code"] if "state_code" in row else None,
             ln=row["ln"],
             sv=row["sv"],
             nv=row["nv"],

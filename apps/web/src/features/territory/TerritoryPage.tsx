@@ -8,11 +8,14 @@ import {
 } from "../../app/filters";
 import { navigate, pathWithCurrentFilters } from "../../app/navigation";
 import { GeographyNotice } from "../../components/GeographyNotice";
+import { MEXICAN_STATES } from "../../components/LevelSwitcher";
 import { PageState } from "../../components/PageState";
 import {
   fetchHistory,
   fetchModels,
   fetchMunicipalityFeatures,
+  fetchMunicipalObservations,
+  fetchNationalStateFeatures,
   fetchPredictions,
   fetchTerritories,
   queryKeys,
@@ -62,7 +65,16 @@ export function TerritoryPage() {
 
   const territoriesQuery = useQuery({
     queryKey: queryKeys.territories(stateCode, level),
-    queryFn: ({ signal }) => fetchTerritories({ stateCode, level, pageSize: 500, signal }),
+    queryFn: async ({ signal }) => {
+      const first = await fetchTerritories({ stateCode, level, pageSize: 500, signal });
+      const items = [...first.items];
+      for (let page = 2; items.length < first.total; page += 1) {
+        const next = await fetchTerritories({ stateCode, level, page, pageSize: 500, signal });
+        if (!next.items.length) throw new Error("La paginación del catálogo municipal terminó antes del total informado.");
+        items.push(...next.items);
+      }
+      return { ...first, items };
+    },
     enabled: stateCode !== "all" && level === "municipality",
     staleTime: 5 * 60_000,
   });
@@ -98,6 +110,19 @@ export function TerritoryPage() {
     queryKey: queryKeys.municipalFeatures(stateCode),
     queryFn: ({ signal }) =>
       fetchMunicipalityFeatures(stateCode, signal),
+    enabled: stateCode !== "all" && level === "municipality",
+    staleTime: 60_000,
+  });
+  const stateOutlineQuery = useQuery({
+    queryKey: queryKeys.nationalStateFeatures(stateCode),
+    queryFn: ({ signal }) => fetchNationalStateFeatures(signal, stateCode),
+    enabled: stateCode !== "all" && level === "municipality",
+    staleTime: 5 * 60_000,
+  });
+
+  const observationsQuery = useQuery({
+    queryKey: queryKeys.municipalObservations(stateCode, historicalYear),
+    queryFn: ({ signal }) => fetchMunicipalObservations(stateCode, historicalYear, signal),
     enabled: stateCode !== "all" && level === "municipality",
     staleTime: 60_000,
   });
@@ -404,9 +429,17 @@ export function TerritoryPage() {
 
       <MunicipalMap
         year={historicalYear}
+        stateName={MEXICAN_STATES.find(([code]) => code === stateCode)?.[1] ?? `Entidad ${stateCode}`}
         features={featuresQuery.data}
+        observations={observationsQuery.isError ? undefined : observationsQuery.data}
+        stateOutline={stateOutlineQuery.data}
+        stateOutlineLoading={stateOutlineQuery.isPending}
+        observationsLoading={observationsQuery.isPending}
+        observationsError={observationsQuery.isError}
+        stateCode={stateCode}
         featuresLoading={featuresQuery.isPending}
         featuresError={featuresQuery.isError}
+        stateOutlineError={stateOutlineQuery.isError}
         selectedMunicipalityCode={selectedMunicipalityCode}
         onSelectMunicipality={(code) => {
           const match = territories.find(
