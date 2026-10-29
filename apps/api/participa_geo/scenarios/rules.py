@@ -280,6 +280,7 @@ def simulate_scenario(
                 territory_id=prediction.territory_id,
                 municipality_code=prediction.municipality_code,
                 municipality_name=prediction.municipality_name,
+                state_code=prediction.state_code,
                 level=prediction.level,
                 territory_code=prediction.territory_code or prediction.municipality_code,
                 district_plan=prediction.district_plan,

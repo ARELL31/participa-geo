@@ -27,6 +27,7 @@ def to_prediction_dto(record: PredictionRecord) -> PredictionDTO:
     return PredictionDTO(
         territory_id=record.territory_id,
         municipality_code=record.municipality_code,
+        state_code=record.state_code,
         level=record.level,
         territory_code=record.territory_code or record.municipality_code,
         district_plan=record.district_plan,

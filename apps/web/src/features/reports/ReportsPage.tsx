@@ -242,6 +242,7 @@ export function ReportsPage() {
               district_plan: "DERFE2023",
               territory_id: filters.territoryId,
               year: 2024,
+              state_code: filters.stateCode,
             }}
             actions={[
               {
@@ -297,6 +298,10 @@ export function ReportsPage() {
           request={{
             territory_id: filters.territoryId,
             year: filters.historicalYear,
+            level: filters.level,
+            state_code: filters.stateCode,
+            district_plan:
+              filters.level === "federal_district" ? "DERFE2023" : undefined,
           }}
           actions={[
             {
@@ -331,7 +336,7 @@ export function ReportsPage() {
         </div>
         <ExportActions
           caption="Evidencia municipal del modelo publicado"
-          request={{}}
+          request={{ level: "municipality", state_code: "all" }}
           actions={[
             {
               kind: "model_evidence_csv",

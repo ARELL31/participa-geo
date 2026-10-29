@@ -64,6 +64,7 @@ export type MunicipalityFeatureCollection = FeatureCollection<
     id?: string | number;
     geometry: Geometry;
     properties: {
+      state_code?: string;
       municipality_code?: string;
       name?: string;
       year?: number;

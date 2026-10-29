@@ -13,11 +13,7 @@ import type {
   MunicipalityFeatureCollection,
   ScenarioDTO,
 } from "../../lib/api";
-
-const JALISCO_BOUNDS: [[number, number], [number, number]] = [
-  [-105.8, 18.2],
-  [-101.4, 22.2],
-];
+import { featureCollectionBounds } from "./mapBounds";
 
 const RISK_COLORS = {
   low: "#EADDE2",
@@ -113,7 +109,14 @@ function ScenarioMapPanel({
           );
           instance.on("load", () => {
             if (disposed) return;
-            instance.fitBounds(JALISCO_BOUNDS, { padding: 20, duration: 0 });
+            const bounds = featureCollectionBounds(data);
+            if (bounds) {
+              instance.fitBounds(bounds, {
+                padding: 28,
+                duration: 0,
+                maxZoom: 9,
+              });
+            }
             instance.addSource("scenario-municipalities", {
               type: "geojson",
               data,
@@ -205,8 +208,12 @@ export function ScenarioMaps({
   featuresError,
 }: ScenarioMapsProps) {
   const data = useMemo<MunicipalityFeatureCollection>(() => {
-    const byCode = new Map(
-      scenario.results.map((result) => [result.municipality_code, result]),
+    // Municipality codes repeat across entities; key by entity + code.
+    const byKey = new Map(
+      scenario.results.map((result) => [
+        `${result.state_code ?? ""}:${result.municipality_code ?? ""}`,
+        result,
+      ]),
     );
     if (!features) {
       return { type: "FeatureCollection", features: [] };
@@ -218,7 +225,11 @@ export function ScenarioMaps({
           typeof feature.properties?.municipality_code === "string"
             ? feature.properties.municipality_code
             : "";
-        const result = byCode.get(code);
+        const featureState =
+          typeof feature.properties?.state_code === "string"
+            ? feature.properties.state_code
+            : "";
+        const result = byKey.get(`${featureState}:${code}`);
         return {
           ...feature,
           properties: {
@@ -241,8 +252,8 @@ export function ScenarioMaps({
           <h2 id="scenario-maps-heading">Comparación cartográfica A/B</h2>
           <p>
             Ambas vistas usan la misma referencia cartográfica, los mismos cortes
-            de riesgo y la misma leyenda. La cámara se abre en la misma extensión
-            de Jalisco.
+            de riesgo y la misma leyenda. La cámara se ajusta a la extensión real
+            de las geometrías del escenario.
           </p>
         </div>
         <span className="status-pill status-pill--neutral">A/B</span>

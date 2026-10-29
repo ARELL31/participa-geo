@@ -1065,7 +1065,7 @@ class Repository:
                     """
                 SELECT s.scenario_id, s.reference_territory_id AS territory_id,
                        t.municipality_code, t.name AS municipality_name,
-                       s.level, t.territory_code, s.district_plan,
+                       t.state_code, s.level, t.territory_code, s.district_plan,
                        s.baseline_abstention_pct, s.hypothetical_abstention_pct,
                        s.baseline_error_lower_pct, s.baseline_error_upper_pct,
                        s.hypothetical_error_lower_pct,
@@ -1091,6 +1091,7 @@ class Repository:
                 territory_id=result["territory_id"],
                 municipality_code=result["municipality_code"],
                 municipality_name=result["municipality_name"],
+                state_code=result["state_code"],
                 level=result["level"],
                 territory_code=result["territory_code"],
                 district_plan=result["district_plan"],

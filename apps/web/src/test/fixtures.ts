@@ -334,6 +334,7 @@ export function prediction(overrides: Partial<PredictionDTO> = {}): PredictionDT
   return {
     territory_id: territoryUuid("999"),
     municipality_code: "999",
+    state_code: "14",
     level: "municipality",
     territory_code: "999",
     district_plan: null,
@@ -434,6 +435,7 @@ export function scenarioResult(
     territory_id: source.territory_id,
     municipality_code: source.municipality_code ?? null,
     municipality_name: source.municipality_name,
+    state_code: source.state_code ?? null,
     level: source.level,
     territory_code: source.territory_code ?? source.municipality_code ?? null,
     district_plan: source.district_plan ?? null,

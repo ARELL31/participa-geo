@@ -138,6 +138,19 @@ export function ScenarioPage() {
 
   const scenario = mutation.data ?? scenarioQuery.data;
   const scenarioIdValue = scenario?.scenario_id ?? null;
+  // A scenario stores every municipality in the country. The map must focus on
+  // the entity of the municipalities actually selected, not on the whole set.
+  const scenarioStateFromResults = useMemo<StateCode | null>(() => {
+    const states = new Set(
+      (scenario?.results ?? [])
+        .filter((row) => row.selected)
+        .map((row) => row.state_code)
+        .filter((value): value is string => Boolean(value)),
+    );
+    return states.size === 1 ? ([...states][0] as StateCode) : null;
+  }, [scenario]);
+  const mapStateCode = scenarioStateFromResults ?? scenarioStateCode;
+  const syncedScenarioRef = useRef<string | null>(null);
   const predictions = useMemo(
     () => predictionsQuery.data?.items ?? [],
     [predictionsQuery.data],
@@ -149,12 +162,19 @@ export function ScenarioPage() {
   const insufficientCount = predictions.length - eligible.length;
 
   const featuresQuery = useQuery({
-    queryKey: queryKeys.municipalFeatures(scenarioStateCode),
-    queryFn: ({ signal }) =>
-      fetchMunicipalityFeatures(scenarioStateCode, signal),
+    queryKey: queryKeys.municipalFeatures(mapStateCode),
+    queryFn: ({ signal }) => fetchMunicipalityFeatures(mapStateCode, signal),
     enabled: level === "municipality" && Boolean(scenario),
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (!scenarioIdValue || !scenarioStateFromResults) return;
+    if (syncedScenarioRef.current === scenarioIdValue) return;
+    syncedScenarioRef.current = scenarioIdValue;
+    // A shared scenario belongs to one entity; align the form and predictions.
+    setScenarioStateOverride(scenarioStateFromResults);
+  }, [scenarioIdValue, scenarioStateFromResults]);
 
   useEffect(() => {
     if (reviewing) confirmHeadingRef.current?.focus();
@@ -554,7 +574,11 @@ export function ScenarioPage() {
             </div>
             <ExportActions
               caption="Exportaciones del escenario persistido"
-              request={{ scenario_id: scenario.scenario_id }}
+              request={{
+                scenario_id: scenario.scenario_id,
+                level: "municipality",
+                state_code: mapStateCode,
+              }}
               actions={[
                 {
                   kind: "scenario_csv",
@@ -607,7 +631,7 @@ export function ScenarioPage() {
 function ScenarioHeading() {
   return (
     <div className="page-heading">
-      <p className="eyebrow">Simulador municipal · Jalisco</p>
+      <p className="eyebrow">Simulador municipal · Nacional</p>
       <h1>Escenarios hipotéticos</h1>
       <p className="page-heading__lead">
         Compare la predicción publicada 2027 (A) con una reducción aritmética

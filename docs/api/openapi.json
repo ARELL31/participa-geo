@@ -1892,6 +1892,17 @@
             ],
             "title": "Municipality Code"
           },
+          "state_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Code"
+          },
           "level": {
             "type": "string",
             "enum": [
@@ -2199,7 +2210,8 @@
               "executive_pdf",
               "technical_zip",
               "district_observed_pdf",
-              "territory_fiche_pdf"
+              "territory_fiche_pdf",
+              "national_geojson"
             ],
             "title": "Kind"
           },
@@ -2313,7 +2325,8 @@
               "executive_pdf",
               "technical_zip",
               "district_observed_pdf",
-              "territory_fiche_pdf"
+              "territory_fiche_pdf",
+              "national_geojson"
             ],
             "title": "Kind"
           },
@@ -2600,6 +2613,17 @@
           "municipality_name": {
             "type": "string",
             "title": "Municipality Name"
+          },
+          "state_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Code"
           },
           "level": {
             "type": "string",

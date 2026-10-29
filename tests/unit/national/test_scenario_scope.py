@@ -193,6 +193,17 @@ def test_scenario_service_rejects_mixed_district_plans(monkeypatch):
     assert not repository.persisted
 
 
+def test_scenario_result_carries_state_code_for_map_scope(monkeypatch):
+    repository = FakeRepository(level="municipality")
+    result, session = _exercise_service(
+        monkeypatch, repository, _request([repository.predictions[0].territory_id])
+    )
+
+    assert result.results[0].state_code == "14"
+    assert {item.state_code for item in result.results} == {"14"}
+    assert session.committed
+
+
 def test_scenario_service_infers_legacy_municipal_scope_when_level_omitted(monkeypatch):
     repository = FakeRepository(level="municipality")
     result, session = _exercise_service(

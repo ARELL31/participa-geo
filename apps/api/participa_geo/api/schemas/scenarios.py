@@ -51,6 +51,7 @@ class ScenarioResultDTO(BaseModel):
     territory_id: UUID
     municipality_code: str | None
     municipality_name: str
+    state_code: str | None = None
     level: TerritoryLevel = "municipality"
     territory_code: str | None = None
     district_plan: DistrictPlan | None = None

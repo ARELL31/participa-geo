@@ -687,6 +687,7 @@ class ScenarioResultRecord:
     risk_a_unstable: bool
     risk_b_unstable: bool
     selected: bool
+    state_code: str | None = None
     level: TerritoryLevel = "municipality"
     district_plan: DistrictPlan | None = None
     territory_code: str | None = None

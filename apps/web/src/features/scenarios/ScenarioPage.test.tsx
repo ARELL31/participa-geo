@@ -321,6 +321,40 @@ describe("ScenarioPage", () => {
     );
   });
 
+  it("uses the persisted scenario's entity for cartography after reload", async () => {
+    const persisted = scenarioDTO(PREDICTIONS, {
+      reduction: 3,
+      selectedTerritoryIds: [ELIGIBLE.territory_id],
+    });
+    // Persisted scenarios contain all 2,477 national rows; only the selected
+    // municipality identifies the entity the map must focus on.
+    const nuevoLeonScenario = {
+      ...persisted,
+      results: persisted.results.map((row) => ({
+        ...row,
+        state_code: row.selected ? "19" : "14",
+      })),
+    };
+    const requestedStates: string[] = [];
+    server.use(
+      modelsHandler(),
+      predictionsHandler(PREDICTIONS),
+      scenarioHandler(nuevoLeonScenario),
+      http.get("*/api/v1/gis/wfs", ({ request }) => {
+        const url = new URL(request.url);
+        requestedStates.push(url.searchParams.get("state_code") ?? "");
+        return HttpResponse.json({ type: "FeatureCollection", features: [] });
+      }),
+    );
+    renderPage(`/scenarios?scenario_id=${SCENARIO_ID}`);
+
+    expect(
+      await screen.findByRole("heading", { name: "Resultado persistido" }),
+    ).toBeVisible();
+    await waitFor(() => expect(requestedStates).toContain("19"));
+    expect(requestedStates).not.toContain("14");
+  });
+
   it("exports the persisted scenario through the real report API", async () => {
     const persisted = scenarioDTO(PREDICTIONS, {
       reduction: 3,

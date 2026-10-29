@@ -58,6 +58,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/territories/{territory_id}/municipal-districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Municipality District Intersections */
+        get: operations["list_municipality_district_intersections_api_v1_territories__territory_id__municipal_districts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/participation/history": {
         parameters: {
             query?: never;
@@ -427,6 +444,55 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
+        /** MunicipalityDistrictDTO */
+        MunicipalityDistrictDTO: {
+            /** State Code */
+            state_code: string;
+            /** Municipality Code */
+            municipality_code: string;
+            /** Municipality Name */
+            municipality_name?: string | null;
+            /** District Code */
+            district_code: string;
+            /** District Name */
+            district_name?: string | null;
+            /**
+             * District Plan
+             * @constant
+             */
+            district_plan: "DERFE2023";
+            /** Is Split */
+            is_split: boolean;
+            /**
+             * Year
+             * @default 2024
+             * @constant
+             */
+            year: 2024;
+            /** Section Count */
+            section_count: number;
+            /** Section Share */
+            section_share: number;
+            /** Ln */
+            ln?: number | null;
+            /** Sv */
+            sv?: number | null;
+            /** Nv */
+            nv?: number | null;
+            /** Ns */
+            ns?: number | null;
+            /** Ln Share */
+            ln_share?: number | null;
+            /** Abstention Pct */
+            abstention_pct?: number | null;
+            /** Coverage Share */
+            coverage_share?: number | null;
+            /**
+             * Coverage Status
+             * @enum {string}
+             */
+            coverage_status: "eligible" | "insufficient";
+        };
         /** Page[HistoryDTO] */
         Page_HistoryDTO_: {
             /** Items */
@@ -443,6 +509,18 @@ export interface components {
         Page_ModelDTO_: {
             /** Items */
             items: components["schemas"]["ModelDTO"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            meta: components["schemas"]["DatasetMeta"];
+        };
+        /** Page[MunicipalityDistrictDTO] */
+        Page_MunicipalityDistrictDTO_: {
+            /** Items */
+            items: components["schemas"]["MunicipalityDistrictDTO"][];
             /** Page */
             page: number;
             /** Page Size */
@@ -511,6 +589,8 @@ export interface components {
             territory_id: string;
             /** Municipality Code */
             municipality_code?: string | null;
+            /** State Code */
+            state_code?: string | null;
             /**
              * Level
              * @default municipality
@@ -688,16 +768,23 @@ export interface components {
             territory_id?: string | null;
             /** Year */
             year?: (2009 | 2012 | 2015 | 2018 | 2021 | 2024) | null;
-            /** Level */
-            level?: "municipality" | "federal_district";
+            /**
+             * Level
+             * @default municipality
+             * @enum {string}
+             */
+            level: "municipality" | "federal_district";
             /** District Plan */
-            district_plan?: "DERFE2021" | "DERFE2023" | null;
-            /** State Code */
-            state_code?: string;
+            district_plan?: ("DERFE2021" | "DERFE2023") | null;
+            /**
+             * State Code
+             * @default all
+             */
+            state_code: string;
         };
         /**
          * ScenarioDTO
-         * @description The persisted scenario plus the full 125-municipality comparison.
+         * @description The persisted scenario plus the full published municipality comparison.
          */
         ScenarioDTO: {
             /**
@@ -793,6 +880,8 @@ export interface components {
             municipality_code: string | null;
             /** Municipality Name */
             municipality_name: string;
+            /** State Code */
+            state_code?: string | null;
             /**
              * Level
              * @default municipality
@@ -991,6 +1080,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_TerritoryDTO_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_municipality_district_intersections_api_v1_territories__territory_id__municipal_districts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                territory_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_MunicipalityDistrictDTO_"];
                 };
             };
             /** @description Validation Error */
